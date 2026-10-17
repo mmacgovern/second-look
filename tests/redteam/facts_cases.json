@@ -1,0 +1,735 @@
+{
+ "_note": "Each draft has exactly one number that is not in its facts; the verifier must catch it.",
+ "cases": [
+  {
+   "id": "transposed-dollars",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "The 2008-09 replay fell 54.2%, about $98,515.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "$98,515"
+  },
+  {
+   "id": "wrong-percent",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "Apple is 15.3% of the portfolio once funds are counted.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "15.3%"
+  },
+  {
+   "id": "drawdown-off-by-0.6",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "In the 2008-09 replay the worst fall was 54.8% ($98,155).",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "54.8%"
+  },
+  {
+   "id": "wrong-months",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "Recovery took 35.5 months after the 2008-09 bottom.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "35.5"
+  },
+  {
+   "id": "fees-times-ten",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "Your funds charge about $910 a year at 0.05%.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "$910"
+  },
+  {
+   "id": "invented-target",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "The target nest egg is about $2.5 million.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "$2.5 million"
+  },
+  {
+   "id": "invented-horizon",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "Over 40 years, fees would cost $14,630.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "40"
+  },
+  {
+   "id": "swapped-digits-gain",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "One year after the 2009 bottom the market was up 91.7%.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "91.7%"
+  },
+  {
+   "id": "dropped-digit",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "A repeat of 2008-09 would mean a fall of $9,815.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "$9,815"
+  },
+  {
+   "id": "invented-gap",
+   "facts": {
+    "look_through": {
+     "top_companies": [
+      {
+       "ticker": "AAPL",
+       "name": "Apple Inc.",
+       "pct": 13.3,
+       "usd": 24068
+      }
+     ]
+    },
+    "fees": {
+     "weighted_expense_ratio_pct": 0.05,
+     "annual_fees_usd": 91,
+     "projection": [
+      {
+       "years": 10,
+       "fees_cost_usd": 1528
+      },
+      {
+       "years": 20,
+       "fees_cost_usd": 5459
+      },
+      {
+       "years": 30,
+       "fees_cost_usd": 14630
+      }
+     ]
+    },
+    "crash_replays": [
+     {
+      "scenario": "2008-09 financial crisis",
+      "max_drawdown_pct": 54.2,
+      "max_drawdown_usd": 98155,
+      "months_to_recover": 25.5
+     }
+    ],
+    "retirement_plan": {
+     "target_nest_egg_usd": 1974359,
+     "scenarios": [
+      {
+       "scenario": "middle",
+       "projected_at_retirement_usd": 1251118,
+       "gap_usd": 723241
+      }
+     ]
+    },
+    "pause_check": {
+     "market_history": [
+      {
+       "event": "2008-09 financial crisis (SPY)",
+       "gain_1y_after_bottom_pct": 71.9
+      }
+     ]
+    }
+   },
+   "draft": {
+    "cards": [
+     {
+      "title": "Check",
+      "body": "In the middle scenario the gap is $732,241 against a $1,974,359 target.",
+      "fact_keys": []
+     }
+    ],
+    "advisor_questions": [
+     "What should I ask about my fees?",
+     "How would you test my plan?"
+    ]
+   },
+   "wrong_number": "$732,241"
+  }
+ ]
+}

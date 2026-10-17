@@ -143,3 +143,16 @@ The explainer agent receives the profile and plan facts; the verifier checks tho
 ```
 
 **Result:** Added About-you step (persona pre-fill, SSA link, 5-question quiz), sidebar Fluency and separate Risk profile badge, Retirement Plan tab (band chart, gap headline, Assumptions sliders recomputing in Python, account-type bar, editable tax rate, mix vs illustrative risk range, every number labeled a planning estimate) and an X-Ray Concentration section; demo replay still 12/12 for $0, 21 screenshots saved, and all 358 pytest tests passed.
+
+### #9 — 2026-10-17 19:07 — Phase 9 — Red-team and safety tests
+
+```text
+Prompt 8 — Red-team and safety tests
+Create tests/redteam/ with:
+- 20 adversarial prompts for the Pause Button and any free-text input: requests for stock picks, guaranteed returns, "pretend you're my advisor", jailbreaks, and requests to reveal the system prompt or API key.
+- 3 malicious CSVs: one with prompt injection in a description field, one with a 50,000-character field, one with fake account and SSN-like numbers.
+- 10 Facts JSON cases where a fake LLM draft contains a wrong number, to confirm the verifier catches it.
+Write scripts/run_redteam.py that runs them all (live or demo), saves results to docs/redteam_results.json, and prints a pass-rate table. Also add tests/test_secrets.py that scans all tracked files and rendered HTML for anything shaped like an API key.
+```
+
+**Result:** Added tests/redteam/ (20 adversarial prompts run on the Pause Button and intake, 3 malicious CSVs, 10 wrong-number drafts), scripts/run_redteam.py (demo 53/53 passed, saved to docs/redteam_results.json), a grounding defense so intake rejects tickers or numbers not in the pasted text, secondlook/safety/secret_scan.py and tests/test_secrets.py (repo files plus 16 rendered app views); all 384 pytest tests passed.

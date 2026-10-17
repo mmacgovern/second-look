@@ -46,8 +46,28 @@ def scrub(text: str) -> str:
     return _LONG_ID.sub("[REDACTED]", text)
 
 
-def to_portfolio(rows: list[IntakeRow]) -> Portfolio:
-    """Python validation of the model's rows (same rules as the CSV parser)."""
+_NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+
+
+def numbers_in(text: str) -> set[float]:
+    return {float(n.replace(",", "")) for n in _NUMBER.findall(text)}
+
+
+def _grounded(row: IntakeRow, symbol: str, is_cash: bool, source: str, source_numbers: set[float]) -> bool:
+    """Every number the model gave, and the ticker itself, must appear in the pasted text."""
+    if not is_cash and not re.search(rf"(?<![A-Za-z]){re.escape(symbol)}(?![A-Za-z])", source, re.IGNORECASE):
+        return False
+    given = [v for v in (row.quantity, row.price, row.market_value) if v is not None]
+    return all(any(abs(v - n) <= 1e-6 * max(1.0, abs(n)) for n in source_numbers) for v in given)
+
+
+def to_portfolio(rows: list[IntakeRow], source: str | None = None) -> Portfolio:
+    """Python validation of the model's rows (same rules as the CSV parser).
+
+    With `source` (the pasted text), a row is also rejected unless its ticker and every
+    number it gives appear in that text, so a model cannot invent holdings or amounts.
+    """
+    source_numbers = numbers_in(source) if source is not None else set()
     holdings, rejected = [], []
     for i, row in enumerate(rows, start=1):
         raw = row.symbol.strip().upper()
@@ -64,6 +84,9 @@ def to_portfolio(rows: list[IntakeRow]) -> Portfolio:
         if value is None or qty is None or value < 0 or qty < 0:
             rejected.append(RejectedRow(row_number=i, reason="missing or negative quantity or value"))
             continue
+        if source is not None and not _grounded(row, symbol, is_cash, source, source_numbers):
+            rejected.append(RejectedRow(row_number=i, reason="ticker or numbers not found in the pasted text"))
+            continue
         holdings.append(Holding(symbol=symbol, quantity=qty, price=1.0 if is_cash and price is None else price,
                                 market_value=round(value, 2), account="Account 1", is_cash=is_cash))
     if not holdings:
@@ -74,5 +97,6 @@ def to_portfolio(rows: list[IntakeRow]) -> Portfolio:
 def run(data: IntakeInput, ctx: AgentContext) -> Portfolio:
     if len(data.text) > MAX_CHARS:
         raise ValueError(f"Pasted text is too long (limit {MAX_CHARS:,} characters).")
-    output: IntakeOutput = call(SPEC, tagged("user_data", scrub(data.text)), IntakeOutput, ctx)
-    return to_portfolio(output.rows)
+    text = scrub(data.text)
+    output: IntakeOutput = call(SPEC, tagged("user_data", text), IntakeOutput, ctx)
+    return to_portfolio(output.rows, source=text)
