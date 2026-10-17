@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+.runtime/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.streamlit/secrets.toml
+.DS_Store
