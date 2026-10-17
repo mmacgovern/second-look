@@ -50,3 +50,19 @@ Then write scripts/build_snapshot.py that uses yfinance to download, for every t
 ```
 
 **Result:** Added three sample portfolio CSVs (beginner ~$15k, midcareer ~$181k, retiree ~$657k), secondlook/market_data.py (live yfinance first, snapshot fallback), scripts/build_snapshot.py and a 2.9 MB snapshot of 28 tickers with prices from 2007, fund profiles and a README; all 72 pytest tests passed.
+
+### #3 — 2026-10-17 17:42 — Phase 5 — Quant engine
+
+```text
+Prompt 4 — Quant engine (no AI)
+Build secondlook/quant/ — pure Python, no LLM calls:
+- parse.py: read brokerage CSVs with flexible column matching; redact account numbers; validate tickers against ^[A-Z.\-]{1,6}$; drop free-text fields; output a pydantic Portfolio.
+- xray.py: look-through exposure. Expand each fund into its holdings by weight, combine with directly held stocks, return top-10 company exposures, sector weights, overlap between each pair of funds (sum of min weights), and a coverage % saying how much of the portfolio was looked through.
+- fees.py: weighted expense ratio and the dollar cost of fees over 10, 20 and 30 years vs. a 0.05% index baseline, at an assumed 6% gross return (a parameter).
+- replay.py: apply the portfolio's current weights to historical returns for 2008-09 (Oct 2007–Mar 2009), Covid (Feb–Mar 2020) and 2022; report max drawdown in % and $, and months to recover. Use stated proxies for funds that didn't exist yet.
+- pause.py: given a proposed action (sell all / sell X% / buy $N of ticker), return before/after top exposures, sector weights and replay results, plus historical context such as what happened to investors who sold at the 2009 or 2020 bottom.
+- facts.py: combine everything into one compact Facts JSON (target under 1,500 tokens) with every number rounded and labeled.
+Write thorough pytest tests with hand-calculated expected values on small toy portfolios.
+```
+
+**Result:** Built secondlook/quant/ (models, parse, xray, fees, replay, pause, facts) as pure Python with no LLM calls; Facts JSON for the three samples is 495-1,068 tokens including a pause check, and all 145 pytest tests passed.
