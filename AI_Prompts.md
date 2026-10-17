@@ -98,3 +98,31 @@ Also build secondlook/safety/advice_guard.py (regex layer) and tests for each ag
 ```
 
 **Result:** Built secondlook/agents/ (intake, analyst, explainer, verifier, pause, each with a prompts/*.md file, typed I/O and fixed model/max_tokens), safe templates, secondlook/safety/ (advice_guard regex layer and number matching) and orchestrator.py (max 4 LLM steps, one rewrite, template fallback); all 301 pytest tests passed with a fake LLM.
+
+### #6 — 2026-10-17 18:22 — Phase 7 — Record demo mode
+
+```text
+Prompt 6 — Record demo mode
+Write scripts/record_demo.py: with DEMO_MODE=false, run the full pipeline once for each of the 3 sample portfolios x 3 fluency levels, plus 3 Pause Button scenarios, and save the responses to demo/recorded/ keyed the same way llm.py looks them up. Print total cost when done. Do not save anything from .env.
+Check: set DEMO_MODE=true, run the app with your key removed, and confirm everything works for $0.
+```
+
+### #7 — 2026-10-17 18:31 — Phase 8 — The UI
+
+```text
+Prompt 7 — The UI
+Build app.py in Streamlit. Look professional and calm, like a modern bank, not a trading app: a .streamlit/config.toml theme (navy/white/one accent color), a clean sans-serif font, generous spacing, no emojis.
+Layout:
+- Landing: one-sentence promise, three buttons for sample portfolios, a CSV uploader, and a privacy note ("processed in memory, account numbers removed before AI").
+- Fluency selector: New to investing / Comfortable / Pro. Changing it re-explains the same numbers.
+- Four tabs: X-Ray (Plotly treemap of look-through exposure + overlap table), Fee Clock (line chart of growth with vs. without fees, $ lost callout), Crash Replay (drawdown chart for each crisis, $ figures), Top 3 Things Worth Knowing.
+- Pause Button panel: a text box "What are you thinking of doing?" plus quick picks (sell everything / buy more of a stock / move to cash); shows before/after and history.
+- A small "Cost of this analysis" badge showing tokens and $ from the ledger, and an admin page (sidebar) with the ledger summary.
+- A persistent footer disclaimer: educational information, not investment advice.
+Show friendly messages when budget limits are hit, and fall back to demo answers.
+Check: click through all three samples at all three levels; take screenshots into docs/screenshots/.
+```
+
+**Result (#6):** Built scripts/record_demo.py, scripts/check_demo.py and secondlook/demo_runs.py, fixed two live-API bugs (Portkey timeout in ms, max_completion_tokens) and a guard false positive on "not guaranteed"; recorded 24 responses (12/12 runs AI) for $0.012339, and check_demo replayed all 12 with no key for $0.00; all 319 pytest tests passed.
+
+**Result (#7):** Built app.py (Streamlit, navy/white/teal theme in .streamlit/config.toml) with landing, fluency selector, X-Ray/Fee Clock/Crash Replay/Top 3 tabs, Pause Button, cost badge, Admin page and footer disclaimer, plus secondlook/ui_data.py; clicked through 3 samples x 3 levels in demo mode (all AI explanations, $0), saved 16 screenshots to docs/screenshots/, and all 342 pytest tests passed.

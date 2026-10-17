@@ -1,0 +1,25 @@
+[theme]
+base = "light"
+primaryColor = "#0E7C86"              # the one accent: calm teal
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F6FA"
+textColor = "#0B1F3A"                 # navy
+font = "sans serif"
+borderColor = "#DCE3EC"
+showWidgetBorder = true
+baseRadius = "0.6rem"
+
+[theme.sidebar]
+backgroundColor = "#0B1F3A"
+textColor = "#F3F6FA"
+secondaryBackgroundColor = "#13294B"
+
+[server]
+headless = true
+maxUploadSize = 1
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
