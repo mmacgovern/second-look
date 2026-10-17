@@ -106,3 +106,97 @@ def test_real_samples_stay_under_token_target(name, action):
     assert json.loads(text) == facts
     assert len(facts["crash_replays"]) == 3
     assert "DEMO-0000" not in text
+
+
+# --- household, plan, risk profile and concentration (Prompt 4b) -------------
+
+from secondlook.quant.accounts import household_from_csvs  # noqa: E402
+from secondlook.quant.profile import GlidePath, UserProfile, load_persona  # noqa: E402
+
+TOY_MARKET = {"technology": 0.5, "healthcare": 0.3, "financial_services": 0.2}
+TOY_USER = UserProfile(age=55, retirement_age=65, desired_income_today_usd=50000,
+                       social_security_or_pension_usd=30000, annual_contribution_usd=5000)
+
+
+@pytest.fixture
+def household_facts(toy_adj):
+    # Account 1 (FUNDA + FUNDB, $6,000) is a 401(k); Account 2 (AAA + cash, $4,000) is a Roth IRA
+    household = household_from_csvs([(TOY_CSV, "401k_403b", {"Account 2": "roth_ira"})])
+    return build_facts(None, TOY_PROFILES, toy_adj, household=household, user=TOY_USER,
+                       risk_answers=[3, 3, 3, 3, 3], market_sectors=TOY_MARKET)
+
+
+def test_household_accounts_and_counted_balance(household_facts):
+    # 6,000 x 0.85 + 4,000 = 9,100
+    assert household_facts["accounts"] == {
+        "by_type_usd": {"401(k)/403(b)": 6000, "Roth IRA": 4000}, "counted_for_retirement_usd": 9100}
+
+
+def test_plan_section_by_hand(household_facts):
+    plan = household_facts["retirement_plan"]
+    # (50,000 - 30,000) / 0.039 = 512,820.51
+    assert (plan["target_nest_egg_usd"], plan["income_needed_from_portfolio_usd"]) == (512821, 20000)
+    assert plan["counted_balance_usd"] == 9100 and plan["status"] == "saving"
+    # net return = real return - weighted ER 0.24%
+    assert [s["net_return_pct"] for s in plan["scenarios"]] == [1.76, 3.76, 5.76]
+    middle = plan["scenarios"][1]
+    g = 1.0376 ** 10
+    projected = 9100 * g + 5000 * (g - 1) / 0.0376
+    assert middle["projected_at_retirement_usd"] == round(projected)
+    assert middle["required_annual_contribution_usd"] == round((512820.5128 - 9100 * g) * 0.0376 / (g - 1))
+
+
+def test_investor_and_concentration_sections(household_facts):
+    inv = household_facts["investor"]
+    # 10 years -> capacity 3; answers all 3 -> tolerance 3
+    assert (inv["years_to_retirement"], inv["capacity_1to5"], inv["tolerance_1to5"], inv["risk_profile"]) == (
+        10, 3, 3, "Moderate")
+    assert inv["portfolio_stock_pct"] == 90.0 and inv["reference_glide_path"] == "not filled in yet"
+    conc = household_facts["concentration"]
+    assert conc["largest_company"] == {"ticker": "AAA", "pct": 54.0}
+    assert conc["effective_holdings"] == 2.8 and conc["effective_companies_upper_bound"] == 2.6
+    assert conc["companies_over_threshold"] == [
+        {"ticker": "AAA", "pct": 54.0, "direct_pct": 30.0}, {"ticker": "BBB", "pct": 12.0, "direct_pct": 0.0}]
+    assert conc["stock_sectors_vs_market_pct_of_stocks"][0] == {
+        "sector": "Technology", "portfolio": 71.1, "market": 50.0, "difference": 21.1}
+
+
+def test_every_assumption_is_labeled(household_facts):
+    a = household_facts["assumptions"]
+    assert a["withdrawal_rate_pct"] == 3.9
+    assert a["real_returns_before_fees_pct"] == {"cautious": 2.0, "middle": 4.0, "strong": 6.0}
+    assert a["fund_expense_ratio_subtracted_pct"] == 0.24
+    assert a["pre_tax_accounts_reduced_by_pct"] == 15.0
+    assert a["concentration_threshold_pct"] == 10.0
+    assert a["fee_projection_gross_return_pct"] == 6.0 and a["fee_baseline_expense_ratio_pct"] == 0.05
+    assert "today's dollars" in a["all_dollars"] and a["contributions"] and a["crash_replay_method"]
+
+
+def test_user_edits_flow_into_facts(toy_adj):
+    household = household_from_csvs([(TOY_CSV, "traditional_ira", None)])
+    facts = build_facts(None, TOY_PROFILES, toy_adj, household=household, user=TOY_USER, withdrawal_rate=0.045,
+                        tax_rate=0.25, threshold=0.5, market_sectors=TOY_MARKET)
+    assert facts["assumptions"]["withdrawal_rate_pct"] == 4.5
+    assert facts["accounts"]["counted_for_retirement_usd"] == 7500  # 10,000 x 0.75
+    assert [f["ticker"] for f in facts["concentration"]["companies_over_threshold"]] == ["AAA"]
+    assert "investor" in facts and "risk_profile" not in facts["investor"]  # no quiz answers given
+
+
+def test_filled_glide_path_reported(toy_adj):
+    glide = GlidePath(is_placeholder=False, source="Toy family", points=[
+        {"years_to_retirement": 0, "stock_share": 0.5}, {"years_to_retirement": 20, "stock_share": 0.9}])
+    facts = build_facts(parse_csv(TOY_CSV), TOY_PROFILES, toy_adj, user=TOY_USER, glide_path=glide,
+                        market_sectors=TOY_MARKET)
+    assert facts["investor"]["reference_stock_pct"] == 70.0  # 10 years: halfway from 50% to 90%
+    assert facts["investor"]["reference_source"] == "Toy family"
+
+
+@pytest.mark.parametrize("name", ["beginner", "midcareer", "retiree"])
+@pytest.mark.parametrize("action", [None, Action(kind="sell_all")])
+def test_personas_with_plan_stay_under_2000_tokens(name, action):
+    user, household, answers = load_persona(name)
+    profiles, adj = load_market_inputs(household.portfolio(), prefer_live=False)
+    facts = build_facts(None, profiles, adj, action, household=household, user=user, risk_answers=answers)
+    assert estimate_tokens(facts_json(facts)) < 2000
+    assert {"investor", "retirement_plan", "accounts", "concentration", "assumptions"} <= set(facts)
+    assert "DEMO-0000" not in facts_json(facts)

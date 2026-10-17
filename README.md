@@ -73,3 +73,19 @@ full holdings list. So:
 Some funds report no holdings or sectors at all. For example, BND, TLT and GLD
 have no top holdings, and AGG lists only one. Target-date funds such as VTTSX
 list their underlying funds rather than stocks.
+
+## Personas and reference data
+
+`data/sample_portfolios/personas.json` gives each sample a made-up investor:
+age, retirement age, desired income, Social Security estimate, yearly
+contribution, account types and risk-quiz answers. Load one with
+`secondlook.quant.profile.load_persona("midcareer")`.
+
+`data/reference/glide_path.json` is a **placeholder**. Fill in the stock share
+by years to retirement from a cited target-date fund family, add the source,
+and set `is_placeholder` to `false`. Until then the app says the reference
+glide path is "not filled in yet" instead of guessing.
+
+Planning assumptions (withdrawal rate, real returns, flat tax rate on pre-tax
+accounts) live in `ASSUMPTIONS` in `secondlook/quant/plan.py`, and every one
+is repeated as a labeled value in the Facts JSON.

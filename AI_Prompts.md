@@ -66,3 +66,19 @@ Write thorough pytest tests with hand-calculated expected values on small toy po
 ```
 
 **Result:** Built secondlook/quant/ (models, parse, xray, fees, replay, pause, facts) as pure Python with no LLM calls; Facts JSON for the three samples is 495-1,068 tokens including a pause check, and all 145 pytest tests passed.
+
+### #4 — 2026-10-17 17:51 — Phase 5b — Retirement plan, concentration and risk profile
+
+```text
+Prompt 4b — Retirement plan, concentration and risk profile (no AI)
+Extend secondlook/quant/ — pure Python, no LLM calls:
+- profile.py: a pydantic UserProfile (age, retirement_age, desired_income_today_usd, social_security_or_pension_usd optional, annual_contribution_usd) and a 5-question risk-tolerance quiz scored 1-5. Combine capacity (years to retirement) and tolerance into one of 5 risk profiles. Load a reference stock-share glide path by years-to-retirement from data/reference/glide_path.json (I will fill in values from a cited target-date fund family; leave clearly marked placeholders and a source field).
+- plan.py: required nest egg = (desired income - SS/pension) / withdrawal_rate (default 0.039, adjustable 0.035-0.045). Project today's balance and contributions forward in today's dollars at three real returns (cautious, middle, strong; parameters in one ASSUMPTIONS dict), subtracting the portfolio's weighted expense ratio from fees.py. Return projected balance by year for each scenario, the gap, and the required annual contribution for each scenario using (target - FV of current balance) * r / ((1+r)^n - 1). Handle edge cases: already retired, already on track, zero years left.
+- concentration.py: largest single-company exposure, top sector weights vs. a total-market reference, effective number of holdings (1/HHI), flags for any single position above a CONCENTRATION_THRESHOLD (default 0.10).
+- Add all of these to the Facts JSON, keeping it under 2,000 tokens, with every assumption included as a labeled value.
+- accounts.py: each uploaded CSV is tagged with an account type (taxable, 401k/403b, traditional_ira, roth_ira, hsa). Merge all accounts into one household Portfolio for xray and concentration. In plan.py, reduce pre-tax balances (401k, traditional_ira) by a flat RETIREMENT_TAX_RATE (default 0.15, user-editable) before counting them; count roth and hsa in full. Nothing else tax-related.
+Add an age, retirement goal and SS estimate to each sample persona in data/sample_portfolios/personas.json.
+Write pytest tests with hand-calculated values, including a test that the required contribution matches a spreadsheet PMT calculation.
+```
+
+**Result:** Added quant profile.py (risk quiz, capacity, placeholder glide path), accounts.py (account types, household merge, flat 15% pre-tax haircut), plan.py (nest egg, three real-return projections, PMT-checked required contribution), concentration.py and personas.json, and extended Facts JSON (max 1,639 tokens); all 222 pytest tests passed.

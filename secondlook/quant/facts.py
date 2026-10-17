@@ -2,7 +2,8 @@
 
 Every number is rounded, and its key says the unit (_pct, _usd, _months,
 _years). Percentages are of the total portfolio unless the key says otherwise.
-The JSON is kept under TOKEN_TARGET by trimming list lengths if needed.
+Every assumption used is listed under "assumptions". The JSON is kept under
+TOKEN_TARGET by trimming list lengths if needed.
 """
 
 from __future__ import annotations
@@ -12,20 +13,24 @@ import math
 
 import pandas as pd
 
-from secondlook.quant.fees import fee_report
+from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, RETIREMENT_TAX_RATE, AccountSummary, Household, summarize
+from secondlook.quant.concentration import CONCENTRATION_THRESHOLD, Concentration, concentration, stock_sectors
+from secondlook.quant.fees import BASELINE_EXPENSE_RATIO, fee_report
 from secondlook.quant.models import CASH, Action, Portfolio
 from secondlook.quant.pause import PauseResult, pause_check
+from secondlook.quant.plan import ASSUMPTIONS, PlanResult, make_plan
+from secondlook.quant.profile import GlidePath, RiskProfile, UserProfile, load_glide_path, risk_profile
 from secondlook.quant.replay import PROXY_MAP, SCENARIOS, ScenarioResult, replay
 from secondlook.quant.xray import SECTOR_LABELS, XRay, xray
 
-TOKEN_TARGET = 1500
+TOKEN_TARGET = 2000
 
 # List lengths, from most to least detailed; the first level that fits wins.
 DETAIL_LEVELS = [
-    {"positions": 5, "companies": 10, "via": 10, "sectors": 8, "overlaps": 5, "funds": 3},
-    {"positions": 5, "companies": 8, "via": 5, "sectors": 6, "overlaps": 3, "funds": 3},
-    {"positions": 3, "companies": 5, "via": 3, "sectors": 5, "overlaps": 3, "funds": 2},
-    {"positions": 3, "companies": 5, "via": 0, "sectors": 4, "overlaps": 2, "funds": 1},
+    {"positions": 5, "companies": 10, "via": 10, "sectors": 8, "overlaps": 5, "funds": 3, "flags": 5},
+    {"positions": 5, "companies": 8, "via": 5, "sectors": 6, "overlaps": 3, "funds": 3, "flags": 5},
+    {"positions": 3, "companies": 5, "via": 3, "sectors": 5, "overlaps": 3, "funds": 2, "flags": 3},
+    {"positions": 3, "companies": 5, "via": 0, "sectors": 4, "overlaps": 2, "funds": 1, "flags": 3},
 ]
 
 
@@ -108,12 +113,103 @@ def _pause(result: PauseResult, n: int) -> dict:
     }
 
 
-def assemble(portfolio: Portfolio, xr: XRay, fees, replays, pause: PauseResult | None, level: dict) -> dict:
+def _concentration(c: Concentration, n_flags: int) -> dict:
+    out = {
+        "largest_company": {"ticker": c.largest_company.symbol, "pct": pct(c.largest_company.weight)}
+        if c.largest_company else None,
+        "effective_holdings": round(c.effective_holdings, 1) if c.effective_holdings else None,
+        "effective_companies_upper_bound": round(c.effective_companies_upper_bound, 1)
+        if c.effective_companies_upper_bound else None,
+        "companies_over_threshold": [
+            {"ticker": f.ticker, "pct": pct(f.weight), "direct_pct": pct(f.direct_weight)} for f in c.flags[:n_flags]
+        ],
+        "stock_sectors_vs_market_pct_of_stocks": [
+            {"sector": sector_name(s.sector), "portfolio": pct(s.portfolio), "market": pct(s.reference),
+             "difference": pct(s.difference)}
+            for s in c.sectors_vs_market
+        ],
+        "market_reference": c.reference,
+    }
+    return out
+
+
+def _investor(user: UserProfile, risk: RiskProfile | None, xr: XRay, glide: GlidePath | None) -> dict:
+    stock_share = sum(xr.sectors.get(k, 0.0) for k in stock_sectors(xr.sectors))
+    out = {
+        "age": user.age,
+        "retirement_age": user.retirement_age,
+        "years_to_retirement": user.years_to_retirement,
+        "portfolio_stock_pct": pct(stock_share),
+    }
+    if risk is not None:
+        out.update(risk_profile=risk.label, capacity_1to5=risk.capacity, tolerance_1to5=risk.tolerance,
+                   risk_level_1to5=risk.level)
+    reference = glide.stock_share_for(user.retirement_age - user.age) if glide is not None else None
+    if reference is None:
+        out["reference_glide_path"] = "not filled in yet"
+    else:
+        out["reference_stock_pct"] = pct(reference)
+        out["reference_source"] = glide.source
+    return out
+
+
+def _plan(p: PlanResult, user: UserProfile) -> dict:
+    return {
+        "status": p.status,
+        "desired_income_usd": usd(user.desired_income_today_usd),
+        "social_security_or_pension_usd": usd(user.guaranteed_income_usd),
+        "income_needed_from_portfolio_usd": usd(p.income_needed_from_portfolio_usd),
+        "target_nest_egg_usd": usd(p.target_nest_egg_usd),
+        "counted_balance_usd": usd(p.counted_balance_usd),
+        "annual_contribution_usd": usd(p.annual_contribution_usd),
+        "scenarios": [
+            {
+                "scenario": s.name,
+                "net_return_pct": pct(s.net_return, 2),
+                "projected_at_retirement_usd": usd(s.projected_at_retirement_usd),
+                "gap_usd": usd(s.gap_usd),
+                "on_track": s.on_track,
+                "required_annual_contribution_usd": usd(s.required_annual_contribution_usd),
+                "supported_income_usd": usd(s.supported_income_usd),
+            }
+            for s in p.scenarios
+        ],
+    }
+
+
+def _accounts(a: AccountSummary) -> dict:
+    return {
+        "by_type_usd": {ACCOUNT_TYPE_LABELS[t]: usd(v) for t, v in a.balances_by_type.items()},
+        "counted_for_retirement_usd": usd(a.counted_usd),
+    }
+
+
+def _assumptions(fees, plan: PlanResult | None, threshold: float, tax_rate: float) -> dict:
+    out = {
+        "all_dollars": "today's dollars" if plan else "current market value",
+        "fee_projection_gross_return_pct": pct(fees.gross_return),
+        "fee_baseline_expense_ratio_pct": pct(BASELINE_EXPENSE_RATIO, 3),
+        "concentration_threshold_pct": pct(threshold),
+        "crash_replay_method": "today's weights held constant; missing history uses stated proxies",
+    }
+    if plan is not None:
+        out.update(
+            withdrawal_rate_pct=pct(plan.withdrawal_rate, 2),
+            real_returns_before_fees_pct={k: pct(v) for k, v in plan.assumptions["real_returns"].items()},
+            fund_expense_ratio_subtracted_pct=pct(plan.expense_ratio, 3),
+            pre_tax_accounts_reduced_by_pct=pct(tax_rate),
+            contributions=plan.assumptions["contributions"],
+        )
+    return out
+
+
+def assemble(portfolio: Portfolio, xr: XRay, fees, replays, pause, level: dict, extras: dict) -> dict:
     values = portfolio.values_by_symbol()
     total = portfolio.total_value
     largest = sorted(((s, v) for s, v in values.items() if s != CASH), key=lambda kv: kv[1], reverse=True)
     facts = {
-        "about": "Computed in Python from the user's file and market data. pct = percent of total portfolio unless the key says otherwise.",
+        "about": "Computed in Python from the user's files and market data. pct = percent of total portfolio unless the key says otherwise.",
+        "assumptions": _assumptions(fees, extras.get("plan"), extras["threshold"], extras["tax_rate"]),
         "portfolio": {
             "total_usd": usd(total),
             "holdings_count": len([s for s in values if s != CASH]),
@@ -132,11 +228,10 @@ def assemble(portfolio: Portfolio, xr: XRay, fees, replays, pause: PauseResult |
                 if o.overlap > 0
             ],
         },
+        "concentration": _concentration(extras["concentration"], level["flags"]),
         "fees": {
             "weighted_expense_ratio_pct": pct(fees.weighted_expense_ratio, 3),
             "annual_fees_usd": usd(fees.annual_cost_usd),
-            "baseline_expense_ratio_pct": pct(fees.baseline_expense_ratio, 3),
-            "assumed_gross_return_pct": pct(fees.gross_return),
             "projection": [
                 {
                     "years": p.years,
@@ -152,6 +247,11 @@ def assemble(portfolio: Portfolio, xr: XRay, fees, replays, pause: PauseResult |
         },
         "crash_replays": _replays(replays, with_proxies=level["via"] > 0),
     }
+    if extras.get("accounts") is not None:
+        facts["accounts"] = _accounts(extras["accounts"])
+    if extras.get("user") is not None:
+        facts["investor"] = _investor(extras["user"], extras.get("risk"), xr, extras.get("glide"))
+        facts["retirement_plan"] = _plan(extras["plan"], extras["user"])
     if xr.funds_without_holdings:
         facts["look_through"]["funds_without_holdings"] = xr.funds_without_holdings
     if xr.unknown_symbols:
@@ -166,22 +266,53 @@ def assemble(portfolio: Portfolio, xr: XRay, fees, replays, pause: PauseResult |
 
 
 def build_facts(
-    portfolio: Portfolio,
+    portfolio: Portfolio | None,
     profiles: dict[str, dict],
     adj: pd.DataFrame,
     action: Action | None = None,
     gross_return: float = 0.06,
     token_target: int = TOKEN_TARGET,
+    *,
+    household: Household | None = None,
+    user: UserProfile | None = None,
+    risk_answers: list[int] | None = None,
+    withdrawal_rate: float = ASSUMPTIONS["withdrawal_rate"],
+    real_returns: dict[str, float] | None = None,
+    tax_rate: float = RETIREMENT_TAX_RATE,
+    threshold: float = CONCENTRATION_THRESHOLD,
+    market_sectors: dict[str, float] | None = None,
+    glide_path: GlidePath | None = None,
 ) -> dict:
+    """Facts for one portfolio, or for a household (all accounts merged) plus an optional plan."""
+    if household is not None:
+        portfolio = household.portfolio()
+    if portfolio is None:
+        raise ValueError("Pass a portfolio or a household")
     values = portfolio.values_by_symbol()
     xr = xray(values, profiles)
     fees = fee_report(values, profiles, gross_return=gross_return)
     replays = replay(values, adj, SCENARIOS, PROXY_MAP)
     pause = pause_check(values, action, profiles, adj) if action is not None else None
 
+    extras: dict = {
+        "threshold": threshold,
+        "tax_rate": tax_rate,
+        "concentration": concentration(values, profiles, reference=market_sectors, threshold=threshold),
+    }
+    if household is not None:
+        extras["accounts"] = summarize(household, tax_rate)
+    if user is not None:
+        counted = extras["accounts"].counted_usd if household is not None else portfolio.total_value
+        extras.update(
+            user=user,
+            risk=risk_profile(user, risk_answers) if risk_answers is not None else None,
+            glide=glide_path if glide_path is not None else load_glide_path(),
+            plan=make_plan(user, counted, fees.weighted_expense_ratio, withdrawal_rate, real_returns, tax_rate),
+        )
+
     facts = {}
     for level in DETAIL_LEVELS:
-        facts = assemble(portfolio, xr, fees, replays, pause, level)
+        facts = assemble(portfolio, xr, fees, replays, pause, level, extras)
         if estimate_tokens(facts_json(facts)) <= token_target:
             break
     return facts

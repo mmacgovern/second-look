@@ -1,0 +1,19 @@
+{
+  "is_placeholder": true,
+  "source": "PLACEHOLDER - fill in from a cited target-date fund family's published glide path (fund family name, document title, page).",
+  "source_url": null,
+  "as_of": null,
+  "notes": "stock_share is the fraction of the target-date fund in stocks (0.9 = 90%). years_to_retirement below 0 means years after the target date. Replace every null and set is_placeholder to false.",
+  "points": [
+    {"years_to_retirement": 40, "stock_share": null},
+    {"years_to_retirement": 35, "stock_share": null},
+    {"years_to_retirement": 30, "stock_share": null},
+    {"years_to_retirement": 25, "stock_share": null},
+    {"years_to_retirement": 20, "stock_share": null},
+    {"years_to_retirement": 15, "stock_share": null},
+    {"years_to_retirement": 10, "stock_share": null},
+    {"years_to_retirement": 5, "stock_share": null},
+    {"years_to_retirement": 0, "stock_share": null},
+    {"years_to_retirement": -7, "stock_share": null}
+  ]
+}

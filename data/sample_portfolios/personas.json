@@ -1,0 +1,42 @@
+{
+  "_note": "Made-up personas for the three sample portfolios. Income and Social Security figures are annual, in today's dollars. account_types maps each account in the CSV (in order: Account 1, Account 2) to its type.",
+  "beginner": {
+    "file": "beginner.csv",
+    "description": "First job, saving in a Roth IRA",
+    "profile": {
+      "age": 26,
+      "retirement_age": 65,
+      "desired_income_today_usd": 55000,
+      "social_security_or_pension_usd": 21000,
+      "annual_contribution_usd": 6000
+    },
+    "account_types": {"Account 1": "roth_ira"},
+    "risk_quiz_answers": [4, 4, 3, 2, 2]
+  },
+  "midcareer": {
+    "file": "midcareer.csv",
+    "description": "Mid-career, 401(k) brokerage window plus a Roth IRA",
+    "profile": {
+      "age": 42,
+      "retirement_age": 65,
+      "desired_income_today_usd": 110000,
+      "social_security_or_pension_usd": 33000,
+      "annual_contribution_usd": 23500
+    },
+    "account_types": {"Account 1": "401k_403b", "Account 2": "roth_ira"},
+    "risk_quiz_answers": [4, 4, 4, 3, 3]
+  },
+  "retiree": {
+    "file": "retiree.csv",
+    "description": "Retired at 65, living on a traditional IRA, a taxable account and Social Security",
+    "profile": {
+      "age": 67,
+      "retirement_age": 65,
+      "desired_income_today_usd": 65000,
+      "social_security_or_pension_usd": 34000,
+      "annual_contribution_usd": 0
+    },
+    "account_types": {"Account 1": "traditional_ira", "Account 2": "taxable"},
+    "risk_quiz_answers": [2, 2, 2, 3, 4]
+  }
+}
