@@ -26,6 +26,11 @@ $shots = [ordered]@{
     "14-pause-midcareer-sell-all"  = @("/?sample=midcareer&tab=Fee+Clock&pause=sell+everything", 2500)
     "15-pause-beginner-buy-qqq"    = @("/?sample=beginner&tab=Fee+Clock&pause=buy+%245%2C000+of+QQQ", 2500)
     "16-admin"                     = @("/?page=Admin", 1100)
+    "17-plan-midcareer"            = @("/?sample=midcareer&tab=Retirement+Plan", 1900)
+    "18-plan-retiree"              = @("/?sample=retiree&tab=Retirement+Plan", 1700)
+    "19-plan-assumptions-beginner" = @("/?sample=beginner&tab=Retirement+Plan&assumptions=open", 2200)
+    "20-about-you-midcareer"       = @("/?sample=midcareer&tab=Retirement+Plan&about=open", 1700)
+    "21-xray-concentration-midcareer" = @("/?sample=midcareer&tab=X-Ray", 2500)
 }
 
 foreach ($name in $shots.Keys) {
@@ -37,7 +42,7 @@ foreach ($name in $shots.Keys) {
         $tmp = Join-Path $env:TEMP "$name.png"
         Start-Process -FilePath $edge -Wait -ArgumentList @(
             "--headless", "--disable-gpu", "--hide-scrollbars", "--user-data-dir=$edgeProfile",
-            "--window-size=1280,$height", "--virtual-time-budget=$(20000 + 10000 * $attempt)", "--screenshot=$tmp", "$Base$url")
+            "--window-size=1400,$height", "--virtual-time-budget=$(20000 + 10000 * $attempt)", "--screenshot=$tmp", "$Base$url")
         Remove-Item -Recurse -Force $edgeProfile -ErrorAction SilentlyContinue
         if ((Test-Path $tmp) -and (Get-Item $tmp).Length -gt 30KB) { break }
     }

@@ -99,3 +99,79 @@ def test_friendly_notes():
 
 def test_holdings_for_buy_lists_holdings_first_then_index_funds():
     assert holdings_for_buy({"AAPL": 10, "VOO": 50, "CASH": 5}) == ["VOO", "AAPL", "VTI", "QQQ"]
+
+
+# --- Retirement Plan tab helpers (Prompt 7b) ------------------------------------
+
+from secondlook.quant.plan import make_plan  # noqa: E402
+from secondlook.quant.profile import RISK_PROFILES, UserProfile  # noqa: E402
+from secondlook.ui_data import (  # noqa: E402
+    PLAN_LABEL, asset_mix, balances_frame, gap_headline, load_risk_ranges, mix_vs_range, plan_band_frame,
+)
+
+RETURNS = {"cautious": 0.0, "middle": 0.05, "strong": 0.10}
+
+
+def saver(contribution=10_000.0):
+    return UserProfile(age=63, retirement_age=65, desired_income_today_usd=50_000,
+                       social_security_or_pension_usd=30_000, annual_contribution_usd=contribution)
+
+
+def test_plan_band_frame_by_hand():
+    plan = make_plan(saver(), 100_000, real_returns=RETURNS)
+    band = plan_band_frame(plan)
+    assert band["age"].tolist() == [63, 64, 65]
+    # middle: 100,000 -> 115,000 -> 130,750 (5%, +10,000 at each year end)
+    assert band["middle"].tolist() == pytest.approx([100_000, 115_000, 130_750])
+    assert band["cautious"].tolist() == pytest.approx([100_000, 110_000, 120_000])
+    assert band["target"].tolist() == pytest.approx([20_000 / 0.039] * 3)
+
+
+def test_gap_headline_saving_range():
+    plan = make_plan(saver(), 100_000, real_returns=RETURNS)
+    text, lo, hi = gap_headline(plan, 50_000)
+    # required yearly saving minus today's 10,000, for each scenario; range from strong to cautious
+    need = [s.required_annual_contribution_usd - 10_000 for s in plan.scenarios]
+    assert (lo, hi) == pytest.approx((min(need), max(need)))
+    assert text == f"Estimated gap: ${min(need):,.0f} to ${max(need):,.0f} of extra saving per year"
+
+
+def test_gap_headline_on_track_and_retired():
+    rich = make_plan(saver(), 2_000_000, real_returns=RETURNS)
+    assert gap_headline(rich, 50_000) == ("On track in every scenario", 0.0, 0.0)
+    retiree = UserProfile(age=70, retirement_age=65, desired_income_today_usd=65_000, social_security_or_pension_usd=34_000)
+    plan = make_plan(retiree, 577_868)
+    # supported income = 577,868 x 3.9% + 34,000 = 56,536.85 -> shortfall 8,463.15 in every scenario
+    text, lo, hi = gap_headline(plan, 65_000)
+    assert lo == hi == pytest.approx(65_000 - (577_868 * 0.039 + 34_000))
+    assert text == "Estimated gap: $8,463 of income per year"
+
+
+def test_balances_frame_applies_tax_to_pre_tax_only():
+    frame = balances_frame({"401k_403b": 1000.0, "roth_ira": 2000.0}, 0.15)
+    assert frame.to_dict("records") == [
+        {"Account type": "Roth IRA", "Balance": 2000.0, "Counted toward retirement": 2000.0},
+        {"Account type": "401(k)/403(b)", "Balance": 1000.0, "Counted toward retirement": 850.0},
+    ]
+
+
+def test_asset_mix_from_look_through():
+    # toy sectors: tech .64, health .16, energy .10, cash .10
+    assert asset_mix(xray(TOY_VALUES, TOY_PROFILES)) == pytest.approx({"Stocks": 90.0, "Bonds": 0.0, "Cash": 10.0, "Other": 0.0})
+
+
+def test_mix_vs_range():
+    ranges = {"stock_pct": {"Moderate": [50, 70]}}
+    assert mix_vs_range(45, "Moderate", ranges) == ((50.0, 70.0), "below")
+    assert mix_vs_range(60, "Moderate", ranges) == ((50.0, 70.0), "within")
+    assert mix_vs_range(99.2, "Moderate", ranges) == ((50.0, 70.0), "above")
+    assert mix_vs_range(60, "Aggressive", ranges) == (None, "no reference")
+
+
+def test_reference_ranges_cover_every_risk_profile_and_are_labeled():
+    ranges = load_risk_ranges()
+    assert set(ranges["stock_pct"]) == set(RISK_PROFILES.values())
+    assert ranges["is_illustrative"] is True and "Illustrative" in ranges["source"]
+    for lo, hi in ranges["stock_pct"].values():
+        assert 0 <= lo < hi <= 100
+    assert PLAN_LABEL == "Planning estimate, not a guarantee."

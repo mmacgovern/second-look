@@ -207,3 +207,29 @@ def test_agent_output_never_contains_key(make_ctx, caplog):
         analyst.run(analyst.AnalystInput(facts=FACTS), ctx)
     assert ODD_KEY not in str(err.value) and ODD_KEY not in caplog.text
     assert json.dumps(FACTS).count(ODD_KEY) == 0
+
+
+# --- the explainer sees profile and plan facts; the verifier checks them ----------
+
+def test_explainer_receives_profile_and_plan_facts():
+    from secondlook.demo_runs import persona_facts
+
+    facts = persona_facts("midcareer")
+    msg = explainer.build_message(explainer.ExplainerInput(facts=facts, findings=[]))
+    for key in ('"investor"', '"retirement_plan"', '"risk_profile"', '"target_nest_egg_usd"', '"accounts"'):
+        assert key in msg, key
+    assert str(facts["retirement_plan"]["target_nest_egg_usd"]) in msg
+
+
+def test_verifier_checks_plan_numbers():
+    from secondlook.demo_runs import persona_facts
+
+    facts = persona_facts("midcareer")
+    target = facts["retirement_plan"]["target_nest_egg_usd"]
+    good = ExplainerOutput(cards=[{"title": "Plan", "body": f"The target nest egg is ${target:,}.",
+                                   "fact_keys": ["retirement_plan.target_nest_egg_usd"]}],
+                           advisor_questions=["What would you change in my plan?", "How realistic is my target?"])
+    assert verifier.python_checks(facts, good).passed
+    bad = good.model_copy(update={"cards": [good.cards[0].model_copy(update={"body": "The target nest egg is $2,500,000."})]})
+    result = verifier.python_checks(facts, bad)
+    assert not result.passed and result.unmatched_numbers == ["$2,500,000"]

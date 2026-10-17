@@ -20,24 +20,27 @@ import streamlit as st
 from secondlook import budget, demo_runs, orchestrator
 from secondlook.agents.base import AgentContext
 from secondlook.config import get_settings
-from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, household_from_csvs
+from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, RETIREMENT_TAX_RATE, counted_balance, household_from_csvs
+from secondlook.quant.concentration import CONCENTRATION_THRESHOLD, concentration
 from secondlook.quant.facts import build_facts, load_market_inputs
 from secondlook.quant.fees import fee_report
 from secondlook.quant.models import CASH, Action
-from secondlook.quant.profile import UserProfile, load_persona
+from secondlook.quant.plan import ASSUMPTIONS, make_plan
+from secondlook.quant.profile import QUIZ, UserProfile, load_persona, risk_profile
 from secondlook.quant.replay import SCENARIOS, replay
 from secondlook.quant.xray import SECTOR_LABELS, xray
 from secondlook.ui_data import (
-    FLUENCY, SAMPLES, Inputs, company_table, crash_frame, fee_curves, friendly_note, holdings_for_buy,
-    overlap_table, parse_action, session_cost, treemap_frame,
+    FLUENCY, PLAN_LABEL, SAMPLES, Inputs, asset_mix, balances_frame, company_table, crash_frame, fee_curves,
+    friendly_note, gap_headline, holdings_for_buy, load_risk_ranges, mix_vs_range, overlap_table, parse_action,
+    plan_band_frame, session_cost, treemap_frame,
 )
 
 NAVY, ACCENT, SLATE, MIST = "#0B1F3A", "#0E7C86", "#64748B", "#E8EEF5"
-TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Top 3 Things Worth Knowing"]
+TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Retirement Plan", "Top 3 Things Worth Knowing"]
 DISCLAIMER = ("Second Look provides educational information only. It is not investment, tax or legal advice, "
               "and it does not recommend buying, selling or holding any security. Past results do not predict future results.")
 
-st.set_page_config(page_title="Second Look", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Second Look", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown(f"""
 <style>
@@ -56,8 +59,13 @@ st.markdown(f"""
   .sl-callout .big {{ font-size: 1.9rem; font-weight: 700; color: {NAVY}; }}
   .sl-source {{ font-size: 0.8rem; color: {SLATE}; margin-bottom: 0.8rem; }}
   .sl-footer {{ position: fixed; left: 0; right: 0; bottom: 0; background: {NAVY}; color: #E2E8F0; font-size: 0.78rem;
-                padding: 0.55rem 1.5rem; text-align: center; z-index: 999990; }}
+                padding: 0.55rem 1.5rem; text-align: center; z-index: 1000100; }}
   div[data-testid="stMetricValue"] {{ color: {NAVY}; }}
+  .sl-risk {{ border: 1px solid rgba(243,246,250,0.35); border-radius: 10px; padding: 0.6rem 0.8rem; margin-top: 0.3rem; }}
+  .sl-risk .label {{ font-size: 1.05rem; font-weight: 700; }}
+  .sl-risk .sub {{ font-size: 0.8rem; opacity: 0.8; }}
+  .sl-estimate {{ font-size: 0.8rem; color: {SLATE}; font-style: italic; }}
+  .sl-headline {{ font-size: 1.6rem; font-weight: 700; color: {NAVY}; margin: 0.2rem 0 0.1rem 0; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -80,35 +88,56 @@ state = st.session_state
 state.setdefault("sid", f"web-{uuid.uuid4().hex[:12]}")
 state.setdefault("analyses", {})
 state.setdefault("pauses", {})
+state.setdefault("uploads", {})
+state.setdefault("inputs", {})
+state.setdefault("about", {})
 params = st.query_params
 
 
 # --- data loading (cached) ------------------------------------------------------
 
 @st.cache_resource(show_spinner=False)
-def sample_inputs(name: str) -> Inputs:
-    user, household, _ = load_persona(name)
-    values = household.portfolio().values_by_symbol()
+def sample_base(name: str):
+    """A sample persona's household, market data, and pre-filled About-you answers."""
+    user, household, answers = load_persona(name)
     profiles, adj = load_market_inputs(household.portfolio(), prefer_live=False, extra=["VOO", "VTI", "QQQ"])
-    title, blurb = SAMPLES[name]
-    return Inputs(key=f"sample:{name}", label=f"{title}: {blurb}", values=values, profiles=profiles, adj=adj,
-                  facts=demo_runs.persona_facts(name), sample=name, extra={"user": user})
+    return household, profiles, adj, user, list(answers)
 
 
-def upload_inputs(files: list[tuple[bytes, str]], user: UserProfile | None) -> Inputs:
-    digest = hashlib.sha256(b"".join(data for data, _ in files) + repr(user).encode()).hexdigest()[:16]
+@st.cache_resource(show_spinner=False)
+def default_persona_facts(name: str) -> dict:
+    """Facts for a sample with its pre-filled answers; shared by all visitors (matches the demo recordings)."""
+    return demo_runs.persona_facts(name)
+
+
+def save_upload(files: list[tuple[bytes, str]]) -> str:
+    """Parse uploaded CSVs (in memory) into a household; returns its key."""
+    digest = hashlib.sha256(b"".join(data + kind.encode() for data, kind in files)).hexdigest()[:16]
     key = f"upload:{digest}"
-    if key in state.get("uploads", {}):
-        return state["uploads"][key]
-    household = household_from_csvs([(data, account_type, None) for data, account_type in files])
-    portfolio = household.portfolio()
-    profiles, adj = load_market_inputs(portfolio, prefer_live=not settings.demo_mode, extra=["VOO", "VTI", "QQQ"])
-    facts = build_facts(None, profiles, adj, household=household, user=user)
-    inputs = Inputs(key=key, label=f"Your upload: {len(files)} file(s), {len(household.accounts)} account(s)",
-                    values=portfolio.values_by_symbol(), profiles=profiles, adj=adj, facts=facts,
-                    extra={"household": household, "user": user})
-    state.setdefault("uploads", {})[key] = inputs
-    return inputs
+    if key not in state.uploads:
+        household = household_from_csvs([(data, kind, None) for data, kind in files])
+        profiles, adj = load_market_inputs(household.portfolio(), prefer_live=not settings.demo_mode,
+                                           extra=["VOO", "VTI", "QQQ"])
+        state.uploads[key] = {"household": household, "profiles": profiles, "adj": adj, "files": len(files)}
+    return key
+
+
+def make_inputs(base_key: str, label: str, household, profiles, adj, sample: str | None,
+                default: tuple[UserProfile | None, list[int] | None]) -> Inputs:
+    user, answers = state.about.get(base_key, default)
+    about_key = hashlib.sha256(f"{user!r}{answers!r}".encode()).hexdigest()[:10]
+    key = f"{base_key}:{about_key}"
+    if key not in state.inputs:
+        is_default = sample is not None and (user, answers) == default
+        if is_default:  # identical to the recorded demo facts
+            facts = default_persona_facts(sample)
+        else:
+            facts = build_facts(None, profiles, adj, household=household, user=user, risk_answers=answers)
+        state.inputs[key] = Inputs(key=key, label=label, values=household.portfolio().values_by_symbol(),
+                                   profiles=profiles, adj=adj, facts=facts, sample=sample,
+                                   extra={"household": household, "user": user, "answers": answers,
+                                          "base_key": base_key, "is_default": is_default, "default": default})
+    return state.inputs[key]
 
 
 def context(demo: bool = False) -> AgentContext:
@@ -129,12 +158,13 @@ def explain(inputs: Inputs, fluency: str):
 
 
 def pause_facts(inputs: Inputs, action: Action) -> dict:
-    if inputs.sample:
+    if inputs.extra["is_default"]:
         return demo_runs.persona_facts(inputs.sample, action)
-    household, user = inputs.extra["household"], inputs.extra["user"]
-    profiles, adj = load_market_inputs(household.portfolio(), prefer_live=not settings.demo_mode,
+    household = inputs.extra["household"]
+    profiles, adj = load_market_inputs(household.portfolio(), prefer_live=not settings.demo_mode and not inputs.sample,
                                        extra=[action.ticker] if action.ticker else [])
-    return build_facts(None, profiles, adj, action, household=household, user=user)
+    return build_facts(None, profiles, adj, action, household=household, user=inputs.extra["user"],
+                       risk_answers=inputs.extra["answers"])
 
 
 def pause_check(inputs: Inputs, action: Action):
@@ -194,20 +224,11 @@ def landing(compact: bool) -> None:
             account_type = st.selectbox(f"Account type for {f.name}", list(ACCOUNT_TYPE_LABELS),
                                         format_func=ACCOUNT_TYPE_LABELS.get, key=f"type-{i}")
             tagged.append((f.getvalue(), account_type))
-        user = None
-        if st.checkbox("Add my retirement picture (optional)"):
-            a, b, c = st.columns(3)
-            age = a.number_input("Age", 18, 100, 40)
-            retire = b.number_input("Retirement age", 40, 100, 65)
-            contribution = c.number_input("Yearly savings ($)", 0, 1_000_000, 10_000, step=1_000)
-            d, e = st.columns(2)
-            income = d.number_input("Yearly income wanted in retirement, today's dollars ($)", 0, 2_000_000, 60_000, step=5_000)
-            ss = e.number_input("Expected Social Security or pension per year ($)", 0, 500_000, 24_000, step=1_000)
-            user = UserProfile(age=age, retirement_age=retire, desired_income_today_usd=income,
-                               social_security_or_pension_usd=ss, annual_contribution_usd=contribution)
+        if files:
+            st.caption("Add one file per account (for example your 401(k) and your IRA) and pick each one's type.")
         if tagged and st.button("Analyze my files", type="primary"):
             try:
-                state["upload_key"] = upload_inputs(tagged, user).key
+                state["upload_key"] = save_upload(tagged)
                 params.clear()
                 params["sample"] = "upload"
                 st.rerun()
@@ -222,10 +243,52 @@ def current_inputs() -> Inputs | None:
     choice = params.get("sample")
     if choice in SAMPLES:
         with st.spinner("Reading the portfolio..."):
-            return sample_inputs(choice)
-    if choice == "upload" and state.get("upload_key") in state.get("uploads", {}):
-        return state["uploads"][state["upload_key"]]
+            household, profiles, adj, user, answers = sample_base(choice)
+            title, blurb = SAMPLES[choice]
+            return make_inputs(f"sample:{choice}", f"{title}: {blurb}", household, profiles, adj, choice, (user, answers))
+    key = state.get("upload_key")
+    if choice == "upload" and key in state.uploads:
+        u = state.uploads[key]
+        label = f"Your upload: {u['files']} file(s), {len(u['household'].accounts)} account(s)"
+        return make_inputs(key, label, u["household"], u["profiles"], u["adj"], None, (None, None))
     return None
+
+
+def about_you(inputs: Inputs) -> None:
+    """The About-you step: situation and the 5-question risk quiz. Samples come pre-filled."""
+    user, answers = inputs.extra["user"], inputs.extra["answers"]
+    base_key, default_user, default_answers = inputs.extra["base_key"], *inputs.extra["default"]
+    filled = user is not None
+    with st.expander("About you" + ("" if filled else ": add your situation to see your plan and risk profile"),
+                     expanded=not filled or params.get("about") == "open"):
+        if inputs.sample:
+            st.markdown('<p class="sl-muted">Pre-filled for this sample persona. Change anything and press Update.</p>',
+                        unsafe_allow_html=True)
+        base = user or UserProfile(age=40, retirement_age=65, desired_income_today_usd=60_000,
+                                   social_security_or_pension_usd=None, annual_contribution_usd=10_000)
+        with st.form(f"about-{base_key}"):
+            a, b, c = st.columns(3)
+            age = a.number_input("Age", 18, 100, base.age)
+            retire = b.number_input("Target retirement age", 40, 100, base.retirement_age)
+            contribution = c.number_input("Current yearly contribution ($)", 0, 1_000_000,
+                                          int(base.annual_contribution_usd), step=500)
+            d, e = st.columns(2)
+            income = d.number_input("Desired yearly income in retirement, in today's dollars ($)", 0, 2_000_000,
+                                    int(base.desired_income_today_usd), step=1_000)
+            ss = e.number_input("Social Security or pension estimate per year ($, optional)", 0, 500_000,
+                                int(base.social_security_or_pension_usd or 0), step=500)
+            e.markdown("[Get your Social Security estimate at ssa.gov/myaccount](https://www.ssa.gov/myaccount/)")
+            st.markdown("**Risk quiz** (one answer per question)")
+            picks = []
+            for i, q in enumerate(QUIZ):
+                default_index = (answers[i] - 1) if answers else 2
+                choice = st.radio(q["question"], q["options"], index=default_index, horizontal=True, key=f"q-{base_key}-{i}")
+                picks.append(q["options"].index(choice) + 1)
+            if st.form_submit_button("Update" if filled else "Save and show my plan", type="primary"):
+                new_user = UserProfile(age=age, retirement_age=retire, desired_income_today_usd=income,
+                                       social_security_or_pension_usd=ss or None, annual_contribution_usd=contribution)
+                state.about[base_key] = (new_user, picks)
+                st.rerun()
 
 
 # --- tabs ---------------------------------------------------------------------------
@@ -266,8 +329,11 @@ def xray_tab(inputs: Inputs) -> None:
     with left:
         st.markdown("##### Largest companies")
         st.dataframe(company_table(xr), hide_index=True,
-                     column_config={"Dollars": st.column_config.NumberColumn(format="$%,.0f"),
-                                    "Company": st.column_config.TextColumn(width="medium")})
+                     column_config={"Dollars": st.column_config.NumberColumn(format="$%,.0f", width="small"),
+                                    "Company": st.column_config.TextColumn(width="medium"),
+                                    "Ticker": st.column_config.TextColumn(width="small"),
+                                    "Share (%)": st.column_config.NumberColumn(width="small"),
+                                    "Direct (%)": st.column_config.NumberColumn(width="small")})
     with right:
         st.markdown("##### How much your funds overlap")
         table = overlap_table(xr)
@@ -275,6 +341,35 @@ def xray_tab(inputs: Inputs) -> None:
             st.markdown('<p class="sl-muted">No overlap between your funds\' reported holdings.</p>', unsafe_allow_html=True)
         else:
             st.dataframe(table, hide_index=True)
+
+    st.markdown("#### Concentration")
+    conc = concentration(inputs.values, inputs.profiles, threshold=CONCENTRATION_THRESHOLD)
+    a, b, c = st.columns(3)
+    lc = conc.largest_company
+    a.metric("Largest single company", f"{lc.symbol}: {100 * lc.weight:.1f}%" if lc else "None",
+             help="Counting shares held directly and inside funds.")
+    b.metric("Effective number of holdings", f"{conc.effective_holdings:.1f}" if conc.effective_holdings else "None",
+             help="1 / HHI of position weights: 10 equal positions count as 10.")
+    c.metric("Effective number of companies", f"{conc.effective_companies_upper_bound:.0f}"
+             if conc.effective_companies_upper_bound else "None",
+             help="From the look-through. Fund holdings beyond the reported top 10 count as fully spread out, so this is an upper bound.")
+    if conc.flags:
+        st.markdown(f"**Companies above {100 * conc.threshold:.0f}% of the portfolio**")
+        st.dataframe(pd.DataFrame([{"Company": f.name, "Ticker": f.ticker, "Share (%)": round(100 * f.weight, 1),
+                                    "Held directly (%)": round(100 * f.direct_weight, 1)} for f in conc.flags]),
+                     hide_index=True)
+    else:
+        st.markdown(f'<p class="sl-muted">No single company is above {100 * conc.threshold:.0f}% of the portfolio.</p>',
+                    unsafe_allow_html=True)
+    if conc.sectors_vs_market:
+        st.markdown("**Stock sectors compared with the total US market**")
+        frame = pd.DataFrame([{"Sector": SECTOR_LABELS.get(x.sector, x.sector), "You": 100 * x.portfolio,
+                               "Total market": 100 * x.reference} for x in conc.sectors_vs_market])
+        fig = go.Figure([go.Bar(name="Your stocks", x=frame["Sector"], y=frame["You"], marker_color=ACCENT),
+                         go.Bar(name="Total US market (VTI)", x=frame["Sector"], y=frame["Total market"], marker_color="#94A3B8")])
+        fig.update_layout(barmode="group")
+        fig.update_yaxes(ticksuffix="%", title="Share of stocks")
+        st.plotly_chart(plot_layout(fig, 320), key=f"sectors-{inputs.key}")
 
 
 def fee_tab(inputs: Inputs) -> None:
@@ -338,6 +433,104 @@ def crash_tab(inputs: Inputs) -> None:
         if r.proxies_used:
             st.caption("Stand-ins for holdings that did not exist yet: "
                        + ", ".join(f"{k} used {v}" for k, v in r.proxies_used.items()) + ".")
+
+
+def plan_tab(inputs: Inputs) -> None:
+    user, answers, household = inputs.extra["user"], inputs.extra["answers"], inputs.extra["household"]
+    if user is None:
+        st.info("Fill in About you above to see your retirement plan.")
+        return
+    key = inputs.extra["base_key"]
+    with st.expander("Assumptions", expanded=params.get("assumptions") == "open"):
+        st.markdown('<p class="sl-muted">Move a slider and the plan recalculates instantly in Python. The AI explanation '
+                    'in Top 3 uses the default assumptions.</p>', unsafe_allow_html=True)
+        a, b = st.columns(2)
+        wr = a.slider("Withdrawal rate (% of the nest egg per year)", 3.5, 4.5, 100 * ASSUMPTIONS["withdrawal_rate"],
+                      step=0.1, key=f"wr-{key}") / 100
+        tax = b.slider("Retirement tax rate on 401(k)/403(b) and traditional IRA (%)", 0, 40,
+                       int(100 * RETIREMENT_TAX_RATE), step=1, key=f"tax-{key}") / 100
+        defaults = ASSUMPTIONS["real_returns"]
+        c, d, e = st.columns(3)
+        returns = {
+            "cautious": c.slider("Cautious real return (%)", 0.0, 8.0, 100 * defaults["cautious"], step=0.5, key=f"rc-{key}") / 100,
+            "middle": d.slider("Middle real return (%)", 0.0, 8.0, 100 * defaults["middle"], step=0.5, key=f"rm-{key}") / 100,
+            "strong": e.slider("Strong real return (%)", 0.0, 10.0, 100 * defaults["strong"], step=0.5, key=f"rs-{key}") / 100,
+        }
+        st.caption("Real returns are after inflation and before fund fees; the portfolio's weighted expense ratio "
+                   "is subtracted. All amounts are in today's dollars.")
+
+    fees = fee_report(inputs.values, inputs.profiles)
+    balances = household.balances_by_type()
+    counted = counted_balance(balances, tax)
+    plan = make_plan(user, counted, fees.weighted_expense_ratio, wr, returns, tax)
+    headline, _, _ = gap_headline(plan, user.desired_income_today_usd)
+
+    st.markdown(f'<div class="sl-headline">{safe(headline)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sl-estimate">{PLAN_LABEL}</div>', unsafe_allow_html=True)
+    a, b, c = st.columns(3)
+    a.metric("Target nest egg", money(plan.target_nest_egg_usd), help=PLAN_LABEL)
+    b.metric("Counted balance today", money(plan.counted_balance_usd), help=PLAN_LABEL)
+    c.metric("Years to retirement", f"{plan.years_to_retirement}" if plan.status == "saving" else "Retired")
+    st.markdown(f'<p class="sl-muted">Target = (desired income {money(user.desired_income_today_usd)} minus Social Security '
+                f'or pension {money(user.guaranteed_income_usd)}) divided by a {100 * wr:.1f}% withdrawal rate.</p>',
+                unsafe_allow_html=True)
+
+    if plan.status == "saving":
+        band = plan_band_frame(plan)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=band["age"], y=band["strong"], line=dict(width=0), showlegend=False, hoverinfo="skip"))
+        fig.add_trace(go.Scatter(x=band["age"], y=band["cautious"], fill="tonexty", fillcolor="rgba(14,124,134,0.16)",
+                                 line=dict(width=0), name="Cautious to strong range",
+                                 hovertemplate="Age %{x}: cautious $%{y:,.0f}<extra></extra>"))
+        fig.add_trace(go.Scatter(x=band["age"], y=band["middle"], line=dict(color=ACCENT, width=3), name="Middle scenario",
+                                 hovertemplate="Age %{x}: $%{y:,.0f}<extra>Middle</extra>"))
+        fig.add_trace(go.Scatter(x=band["age"], y=band["target"], line=dict(color=NAVY, width=2, dash="dash"),
+                                 name="Target nest egg", hovertemplate="Target $%{y:,.0f}<extra></extra>"))
+        fig.update_yaxes(tickprefix="$", tickformat=",.0f", title=None)
+        fig.update_xaxes(title="Age")
+        st.markdown("##### Projected balance in three scenarios (planning estimate, not a guarantee)")
+        st.plotly_chart(plot_layout(fig, 380), key=f"plan-{inputs.key}")
+
+    st.dataframe(pd.DataFrame([{
+        "Scenario": s.name.capitalize(), "Return after fees (%)": round(100 * s.net_return, 2),
+        "Projected at retirement": round(s.projected_at_retirement_usd),
+        "Gap to target": round(max(s.gap_usd, 0)),
+        "Yearly saving needed": round(s.required_annual_contribution_usd) if s.required_annual_contribution_usd is not None else None,
+        "Supported yearly income": round(s.supported_income_usd)} for s in plan.scenarios]), hide_index=True,
+        column_config={k: st.column_config.NumberColumn(format="$%,.0f") for k in
+                       ("Projected at retirement", "Gap to target", "Yearly saving needed", "Supported yearly income")})
+    st.caption(f"Every amount in this table is a {PLAN_LABEL.lower()[:-1]}.")
+
+    left, right = st.columns(2)
+    with left:
+        st.markdown("##### Balances by account type")
+        frame = balances_frame(balances, tax)
+        fig = go.Figure([go.Bar(name="Balance", y=frame["Account type"], x=frame["Balance"], orientation="h", marker_color="#94A3B8"),
+                         go.Bar(name="Counted toward retirement", y=frame["Account type"], x=frame["Counted toward retirement"],
+                                orientation="h", marker_color=ACCENT)])
+        fig.update_layout(barmode="group")
+        fig.update_xaxes(tickprefix="$", tickformat=",.0f")
+        st.plotly_chart(plot_layout(fig, 260), key=f"accounts-{inputs.key}")
+        st.caption(f"Pre-tax accounts are counted after a flat {100 * tax:.0f}% tax; Roth, HSA and taxable count in full.")
+    with right:
+        st.markdown("##### Your stock and bond mix")
+        mix = asset_mix(xray(inputs.values, inputs.profiles))
+        st.dataframe(pd.DataFrame([{"Asset": k, "Share (%)": round(v, 1)} for k, v in mix.items() if v > 0.05]),
+                     hide_index=True)
+        if answers:
+            risk = risk_profile(user, answers)
+            ranges = load_risk_ranges()
+            band, position = mix_vs_range(mix["Stocks"], risk.label, ranges)
+            if band:
+                st.markdown(f"Stocks are **{mix['Stocks']:.1f}%** of your portfolio. The reference range for a "
+                            f"**{risk.label.lower()}** profile is **{band[0]:.0f}% to {band[1]:.0f}%** stocks, "
+                            f"so your mix is **{position}** that range.")
+                if ranges.get("is_illustrative"):
+                    st.caption("Reference ranges are illustrative rules of thumb, not personal advice "
+                               "(data/reference/risk_profile_ranges.json).")
+        else:
+            st.markdown('<p class="sl-muted">Answer the risk quiz in About you to compare your mix with a reference range.</p>',
+                        unsafe_allow_html=True)
 
 
 def top3_tab(inputs: Inputs, fluency: str) -> None:
@@ -435,13 +628,32 @@ def pause_panel(inputs: Inputs) -> None:
 # --- main ---------------------------------------------------------------------------
 
 page = st.sidebar.radio("Page", ["Analysis", "Admin"], key="page", label_visibility="collapsed", bind="query-params")
-st.sidebar.markdown(f"**AI mode:** {'Demo, no charges' if settings.demo_mode else 'Live'}")
 if page == "Admin":
+    st.sidebar.markdown(f"**AI mode:** {'Demo, no charges' if settings.demo_mode else 'Live'}")
     admin_page()
     footer()
     st.stop()
 
 inputs = current_inputs()
+
+# Two separate sidebar controls: how things are explained, and what the portfolio is compared to.
+st.sidebar.markdown("#### Fluency")
+st.sidebar.caption("How the findings are explained.")
+fluency_label = st.sidebar.radio("Fluency", list(FLUENCY), index=1, key="fluency", bind="query-params",
+                                 label_visibility="collapsed")
+fluency = FLUENCY[fluency_label or "Comfortable"]
+st.sidebar.markdown("#### Risk profile")
+st.sidebar.caption("What your mix is compared to. Set by the risk quiz and your years to retirement.")
+if inputs is not None and inputs.extra["user"] is not None and inputs.extra["answers"]:
+    risk = risk_profile(inputs.extra["user"], inputs.extra["answers"])
+    st.sidebar.markdown(f'<div class="sl-risk"><div class="label">{safe(risk.label)}</div>'
+                        f'<div class="sub">Capacity {risk.capacity} of 5 (time) and tolerance {risk.tolerance} of 5 (quiz); '
+                        f'the lower one sets the profile.</div></div>', unsafe_allow_html=True)
+else:
+    st.sidebar.markdown('<div class="sl-risk"><div class="sub">Not set yet. Complete About you.</div></div>',
+                        unsafe_allow_html=True)
+st.sidebar.markdown(f"**AI mode:** {'Demo, no charges' if settings.demo_mode else 'Live'}")
+
 landing(compact=inputs is not None)
 if inputs is None:
     footer()
@@ -454,11 +666,9 @@ with head:
     p = inputs.facts["portfolio"]
     st.markdown(f'<p class="sl-muted">{money(p["total_usd"])} in {p["holdings_count"]} holdings across '
                 f'{p["accounts_count"]} account(s).</p>', unsafe_allow_html=True)
-fluency_label = st.segmented_control("Explain it for", list(FLUENCY), default="Comfortable", key="fluency",
-                                     bind="query-params", required=True)
-fluency = FLUENCY[fluency_label or "Comfortable"]
+about_you(inputs)
 
-xray_t, fee_t, crash_t, top3_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
+xray_t, fee_t, crash_t, plan_t, top3_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
 with xray_t:
     if xray_t.open:
         xray_tab(inputs)
@@ -468,6 +678,9 @@ with fee_t:
 with crash_t:
     if crash_t.open:
         crash_tab(inputs)
+with plan_t:
+    if plan_t.open:
+        plan_tab(inputs)
 with top3_t:
     if top3_t.open:
         top3_tab(inputs, fluency)

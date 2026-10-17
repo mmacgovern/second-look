@@ -126,3 +126,20 @@ Check: click through all three samples at all three levels; take screenshots int
 **Result (#6):** Built scripts/record_demo.py, scripts/check_demo.py and secondlook/demo_runs.py, fixed two live-API bugs (Portkey timeout in ms, max_completion_tokens) and a guard false positive on "not guaranteed"; recorded 24 responses (12/12 runs AI) for $0.012339, and check_demo replayed all 12 with no key for $0.00; all 319 pytest tests passed.
 
 **Result (#7):** Built app.py (Streamlit, navy/white/teal theme in .streamlit/config.toml) with landing, fluency selector, X-Ray/Fee Clock/Crash Replay/Top 3 tabs, Pause Button, cost badge, Admin page and footer disclaimer, plus secondlook/ui_data.py; clicked through 3 samples x 3 levels in demo mode (all AI explanations, $0), saved 16 screenshots to docs/screenshots/, and all 342 pytest tests passed.
+
+### #8 — 2026-10-17 18:52 — Phase 8b — Plan and risk screens
+
+```text
+Prompt 7b — Plan and risk screens
+Add to app.py:
+- A short "About you" step after upload: age, target retirement age, desired yearly income in today's dollars, optional Social Security/pension estimate (link to ssa.gov/myaccount), current yearly contribution, and the 5-question risk quiz. Sample personas pre-fill these. Allow multiple CSV uploads, each with an account-type dropdown; give the mid-career and retiree personas 2-3 accounts each.
+- On the Plan tab, a simple bar of balances by account type and an editable retirement tax rate in the Assumptions drawer.
+- Keep two separate controls in the sidebar: Fluency (how it's explained) and a Risk profile badge (what it's compared to). Never merge them.
+- New tab "Retirement Plan": a Plotly band chart of the three scenarios vs. the target nest egg, a headline ("Estimated gap: $X-$Y per year"), and an Assumptions drawer with sliders for withdrawal rate and returns that recompute instantly without calling the LLM.
+- Extend the X-Ray tab with a "Concentration" section: largest company, sectors vs. the market, effective number of holdings, threshold flags.
+- Show the stock/bond mix next to the reference range for the user's risk profile.
+- Label every plan number "planning estimate, not a guarantee."
+The explainer agent receives the profile and plan facts; the verifier checks those numbers too.
+```
+
+**Result:** Added About-you step (persona pre-fill, SSA link, 5-question quiz), sidebar Fluency and separate Risk profile badge, Retirement Plan tab (band chart, gap headline, Assumptions sliders recomputing in Python, account-type bar, editable tax rate, mix vs illustrative risk range, every number labeled a planning estimate) and an X-Ray Concentration section; demo replay still 12/12 for $0, 21 screenshots saved, and all 358 pytest tests passed.

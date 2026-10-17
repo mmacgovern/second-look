@@ -205,3 +205,75 @@ def friendly_note(note: str | None, demo_mode: bool) -> str | None:
 
 def holdings_for_buy(values: dict[str, float]) -> list[str]:
     return list(dict.fromkeys([t for t in sorted(values, key=values.get, reverse=True) if t != CASH] + list(EXTRA_BUY_TICKERS)))
+
+
+# --- Retirement Plan tab -----------------------------------------------------------
+
+PLAN_LABEL = "Planning estimate, not a guarantee."
+RISK_RANGES_FILE = Path(__file__).resolve().parents[1] / "data" / "reference" / "risk_profile_ranges.json"
+NON_STOCK = {"bonds", "cash", "other", "unclassified"}
+
+
+def plan_band_frame(plan) -> pd.DataFrame:
+    """Balance by age for each scenario plus the target, for the band chart."""
+    frame = pd.DataFrame({"age": [p.age for p in plan.scenarios[0].balances]})
+    for s in plan.scenarios:
+        frame[s.name] = [p.balance_usd for p in s.balances]
+    frame["target"] = plan.target_nest_egg_usd
+    return frame
+
+
+def gap_headline(plan, desired_income: float) -> tuple[str, float, float]:
+    """Headline for the plan tab and its low/high dollars per year.
+
+    Saving: extra yearly saving needed beyond today's contribution, across the scenarios.
+    Retired or retiring now: yearly income shortfall versus the goal, across the scenarios.
+    """
+    if plan.status == "saving":
+        extra = [max(0.0, (s.required_annual_contribution_usd or 0.0) - plan.annual_contribution_usd) for s in plan.scenarios]
+        what = "of extra saving per year"
+    else:
+        extra = [max(0.0, desired_income - s.supported_income_usd) for s in plan.scenarios]
+        what = "of income per year"
+    lo, hi = min(extra), max(extra)
+    if hi <= 0:
+        return "On track in every scenario", 0.0, 0.0
+    if round(lo) == round(hi):
+        return f"Estimated gap: ${hi:,.0f} {what}", lo, hi
+    return f"Estimated gap: ${lo:,.0f} to ${hi:,.0f} {what}", lo, hi
+
+
+def balances_frame(balances_by_type: dict[str, float], tax_rate: float) -> pd.DataFrame:
+    from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, PRE_TAX
+
+    rows = [{"Account type": ACCOUNT_TYPE_LABELS[t], "Balance": v,
+             "Counted toward retirement": v * (1 - tax_rate) if t in PRE_TAX else v}
+            for t, v in sorted(balances_by_type.items(), key=lambda kv: kv[1], reverse=True)]
+    return pd.DataFrame(rows, columns=["Account type", "Balance", "Counted toward retirement"])
+
+
+def asset_mix(xr: XRay) -> dict[str, float]:
+    """Stocks / bonds / cash / other as percent of the portfolio, from the look-through sectors."""
+    s = xr.sectors
+    return {
+        "Stocks": 100 * sum(v for k, v in s.items() if k not in NON_STOCK),
+        "Bonds": 100 * s.get("bonds", 0.0),
+        "Cash": 100 * s.get("cash", 0.0),
+        "Other": 100 * (s.get("other", 0.0) + s.get("unclassified", 0.0)),
+    }
+
+
+def load_risk_ranges(path: Path = RISK_RANGES_FILE) -> dict:
+    import json
+
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def mix_vs_range(stock_pct: float, profile_label: str, ranges: dict) -> tuple[tuple[float, float] | None, str]:
+    """The reference stock range for a risk profile and where the portfolio sits: below, within or above."""
+    band = ranges.get("stock_pct", {}).get(profile_label)
+    if not band:
+        return None, "no reference"
+    lo, hi = band
+    position = "below" if stock_pct < lo else "above" if stock_pct > hi else "within"
+    return (float(lo), float(hi)), position
