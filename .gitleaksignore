@@ -1,0 +1,3 @@
+# Intentional fake keys used by tests to prove redaction works.
+d0a4de492ba019026adb6deff8aa7af86350b1db:tests/conftest.py:generic-api-key:10
+b68ab0e310bca7c0a74cffbf7e70260b424d3001:tests/test_log_prompt.py:generic-api-key:12

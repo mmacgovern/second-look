@@ -7,7 +7,7 @@ import pytest
 from secondlook import budget, config, llm
 
 # Two fake keys: one shaped like a real key, one that only exact-value redaction can catch.
-FAKE_KEY = "sk-test-1234567890abcdef1234567890"
+FAKE_KEY = "sk-test-1234567890abcdef1234567890"  # gitleaks:allow
 ODD_KEY = "portkey-NOTAREAL-q7w8e9r0t1y2"
 
 

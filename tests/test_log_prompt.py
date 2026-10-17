@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 HOOK = Path(__file__).resolve().parents[1] / ".claude" / "hooks" / "log_prompt.py"
-FAKE_KEY = "sk-test-1234567890abcdef1234567890"
+FAKE_KEY = "sk-test-1234567890abcdef1234567890"  # gitleaks:allow
 
 
 @pytest.fixture
