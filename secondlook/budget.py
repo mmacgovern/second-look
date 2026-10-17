@@ -26,14 +26,19 @@ class ModelPrice:
     output_per_1m: float  # USD per 1M output tokens
 
 
-# TODO: replace these placeholder names and numbers with the real models and prices.
+# OpenAI standard (list) prices per 1M tokens for prompts under 272K tokens.
+# Sources: MGT 409 Lecture 11 course price table (hw6/data/prices.json) for
+# gpt-6-luna; genai-prices 0.1.9, citing https://developers.openai.com/api/docs/models,
+# for all three. Cached-input discounts are ignored, so recorded costs are an upper bound.
 PRICES: dict[str, ModelPrice] = {
-    "TODO-fast-model": ModelPrice(input_per_1m=1.00, output_per_1m=4.00),
-    "TODO-smart-model": ModelPrice(input_per_1m=5.00, output_per_1m=20.00),
+    "gpt-6-luna": ModelPrice(input_per_1m=0.10, output_per_1m=0.50),    # course default; fast tasks
+    "gpt-6-sol": ModelPrice(input_per_1m=2.00, output_per_1m=10.00),    # complex work
+    "gpt-6-astra": ModelPrice(input_per_1m=10.00, output_per_1m=50.00),  # most capable; exceeds the
+    # default per-call and session limits for the explainer, so raise them before using it
 }
 
-# Used for any model missing from PRICES. Deliberately high so unknown models
-# are budgeted conservatively. TODO: revisit once PRICES is filled in.
+# Used for any model missing from PRICES: above the most expensive listed
+# model, so a mistyped or new model name is budgeted conservatively.
 FALLBACK_PRICE = ModelPrice(input_per_1m=15.00, output_per_1m=75.00)
 
 

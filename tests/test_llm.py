@@ -17,7 +17,7 @@ MESSAGES = [{"role": "user", "content": "Volatility is 14.2%."}]
 
 def call(settings, client, ledger, **overrides):
     args = dict(
-        agent_name="explainer", model="TODO-fast-model", system=SYSTEM, messages=MESSAGES,
+        agent_name="explainer", model="test-fast-model", system=SYSTEM, messages=MESSAGES,
         max_tokens=500, session_id="s1", settings=settings, client=client, db_path=ledger,
     )
     args.update(overrides)
@@ -41,7 +41,7 @@ def test_blocks_call_over_per_call_cost_limit(live_settings, fake_client_cls, le
 
 
 def test_blocks_call_over_session_budget(live_settings, fake_client_cls, ledger):
-    record_after_call("s1", "earlier", "TODO-smart-model", 0, 4_900, 1.0, db_path=ledger)  # $0.098 spent
+    record_after_call("s1", "earlier", "test-smart-model", 0, 4_900, 1.0, db_path=ledger)  # $0.098 spent
     client = fake_client_cls()
     with pytest.raises(BudgetExceeded) as err:
         call(live_settings, client, ledger)
@@ -50,7 +50,7 @@ def test_blocks_call_over_session_budget(live_settings, fake_client_cls, ledger)
 
 def test_blocks_call_over_daily_budget(live_settings, fake_client_cls, ledger):
     for i in range(20):  # $1.998 spent today across other sessions
-        record_after_call(f"other-{i}", "earlier", "TODO-smart-model", 0, 4_995, 1.0, db_path=ledger)
+        record_after_call(f"other-{i}", "earlier", "test-smart-model", 0, 4_995, 1.0, db_path=ledger)
     client = fake_client_cls()
     with pytest.raises(BudgetExceeded) as err:
         call(live_settings, client, ledger, session_id="fresh")
@@ -67,7 +67,7 @@ def test_call_sets_max_tokens_timeout_and_records_usage(live_settings, fake_clie
     assert sent["max_tokens"] == 500 and sent["timeout"] == 30
     assert sent["messages"][0] == {"role": "system", "content": SYSTEM}
     assert (resp.input_tokens, resp.output_tokens) == (120, 40)
-    assert resp.cost_usd == pytest.approx(budget.cost_usd("TODO-fast-model", 120, 40))
+    assert resp.cost_usd == pytest.approx(budget.cost_usd("test-fast-model", 120, 40))
     assert budget.summary(ledger)["total_usd"] == pytest.approx(resp.cost_usd)
 
 
@@ -135,7 +135,7 @@ def test_missing_model_in_live_mode_fails_generically(live_settings, fake_client
 
 @pytest.mark.parametrize("key", [FAKE_KEY, ODD_KEY])
 def test_key_never_in_logs_or_exception_text(key, fake_client_cls, ledger, caplog):
-    settings = Settings(portkey_api_key=key, demo_mode=False, model_fast="TODO-fast-model")
+    settings = Settings(portkey_api_key=key, demo_mode=False, model_fast="test-fast-model")
     client = fake_client_cls(PermissionError(f"401 invalid api key {key} for request"))
     with caplog.at_level(logging.DEBUG, logger="secondlook"):
         with pytest.raises(LLMError) as err:
@@ -164,7 +164,7 @@ def test_demo_mode_replays_recording_without_client(fake_client_cls, ledger, tmp
 
 
 def test_demo_mode_prefers_exact_recording_by_hash(ledger):
-    key = llm.cache_key("TODO-fast-model", SYSTEM, MESSAGES)
+    key = llm.cache_key("test-fast-model", SYSTEM, MESSAGES)
     (llm.DEMO_DIR / "explainer").mkdir(parents=True)
     (llm.DEMO_DIR / "explainer" / f"{key}.json").write_text(json.dumps({"text": "exact"}), encoding="utf-8")
     (llm.DEMO_DIR / "explainer.json").write_text(json.dumps({"text": "fallback"}), encoding="utf-8")

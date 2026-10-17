@@ -18,6 +18,9 @@ def isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "ENV_FILE", tmp_path / "no-such.env")
     config.get_settings.cache_clear()
     monkeypatch.setattr(budget, "LEDGER_PATH", tmp_path / ".runtime" / "ledger.db")
+    # Test-only models with round prices, so hand-calculated costs stay simple.
+    monkeypatch.setitem(budget.PRICES, "test-fast-model", budget.ModelPrice(input_per_1m=1.00, output_per_1m=4.00))
+    monkeypatch.setitem(budget.PRICES, "test-smart-model", budget.ModelPrice(input_per_1m=5.00, output_per_1m=20.00))
     monkeypatch.setattr(llm, "DEMO_DIR", tmp_path / "demo" / "recorded")
     llm.CACHE.clear()
     yield
@@ -36,7 +39,7 @@ def live_settings():
     return config.Settings(
         portkey_api_key=ODD_KEY,
         demo_mode=False,
-        model_fast="TODO-fast-model",
+        model_fast="test-fast-model",
         session_budget_usd=0.10,
         daily_budget_usd=2.00,
         max_tokens_per_call=1500,

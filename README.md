@@ -14,6 +14,10 @@ cp .env.example .env                             # then add your Portkey key to 
 .venv/Scripts/python -m pytest
 ```
 
+Models: `.env.example` uses `gpt-6-luna` (the course default, $0.10 / $0.50 per 1M tokens) for both
+`MODEL_FAST` and `MODEL_SMART`. `gpt-6-sol` ($2 / $10) and `gpt-6-astra` ($10 / $50) are also priced in
+`secondlook/budget.py`; astra needs a higher `MAX_COST_PER_CALL_USD` and `SESSION_BUDGET_USD`.
+
 Without a `PORTKEY_API_KEY`, the app runs in demo mode and replays recorded AI
 responses from `demo/recorded/`.
 

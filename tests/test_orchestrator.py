@@ -11,7 +11,7 @@ from secondlook.config import Settings
 
 @pytest.fixture
 def settings():
-    return Settings(portkey_api_key=ODD_KEY, demo_mode=False, model_fast="TODO-fast-model", model_smart="TODO-smart-model")
+    return Settings(portkey_api_key=ODD_KEY, demo_mode=False, model_fast="test-fast-model", model_smart="test-smart-model")
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def test_happy_path_three_steps(run, ledger):
     result, ctx = run(reply(ANALYST_REPLY), reply(GOOD_DRAFT), reply(PASS))
     assert result.source == "ai" and result.steps == ["analyst", "explainer", "verifier"]
     assert result.cards[0].title == "Hidden Apple" and [f.title for f in result.findings][0] == "Retirement gap"
-    assert models(ctx) == ["TODO-smart-model", "TODO-smart-model", "TODO-fast-model"]
+    assert models(ctx) == ["test-smart-model", "test-smart-model", "test-fast-model"]
     assert {r["name"] for r in budget.summary(ledger)["by_agent"]} == {"analyst", "explainer", "verifier"}
 
 
