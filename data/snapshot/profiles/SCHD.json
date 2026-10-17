@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0009,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.9991
+ },
+ "category": "Large Value",
+ "expense_ratio": 0.0006,
+ "industry": null,
+ "name": "Schwab U.S. Dividend Equity ETF",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0,
+  "communication_services": 0.0595,
+  "consumer_cyclical": 0.0673,
+  "consumer_defensive": 0.2007,
+  "energy": 0.1535,
+  "financial_services": 0.0918,
+  "healthcare": 0.1933,
+  "industrials": 0.0731,
+  "realestate": 0.0,
+  "technology": 0.1598,
+  "utilities": 0.0009
+ },
+ "ticker": "SCHD",
+ "top_holdings": [
+  {
+   "name": "Texas Instruments Inc",
+   "symbol": "TXN",
+   "weight": 0.046567
+  },
+  {
+   "name": "Qualcomm Inc",
+   "symbol": "QCOM",
+   "weight": 0.045626
+  },
+  {
+   "name": "Procter & Gamble Co",
+   "symbol": "PG",
+   "weight": 0.042315
+  },
+  {
+   "name": "Merck & Co Inc",
+   "symbol": "MRK",
+   "weight": 0.041466
+  },
+  {
+   "name": "Coca-Cola Co",
+   "symbol": "KO",
+   "weight": 0.041454
+  },
+  {
+   "name": "Chevron Corp",
+   "symbol": "CVX",
+   "weight": 0.040649
+  },
+  {
+   "name": "Amgen Inc",
+   "symbol": "AMGN",
+   "weight": 0.040295
+  },
+  {
+   "name": "UnitedHealth Group Inc",
+   "symbol": "UNH",
+   "weight": 0.039516
+  },
+  {
+   "name": "PepsiCo Inc",
+   "symbol": "PEP",
+   "weight": 0.038576
+  },
+  {
+   "name": "Verizon Communications Inc",
+   "symbol": "VZ",
+   "weight": 0.038566
+  }
+ ]
+}

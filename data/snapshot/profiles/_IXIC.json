@@ -1,0 +1,13 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {},
+ "category": null,
+ "expense_ratio": null,
+ "industry": null,
+ "name": "NASDAQ Composite",
+ "quote_type": "INDEX",
+ "sector": null,
+ "sector_weights": {},
+ "ticker": "^IXIC",
+ "top_holdings": []
+}

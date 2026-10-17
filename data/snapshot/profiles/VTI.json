@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0019,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0004,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.9978
+ },
+ "category": "Large Blend",
+ "expense_ratio": 0.0003,
+ "industry": null,
+ "name": "Vanguard Morningstar Total Stock Market ETF",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0192,
+  "communication_services": 0.0876,
+  "consumer_cyclical": 0.0921,
+  "consumer_defensive": 0.0426,
+  "energy": 0.0368,
+  "financial_services": 0.1238,
+  "healthcare": 0.1006,
+  "industrials": 0.0911,
+  "realestate": 0.0228,
+  "technology": 0.3637,
+  "utilities": 0.0198
+ },
+ "ticker": "VTI",
+ "top_holdings": [
+  {
+   "name": "NVIDIA Corp",
+   "symbol": "NVDA",
+   "weight": 0.068748
+  },
+  {
+   "name": "Apple Inc",
+   "symbol": "AAPL",
+   "weight": 0.063032
+  },
+  {
+   "name": "Microsoft Corp",
+   "symbol": "MSFT",
+   "weight": 0.051041
+  },
+  {
+   "name": "Amazon.com Inc",
+   "symbol": "AMZN",
+   "weight": 0.034063
+  },
+  {
+   "name": "Alphabet Inc Class A",
+   "symbol": "GOOGL",
+   "weight": 0.02696
+  },
+  {
+   "name": "Broadcom Inc",
+   "symbol": "AVGO",
+   "weight": 0.023749
+  },
+  {
+   "name": "Alphabet Inc Class C",
+   "symbol": "GOOG",
+   "weight": 0.021214
+  },
+  {
+   "name": "Meta Platforms Inc Class A",
+   "symbol": "META",
+   "weight": 0.017024
+  },
+  {
+   "name": "Micron Technology Inc",
+   "symbol": "MU",
+   "weight": 0.014644
+  },
+  {
+   "name": "Tesla Inc",
+   "symbol": "TSLA",
+   "weight": 0.014038
+  }
+ ]
+}

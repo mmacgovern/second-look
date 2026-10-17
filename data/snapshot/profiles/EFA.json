@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0066,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0016,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.9918
+ },
+ "category": "Foreign Large Blend",
+ "expense_ratio": 0.0032,
+ "industry": null,
+ "name": "iShares MSCI EAFE ETF",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0583,
+  "communication_services": 0.0474,
+  "consumer_cyclical": 0.0718,
+  "consumer_defensive": 0.0642,
+  "energy": 0.0394,
+  "financial_services": 0.26,
+  "healthcare": 0.1007,
+  "industrials": 0.187,
+  "realestate": 0.0152,
+  "technology": 0.1204,
+  "utilities": 0.0356
+ },
+ "ticker": "EFA",
+ "top_holdings": [
+  {
+   "name": "ASML Holding NV",
+   "symbol": "ASML.AS",
+   "weight": 0.032539
+  },
+  {
+   "name": "HSBC Holdings PLC",
+   "symbol": "HSBA.L",
+   "weight": 0.015785
+  },
+  {
+   "name": "Roche Holding AG Ordinary Shares new",
+   "symbol": "ROP.SW",
+   "weight": 0.013577
+  },
+  {
+   "name": "Shell PLC",
+   "symbol": "SHEL.L",
+   "weight": 0.012673
+  },
+  {
+   "name": "Novartis AG Registered Shares",
+   "symbol": "NOVN.SW",
+   "weight": 0.012149
+  },
+  {
+   "name": "Mitsubishi UFJ Financial Group Inc",
+   "symbol": "8306.T",
+   "weight": 0.011624
+  },
+  {
+   "name": "AstraZeneca PLC",
+   "symbol": "AZN.L",
+   "weight": 0.011391
+  },
+  {
+   "name": "Nestle SA",
+   "symbol": "NESN.SW",
+   "weight": 0.010832
+  },
+  {
+   "name": "Siemens AG",
+   "symbol": "SIE.DE",
+   "weight": 0.010462
+  },
+  {
+   "name": "BHP Group Ltd",
+   "symbol": "BHP.AX",
+   "weight": 0.009938
+  }
+ ]
+}

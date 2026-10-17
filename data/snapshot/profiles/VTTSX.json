@@ -1,0 +1,53 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0839,
+  "cashPosition": 0.0164,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0008,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.8988
+ },
+ "category": null,
+ "expense_ratio": 0.0008,
+ "industry": null,
+ "name": "Vanguard Target Retirement 2060 Fund",
+ "quote_type": "MUTUALFUND",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0419,
+  "communication_services": 0.0702,
+  "consumer_cyclical": 0.0876,
+  "consumer_defensive": 0.0446,
+  "energy": 0.041,
+  "financial_services": 0.1666,
+  "healthcare": 0.0881,
+  "industrials": 0.1147,
+  "realestate": 0.023,
+  "technology": 0.2989,
+  "utilities": 0.0234
+ },
+ "ticker": "VTTSX",
+ "top_holdings": [
+  {
+   "name": "Vanguard MStar Total Stk Mkt Idx Inst Pl",
+   "symbol": "VSMPX",
+   "weight": 0.546141
+  },
+  {
+   "name": "Vanguard Total Intl Stock Index Inv",
+   "symbol": "VGTSX",
+   "weight": 0.364306
+  },
+  {
+   "name": "Vanguard Total Bond Market II Idx Inv",
+   "symbol": "VTBIX",
+   "weight": 0.058776
+  },
+  {
+   "name": "Vanguard Total Intl Bd II Idx Insl",
+   "symbol": "VTILX",
+   "weight": 0.025499
+  }
+ ]
+}

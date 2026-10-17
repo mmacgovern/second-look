@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0225,
+  "convertiblePosition": 0.0002,
+  "otherPosition": 0.0219,
+  "preferredPosition": 0.0094,
+  "stockPosition": 0.946
+ },
+ "category": null,
+ "expense_ratio": 0.0135,
+ "industry": null,
+ "name": "American Funds Growth Fd of Amer C",
+ "quote_type": "MUTUALFUND",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0173,
+  "communication_services": 0.1327,
+  "consumer_cyclical": 0.1364,
+  "consumer_defensive": 0.0178,
+  "energy": 0.0139,
+  "financial_services": 0.0662,
+  "healthcare": 0.0996,
+  "industrials": 0.0835,
+  "realestate": 0.0085,
+  "technology": 0.4194,
+  "utilities": 0.0048
+ },
+ "ticker": "GFACX",
+ "top_holdings": [
+  {
+   "name": "NVIDIA Corp",
+   "symbol": "NVDA",
+   "weight": 0.054873
+  },
+  {
+   "name": "Broadcom Inc",
+   "symbol": "AVGO",
+   "weight": 0.043775
+  },
+  {
+   "name": "Meta Platforms Inc Class A",
+   "symbol": "META",
+   "weight": 0.038257
+  },
+  {
+   "name": "Microsoft Corp",
+   "symbol": "MSFT",
+   "weight": 0.034108
+  },
+  {
+   "name": "Micron Technology Inc",
+   "symbol": "MU",
+   "weight": 0.033102
+  },
+  {
+   "name": "Amazon.com Inc",
+   "symbol": "AMZN",
+   "weight": 0.032583
+  },
+  {
+   "name": "Eli Lilly and Co",
+   "symbol": "LLY",
+   "weight": 0.028104
+  },
+  {
+   "name": "Alphabet Inc Class C",
+   "symbol": "GOOG",
+   "weight": 0.027926
+  },
+  {
+   "name": "Alphabet Inc Class A",
+   "symbol": "GOOGL",
+   "weight": 0.027603
+  },
+  {
+   "name": "Tesla Inc",
+   "symbol": "TSLA",
+   "weight": 0.025106
+  }
+ ]
+}

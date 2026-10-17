@@ -1,1 +1,1 @@
-Phase 3 — Config, LLM wrapper and cost harness
+Phase 4 — Sample data and offline snapshot

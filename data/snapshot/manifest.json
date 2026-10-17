@@ -1,0 +1,271 @@
+{
+ "built_at": "2026-10-17T21:38:17+00:00",
+ "source": "yfinance",
+ "price_start": "2007-01-01",
+ "proxies": {
+  "^GSPC": "S&P 500 index",
+  "^IXIC": "Nasdaq Composite index",
+  "SPY": "S&P 500 ETF (since 1993)",
+  "QQQ": "Nasdaq-100 ETF (since 1999)",
+  "IWM": "Russell 2000 small-cap ETF",
+  "EFA": "Developed international stocks ETF",
+  "AGG": "US aggregate bond ETF",
+  "TLT": "Long-term Treasury ETF",
+  "GLD": "Gold ETF"
+ },
+ "tickers": {
+  "VTTSX": {
+   "rows": 3708,
+   "first_date": "2012-01-19",
+   "last_date": "2026-10-16",
+   "quote_type": "MUTUALFUND",
+   "expense_ratio": 0.0008,
+   "top_holdings": 4,
+   "has_sector_weights": true
+  },
+  "AAPL": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "NVDA": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "AMZN": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "TSLA": {
+   "rows": 4101,
+   "first_date": "2010-06-29",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "VOO": {
+   "rows": 4051,
+   "first_date": "2010-09-09",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0003,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "QQQ": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0018,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "XLK": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0008,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "META": {
+   "rows": 3624,
+   "first_date": "2012-05-18",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "VTI": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0003,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "MSFT": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "GOOGL": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "VXUS": {
+   "rows": 3953,
+   "first_date": "2011-01-28",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0005,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "BND": {
+   "rows": 4913,
+   "first_date": "2007-04-10",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0003,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "GFACX": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "MUTUALFUND",
+   "expense_ratio": 0.0135,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "SCHD": {
+   "rows": 3769,
+   "first_date": "2011-10-20",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0006,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "JNJ": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "PG": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "KO": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "VZ": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "EQUITY",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "^GSPC": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "INDEX",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "^IXIC": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "INDEX",
+   "expense_ratio": null,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "SPY": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.000945,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "IWM": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0019,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "EFA": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0032,
+   "top_holdings": 10,
+   "has_sector_weights": true
+  },
+  "AGG": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0003,
+   "top_holdings": 1,
+   "has_sector_weights": false
+  },
+  "TLT": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.0015,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  },
+  "GLD": {
+   "rows": 4979,
+   "first_date": "2007-01-03",
+   "last_date": "2026-10-16",
+   "quote_type": "ETF",
+   "expense_ratio": 0.004,
+   "top_holdings": 0,
+   "has_sector_weights": false
+  }
+ },
+ "failures": []
+}

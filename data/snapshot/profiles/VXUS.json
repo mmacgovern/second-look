@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0268,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0017,
+  "preferredPosition": 0.0001,
+  "stockPosition": 0.9714
+ },
+ "category": "Foreign Large Blend",
+ "expense_ratio": 0.0005,
+ "industry": null,
+ "name": "Vanguard Total International Stock Index Fund ETF Shares",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.077,
+  "communication_services": 0.0433,
+  "consumer_cyclical": 0.0807,
+  "consumer_defensive": 0.0477,
+  "energy": 0.0476,
+  "financial_services": 0.2329,
+  "healthcare": 0.0689,
+  "industrials": 0.1511,
+  "realestate": 0.0233,
+  "technology": 0.1987,
+  "utilities": 0.0289
+ },
+ "ticker": "VXUS",
+ "top_holdings": [
+  {
+   "name": "Taiwan Semiconductor Manufacturing Co Ltd",
+   "symbol": "2330.TW",
+   "weight": 0.03974
+  },
+  {
+   "name": "Samsung Electronics Co Ltd",
+   "symbol": "005930.KQ",
+   "weight": 0.018965
+  },
+  {
+   "name": "SK hynix Inc",
+   "symbol": "000660.KQ",
+   "weight": 0.014602
+  },
+  {
+   "name": "ASML Holding NV",
+   "symbol": "ASML.AS",
+   "weight": 0.014245
+  },
+  {
+   "name": "Tencent Holdings Ltd",
+   "symbol": "0700.HK",
+   "weight": 0.007812
+  },
+  {
+   "name": "HSBC Holdings PLC",
+   "symbol": "HSBA.L",
+   "weight": 0.00765
+  },
+  {
+   "name": "Roche Holding AG Ordinary Shares new",
+   "symbol": "ROP.SW",
+   "weight": 0.006672
+  },
+  {
+   "name": "Royal Bank of Canada",
+   "symbol": "RY",
+   "weight": 0.006219
+  },
+  {
+   "name": "Novartis AG Registered Shares",
+   "symbol": "NOVN.SW",
+   "weight": 0.006172
+  },
+  {
+   "name": "Alibaba Group Holding Ltd Ordinary Shares",
+   "symbol": "9988.HK",
+   "weight": 0.005898
+  }
+ ]
+}

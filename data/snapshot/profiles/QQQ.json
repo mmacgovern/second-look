@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0024,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.9976
+ },
+ "category": "Large Growth",
+ "expense_ratio": 0.0018,
+ "industry": null,
+ "name": "Invesco QQQ Trust",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0092,
+  "communication_services": 0.1259,
+  "consumer_cyclical": 0.1007,
+  "consumer_defensive": 0.0556,
+  "energy": 0.0045,
+  "financial_services": 0.0019,
+  "healthcare": 0.0379,
+  "industrials": 0.0511,
+  "realestate": 0.0,
+  "technology": 0.6033,
+  "utilities": 0.0101
+ },
+ "ticker": "QQQ",
+ "top_holdings": [
+  {
+   "name": "NVIDIA Corp",
+   "symbol": "NVDA",
+   "weight": 0.083274
+  },
+  {
+   "name": "Apple Inc",
+   "symbol": "AAPL",
+   "weight": 0.073534
+  },
+  {
+   "name": "Microsoft Corp",
+   "symbol": "MSFT",
+   "weight": 0.057623
+  },
+  {
+   "name": "Micron Technology Inc",
+   "symbol": "MU",
+   "weight": 0.050245
+  },
+  {
+   "name": "Advanced Micro Devices Inc",
+   "symbol": "AMD",
+   "weight": 0.041714
+  },
+  {
+   "name": "Amazon.com Inc",
+   "symbol": "AMZN",
+   "weight": 0.04066
+  },
+  {
+   "name": "Meta Platforms Inc Class A",
+   "symbol": "META",
+   "weight": 0.032626
+  },
+  {
+   "name": "Alphabet Inc Class A",
+   "symbol": "GOOGL",
+   "weight": 0.030548
+  },
+  {
+   "name": "Alphabet Inc Class C",
+   "symbol": "GOOG",
+   "weight": 0.028494
+  },
+  {
+   "name": "Tesla Inc",
+   "symbol": "TSLA",
+   "weight": 0.028201
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0,
+  "convertiblePosition": 0.0,
+  "otherPosition": 1.0,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.0
+ },
+ "category": "Commodities Focused",
+ "expense_ratio": 0.004,
+ "industry": null,
+ "name": "SPDR Gold Shares",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {},
+ "ticker": "GLD",
+ "top_holdings": []
+}

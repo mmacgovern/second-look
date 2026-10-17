@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0035,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.9965
+ },
+ "category": "Small Blend",
+ "expense_ratio": 0.0019,
+ "industry": null,
+ "name": "iShares Russell 2000 ETF",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0428,
+  "communication_services": 0.0233,
+  "consumer_cyclical": 0.086,
+  "consumer_defensive": 0.0257,
+  "energy": 0.0636,
+  "financial_services": 0.1797,
+  "healthcare": 0.2093,
+  "industrials": 0.1329,
+  "realestate": 0.0641,
+  "technology": 0.1455,
+  "utilities": 0.027
+ },
+ "ticker": "IWM",
+ "top_holdings": [
+  {
+   "name": "BlackRock Cash Funds Treasury SL Agency",
+   "symbol": "XTSLA",
+   "weight": 0.004783
+  },
+  {
+   "name": "Twist Bioscience Corp",
+   "symbol": "TWST",
+   "weight": 0.004293
+  },
+  {
+   "name": "Moog Inc Class A",
+   "symbol": "MOG-A",
+   "weight": 0.003666
+  },
+  {
+   "name": "JFrog Ltd Ordinary Shares",
+   "symbol": "FROG",
+   "weight": 0.003561
+  },
+  {
+   "name": "10x Genomics Inc Ordinary Shares - Class A",
+   "symbol": "TXG",
+   "weight": 0.003552
+  },
+  {
+   "name": "UMB Financial Corp",
+   "symbol": "UMBF",
+   "weight": 0.003246
+  },
+  {
+   "name": "BrightSpring Health Services Inc",
+   "symbol": "BTSG",
+   "weight": 0.003211
+  },
+  {
+   "name": "Glaukos Corp",
+   "symbol": "GKOS",
+   "weight": 0.003184
+  },
+  {
+   "name": "Viasat Inc",
+   "symbol": "VSAT",
+   "weight": 0.003045
+  },
+  {
+   "name": "Hut 8 Corp",
+   "symbol": "HUT",
+   "weight": 0.002988
+  }
+ ]
+}

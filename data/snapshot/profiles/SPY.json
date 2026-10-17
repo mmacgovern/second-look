@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0025,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.9975
+ },
+ "category": "Large Blend",
+ "expense_ratio": 0.000945,
+ "industry": null,
+ "name": "State Street SPDR S&P 500 ETF Trust",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0156,
+  "communication_services": 0.0995,
+  "consumer_cyclical": 0.0874,
+  "consumer_defensive": 0.0433,
+  "energy": 0.034,
+  "financial_services": 0.112,
+  "healthcare": 0.0926,
+  "industrials": 0.0754,
+  "realestate": 0.017,
+  "technology": 0.4045,
+  "utilities": 0.0188
+ },
+ "ticker": "SPY",
+ "top_holdings": [
+  {
+   "name": "NVIDIA Corp",
+   "symbol": "NVDA",
+   "weight": 0.083616
+  },
+  {
+   "name": "Apple Inc",
+   "symbol": "AAPL",
+   "weight": 0.07353
+  },
+  {
+   "name": "Microsoft Corp",
+   "symbol": "MSFT",
+   "weight": 0.05762
+  },
+  {
+   "name": "Amazon.com Inc",
+   "symbol": "AMZN",
+   "weight": 0.037
+  },
+  {
+   "name": "Alphabet Inc Class A",
+   "symbol": "GOOGL",
+   "weight": 0.030546
+  },
+  {
+   "name": "Broadcom Inc",
+   "symbol": "AVGO",
+   "weight": 0.025279
+  },
+  {
+   "name": "Alphabet Inc Class C",
+   "symbol": "GOOG",
+   "weight": 0.024504
+  },
+  {
+   "name": "Meta Platforms Inc Class A",
+   "symbol": "META",
+   "weight": 0.024194
+  },
+  {
+   "name": "Micron Technology Inc",
+   "symbol": "MU",
+   "weight": 0.0182
+  },
+  {
+   "name": "Tesla Inc",
+   "symbol": "TSLA",
+   "weight": 0.015127
+  }
+ ]
+}

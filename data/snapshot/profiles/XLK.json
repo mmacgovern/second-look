@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.0,
+  "cashPosition": 0.0004,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.9997
+ },
+ "category": "Technology",
+ "expense_ratio": 0.0008,
+ "industry": null,
+ "name": "State Street Technology Select Sector SPDR ETF",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {
+  "basic_materials": 0.0,
+  "communication_services": 0.0,
+  "consumer_cyclical": 0.0,
+  "consumer_defensive": 0.0,
+  "energy": 0.0,
+  "financial_services": 0.0,
+  "healthcare": 0.0,
+  "industrials": 0.0,
+  "realestate": 0.0,
+  "technology": 1.0,
+  "utilities": 0.0
+ },
+ "ticker": "XLK",
+ "top_holdings": [
+  {
+   "name": "NVIDIA Corp",
+   "symbol": "NVDA",
+   "weight": 0.154659
+  },
+  {
+   "name": "Apple Inc",
+   "symbol": "AAPL",
+   "weight": 0.136004
+  },
+  {
+   "name": "Microsoft Corp",
+   "symbol": "MSFT",
+   "weight": 0.106577
+  },
+  {
+   "name": "Advanced Micro Devices Inc",
+   "symbol": "AMD",
+   "weight": 0.05059
+  },
+  {
+   "name": "Broadcom Inc",
+   "symbol": "AVGO",
+   "weight": 0.046755
+  },
+  {
+   "name": "Micron Technology Inc",
+   "symbol": "MU",
+   "weight": 0.044658
+  },
+  {
+   "name": "Intel Corp",
+   "symbol": "INTC",
+   "weight": 0.033849
+  },
+  {
+   "name": "Palantir Technologies Inc Ordinary Shares - Class A",
+   "symbol": "PLTR",
+   "weight": 0.024383
+  },
+  {
+   "name": "Cisco Systems Inc",
+   "symbol": "CSCO",
+   "weight": 0.024036
+  },
+  {
+   "name": "Lam Research Corp",
+   "symbol": "LRCX",
+   "weight": 0.023291
+  }
+ ]
+}

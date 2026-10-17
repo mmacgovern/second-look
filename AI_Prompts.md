@@ -35,3 +35,18 @@ Check: pytest passes, including a test that forces each budget limit.
 ```
 
 **Result:** Built secondlook/config.py (pydantic settings, auto demo mode, redact() and a redacting log filter), budget.py (price table, SQLite ledger, per-call/session/daily limits, summary) and llm.py (budgeted, cached, single-retry Portkey wrapper with demo replay); all 52 pytest tests passed.
+
+### #2 — 2026-10-17 17:34 — Phase 4 — Sample data and offline snapshot
+
+```text
+Prompt 3 — Sample data and offline snapshot
+Create data/sample_portfolios/ with three realistic CSVs in a common brokerage export format (Symbol, Description, Quantity, Price, Market Value, Account Number):
+- beginner.csv: ~$15k, a target-date fund plus a few popular stocks
+- midcareer.csv: ~$180k, overlapping ETFs (e.g., S&P 500 fund, total-market fund, Nasdaq-100 fund, a tech sector fund) plus big-tech stocks — designed to show hidden concentration
+- retiree.csv: ~$650k, a mix including a high-expense-ratio active fund
+Use obviously fake account numbers.
+
+Then write scripts/build_snapshot.py that uses yfinance to download, for every ticker in the samples plus proxy indexes for crash replay: daily prices for 2007-2026, ETF top holdings, sector weights and expense ratios where available. Save to data/snapshot/ as small parquet or JSON files. The app should prefer live data and fall back to the snapshot. Note in the README which fields come from top-holdings only.
+```
+
+**Result:** Added three sample portfolio CSVs (beginner ~$15k, midcareer ~$181k, retiree ~$657k), secondlook/market_data.py (live yfinance first, snapshot fallback), scripts/build_snapshot.py and a 2.9 MB snapshot of 28 tickers with prices from 2007, fund profiles and a README; all 72 pytest tests passed.

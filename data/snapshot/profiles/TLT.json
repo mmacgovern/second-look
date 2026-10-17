@@ -1,0 +1,20 @@
+{
+ "as_of": "2026-10-17",
+ "asset_classes": {
+  "bondPosition": 0.996,
+  "cashPosition": 0.004,
+  "convertiblePosition": 0.0,
+  "otherPosition": 0.0,
+  "preferredPosition": 0.0,
+  "stockPosition": 0.0
+ },
+ "category": "Long Government",
+ "expense_ratio": 0.0015,
+ "industry": null,
+ "name": "iShares 20+ Year Treasury Bond ETF",
+ "quote_type": "ETF",
+ "sector": null,
+ "sector_weights": {},
+ "ticker": "TLT",
+ "top_holdings": []
+}
