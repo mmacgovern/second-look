@@ -18,3 +18,6 @@ Second Look is a Streamlit app that gives an AI second opinion on an investment 
 ## Testing
 - Write a pytest test for every module.
 - Run tests before saying a task is done.
+
+## Prompt log
+- At the end of each completed task, append one line under the latest AI_Prompts.md entry: '**Result:**' followed by a one-sentence summary of what was built and whether tests passed. Never edit or delete earlier entries.

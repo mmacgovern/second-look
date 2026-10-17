@@ -8,5 +8,17 @@
       "Bash(printenv*)",
       "Bash(env)"
     ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/log_prompt.py\""
+          }
+        ]
+      }
+    ]
   }
 }
