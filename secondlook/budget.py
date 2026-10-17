@@ -37,6 +37,10 @@ PRICES: dict[str, ModelPrice] = {
     # default per-call and session limits for the explainer, so raise them before using it
 }
 
+# Demo mode replays recorded answers and costs nothing.
+DEMO_MODEL = "demo"
+PRICES[DEMO_MODEL] = ModelPrice(input_per_1m=0.0, output_per_1m=0.0)
+
 # Used for any model missing from PRICES: above the most expensive listed
 # model, so a mistyped or new model name is budgeted conservatively.
 FALLBACK_PRICE = ModelPrice(input_per_1m=15.00, output_per_1m=75.00)
@@ -182,9 +186,16 @@ def record_after_call(
     return cost
 
 
-def summary(db_path: Path | None = None, session_id: str | None = None) -> dict:
-    """Cost per agent and per session, for the dashboard."""
-    where, params = ("WHERE session_id = ?", (session_id,)) if session_id else ("", ())
+def summary(db_path: Path | None = None, session_id: str | None = None, session_prefix: str | None = None) -> dict:
+    """Cost per agent and per session, for the dashboard (optionally one session, or all
+    sessions whose id starts with session_prefix)."""
+    if session_id:
+        where, params = "WHERE session_id = ?", (session_id,)
+    elif session_prefix:
+        # exact prefix match (no LIKE wildcards to escape)
+        where, params = "WHERE substr(session_id, 1, ?) = ?", (len(session_prefix), session_prefix)
+    else:
+        where, params = "", ()
     group_sql = """SELECT {key} AS name, COUNT(*) AS calls,
                           SUM(cache_hit) AS cache_hits,
                           SUM(input_tokens) AS input_tokens,

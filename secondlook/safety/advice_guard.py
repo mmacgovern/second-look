@@ -25,6 +25,7 @@ class Rule:
     name: str
     pattern: re.Pattern
     question_ok: bool = False   # allowed inside a question when allow_questions=True
+    negatable: bool = False     # skipped when negated: "not guaranteed", "isn't risk-free"
 
 
 RULES: list[Rule] = [
@@ -38,7 +39,8 @@ RULES: list[Rule] = [
     Rule("directive", re.compile(r"(?:^|[.!:;]\s+|\n)\s*(?:Buy|Sell|Hold|Dump|Short)\s+(?:more\s+|some\s+|all\s+)?(?:of\s+)?(?:[A-Z]{1,5}\b|your\b|the\b|it\b|them\b|now\b)"), True),
     Rule("rating", re.compile(r"\bstrong (?:buy|sell)\b|\b(?:buy|sell|hold) rating\b|\b(?:overweight|underweight|outperform) rating\b", I)),
     Rule("price_target", re.compile(r"\bprice target\b|\btarget price\b|\b(?:will|could|should|is going to) (?:hit|reach|trade at) \$?\d", I)),
-    Rule("promise", re.compile(r"\bguarantee(?:d|s)?\b|\brisk[- ]free\b|\bcan(?:'|no)?t lose\b|\bsure thing\b|\bno[- ]brainer\b|\bsafe bet\b", I)),
+    Rule("promise", re.compile(r"\bguarantee(?:d|s)?\b|\brisk[- ]free\b|\bcan(?:'|no)?t lose\b|\bsure thing\b|\bno[- ]brainer\b|\bsafe bet\b", I),
+         negatable=True),
     Rule("prediction", re.compile(
         r"\b(?:will|is going to|are going to|is sure to|are sure to)\s+(?:definitely\s+)?"
         r"(?:rise|go up|double|triple|soar|recover|rebound|bounce back|outperform|beat the market|crash|collapse|fall|drop|go down)\b", I)),
@@ -47,6 +49,10 @@ RULES: list[Rule] = [
         r"\b(?:good|bad|smart|wise|great|terrible|poor|foolish) (?:idea|move|decision|choice|call)\b"
         r"|\b(?:right|wrong) (?:move|call|decision|choice|thing to do)\b|\bmistake\b", I), True),
 ]
+
+
+# A negation just before a match ("not a guaranteed outcome", "isn't risk-free", "no guarantees").
+NEGATED = re.compile(r"\b(?:not|no|never|nor|without|isn'?t|aren'?t|wasn'?t|cannot be)\s+(?:a\s+|an\s+|any\s+|being\s+)?$", I)
 
 
 @dataclass(frozen=True)
@@ -70,7 +76,8 @@ def check(text: str, allow_questions: bool = False) -> list[GuardHit]:
         for rule in RULES:
             if allow_questions and is_question and rule.question_ok:
                 continue
-            match = rule.pattern.search(sentence)
+            match = next((m for m in rule.pattern.finditer(sentence)
+                          if not (rule.negatable and NEGATED.search(sentence[: m.start()]))), None)
             if match:
                 start, end = max(0, match.start() - 25), min(len(sentence), match.end() + 25)
                 hits.append(GuardHit(rule.name, sentence[start:end].strip()))

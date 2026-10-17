@@ -64,7 +64,7 @@ def test_call_sets_max_tokens_timeout_and_records_usage(live_settings, fake_clie
     resp = call(live_settings, client, ledger)
     assert resp.text == "Volatility measures swings."
     sent = client.calls[0]
-    assert sent["max_tokens"] == 500 and sent["timeout"] == 30
+    assert sent["max_completion_tokens"] == 500 and sent["timeout"] == 30
     assert sent["messages"][0] == {"role": "system", "content": SYSTEM}
     assert (resp.input_tokens, resp.output_tokens) == (120, 40)
     assert resp.cost_usd == pytest.approx(budget.cost_usd("test-fast-model", 120, 40))
@@ -164,7 +164,7 @@ def test_demo_mode_replays_recording_without_client(fake_client_cls, ledger, tmp
 
 
 def test_demo_mode_prefers_exact_recording_by_hash(ledger):
-    key = llm.cache_key("test-fast-model", SYSTEM, MESSAGES)
+    key = llm.demo_key(SYSTEM, MESSAGES)
     (llm.DEMO_DIR / "explainer").mkdir(parents=True)
     (llm.DEMO_DIR / "explainer" / f"{key}.json").write_text(json.dumps({"text": "exact"}), encoding="utf-8")
     (llm.DEMO_DIR / "explainer.json").write_text(json.dumps({"text": "fallback"}), encoding="utf-8")
@@ -184,4 +184,4 @@ def test_demo_mode_still_enforces_budget(ledger):
 def test_get_client_disables_sdk_retries_and_sets_timeout():
     client = llm.get_client(Settings(portkey_api_key=ODD_KEY, demo_mode=False))
     assert client.openai_client.max_retries == 0
-    assert client.request_timeout == 30
+    assert client.request_timeout == 30_000  # Portkey takes milliseconds: 30 s, not 30 ms

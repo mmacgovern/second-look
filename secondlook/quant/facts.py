@@ -322,11 +322,14 @@ def facts_json(facts: dict) -> str:
     return json.dumps(facts, separators=(",", ":"), ensure_ascii=False)
 
 
-def load_market_inputs(portfolio: Portfolio, prefer_live: bool = False) -> tuple[dict[str, dict], pd.DataFrame]:
-    """Profiles for every holding plus adjusted closes for holdings and proxies."""
+def load_market_inputs(
+    portfolio: Portfolio, prefer_live: bool = False, extra: list[str] | tuple[str, ...] = ()
+) -> tuple[dict[str, dict], pd.DataFrame]:
+    """Profiles for every holding (plus `extra` tickers, e.g. one being bought) and adjusted
+    closes for those and the replay proxies."""
     from secondlook import market_data as md
 
-    symbols = [s for s in portfolio.values_by_symbol() if s != CASH]
+    symbols = list(dict.fromkeys([s for s in portfolio.values_by_symbol() if s != CASH] + [t.upper() for t in extra]))
     profiles = {}
     for symbol in symbols:
         try:

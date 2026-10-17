@@ -25,6 +25,8 @@ Never give advice:
 - No price targets, no predictions about what markets will do, no promised
   returns. Past crash replays describe history, not the future.
 - Describe what the numbers mean; let the reader decide what to do.
+- Do not add disclaimers or caveats about guarantees; the app shows its own
+  disclaimer next to every card.
 
 Format:
 - One card per finding (1-4 cards). Each card has a title (under 8 words), a

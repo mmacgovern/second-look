@@ -122,3 +122,13 @@ def test_astra_explainer_is_blocked_by_default_per_call_limit(ledger):
     with pytest.raises(BudgetExceeded) as err:
         check_before_call("s", 3000, 1400, "gpt-6-astra", settings=Settings(), db_path=ledger)
     assert err.value.limit == "per-call cost" and err.value.worst_case_usd == pytest.approx(0.10)
+
+
+def test_summary_by_session_prefix(ledger):
+    record_after_call("rec-1-00", "a", "test-fast-model", 1000, 0, 0.1, db_path=ledger)   # $0.001
+    record_after_call("rec-1-01", "b", "test-fast-model", 2000, 0, 0.1, db_path=ledger)   # $0.002
+    record_after_call("rec-10-00", "a", "test-fast-model", 4000, 0, 0.1, db_path=ledger)  # $0.004, other prefix
+    record_after_call("rec_1-x", "a", "test-fast-model", 8000, 0, 0.1, db_path=ledger)    # "_" is not a wildcard
+    out = budget.summary(ledger, session_prefix="rec-1-")
+    assert out["total_usd"] == pytest.approx(0.003)
+    assert {r["name"] for r in out["by_session"]} == {"rec-1-00", "rec-1-01"}

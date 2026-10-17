@@ -1,0 +1,6 @@
+{
+ "agent": "verifier",
+ "text": "{\"passed\":true,\"problems\":[]}",
+ "input_tokens": 2425,
+ "output_tokens": 96
+}

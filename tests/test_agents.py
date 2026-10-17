@@ -81,7 +81,7 @@ def test_intake_scrubs_wraps_and_validates(make_ctx):
     assert [r.reason for r in portfolio.rejected] == ["invalid or missing ticker", "missing or negative quantity or value"]
 
     sent = ctx.client.calls[0]
-    assert sent["model"] == "test-fast-model" and sent["max_tokens"] == 1200
+    assert sent["model"] == "test-fast-model" and sent["max_completion_tokens"] == 1200
     msg = user_message(ctx)
     assert msg.startswith("<user_data>") and msg.count("</user_data>") == 1
     for secret in ("Z12-345678", "345678", "123-45-6789"):
@@ -105,7 +105,7 @@ def test_analyst_ranks_by_dollar_fact_and_keeps_three(make_ctx):
     assert [f.title for f in findings] == ["Retirement gap", "Crash replay", "Hidden Apple"]
     assert [f.dollar_impact_usd for f in findings] == [723241, 98155, 24068]
     sent = ctx.client.calls[0]
-    assert sent["model"] == "test-smart-model" and sent["max_tokens"] == 700
+    assert sent["model"] == "test-smart-model" and sent["max_completion_tokens"] == 700
     assert user_message(ctx).startswith("<facts>")
 
 
@@ -131,7 +131,7 @@ def test_explainer_sends_fluency_findings_and_revision_notes(make_ctx):
     assert out.cards[0].title == "Hidden Apple" and len(out.advisor_questions) == 2
     msg = user_message(ctx)
     assert "<fluency>new</fluency>" in msg and "<findings>" in msg and "Remove the 15% figure." in msg
-    assert ctx.client.calls[0]["model"] == "test-smart-model" and ctx.client.calls[0]["max_tokens"] == 1400
+    assert ctx.client.calls[0]["model"] == "test-smart-model" and ctx.client.calls[0]["max_completion_tokens"] == 1400
 
 
 def test_explainer_rejects_wrong_number_of_questions(make_ctx):
@@ -161,7 +161,7 @@ def test_verifier_llm_pass_and_fail(make_ctx):
     ctx = make_ctx(reply(PASS))
     result = verifier.run(verifier.VerifierInput(facts=FACTS, draft=ExplainerOutput(**GOOD_DRAFT)), ctx)
     assert result.passed and result.llm_checked
-    assert ctx.client.calls[0]["model"] == "test-fast-model" and ctx.client.calls[0]["max_tokens"] == 500
+    assert ctx.client.calls[0]["model"] == "test-fast-model" and ctx.client.calls[0]["max_completion_tokens"] == 500
     assert "<draft>" in user_message(ctx)
 
     llm.CACHE.clear()  # the same request would otherwise be served from call_agent's cache
@@ -182,7 +182,7 @@ def test_pause_agent_neutral_output_passes(make_ctx):
     ctx = make_ctx(reply(NEUTRAL_PAUSE))
     out = pause.run(pause.PauseInput(pause_facts=FACTS["pause_check"]), ctx)
     assert pause.check(out, FACTS["pause_check"]) == []
-    assert ctx.client.calls[0]["model"] == "test-smart-model" and ctx.client.calls[0]["max_tokens"] == 700
+    assert ctx.client.calls[0]["model"] == "test-smart-model" and ctx.client.calls[0]["max_completion_tokens"] == 700
 
 
 def test_pause_check_flags_judgment_and_invented_numbers():

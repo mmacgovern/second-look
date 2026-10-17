@@ -99,3 +99,17 @@ def test_unmatched_numbers():
     assert unmatched_numbers("About $97,000.", facts) == ["$97,000"]     # outside the $500 rounding
     assert unmatched_numbers("Down 40%.", {"pct": 41.3}) == ["40%"]      # small round numbers are exact
     assert unmatched_numbers("Down 41%.", {"pct": 41.3}) == []
+
+
+@pytest.mark.parametrize("text", [
+    "This is a scenario estimate, not a guaranteed outcome.",
+    "Projections are based on assumptions, not guarantees.",
+    "Bonds are not risk-free.",
+    "There are no guarantees in investing.",
+])
+def test_negated_promises_pass(text):
+    assert advice_guard.is_safe(text), text
+
+
+def test_promise_still_caught_after_a_negated_one():
+    assert not advice_guard.is_safe("Not guaranteed today, but this fund is a guaranteed winner long term.")

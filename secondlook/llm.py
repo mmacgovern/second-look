@@ -28,6 +28,7 @@ MAX_ATTEMPTS = 2  # first try + one retry
 GENERIC_ERROR = "The AI service could not complete this request. Please try again later."
 
 CACHE: dict[str, "LLMResponse"] = {}
+RECORD_DIR: Path | None = None  # set by record_responses_to() while recording demo responses
 
 log = get_logger(__name__)
 
@@ -61,6 +62,33 @@ def cache_key(model: str, system: str, messages: list[dict], response_schema: ty
     return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()
 
 
+def demo_key(system: str, messages: list[dict], response_schema: type[BaseModel] | None = None) -> str:
+    """Key for demo/recorded/<agent>/<key>.json. Model-independent, so a recording made
+    with any model replays in demo mode even when no model is configured."""
+    return cache_key("", system, messages, response_schema)
+
+
+def record_responses_to(path: Path | None) -> None:
+    """Turn recording of live responses on (a directory) or off (None). Used by scripts/record_demo.py."""
+    global RECORD_DIR
+    RECORD_DIR = Path(path) if path is not None else None
+
+
+def _save_recording(agent_name: str, key: str, response: "LLMResponse") -> None:
+    """Save only the model's answer and token counts. Nothing from settings or .env."""
+    from secondlook.config import redact
+
+    path = RECORD_DIR / agent_name / f"{key}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {  # no model name either: it may come from .env
+        "agent": agent_name,
+        "text": redact(response.text),
+        "input_tokens": response.input_tokens,
+        "output_tokens": response.output_tokens,
+    }
+    path.write_text(json.dumps(record, indent=1, ensure_ascii=False), encoding="utf-8")
+
+
 def estimate_tokens(system: str, messages: list[dict]) -> int:
     """Rough upper estimate: ~4 characters per token plus per-message overhead."""
     chars = len(system) + sum(len(str(m.get("content", ""))) for m in messages)
@@ -73,7 +101,7 @@ def get_client(settings: Settings) -> Any:
     client = Portkey(
         api_key=settings.portkey_api_key.get_secret_value(),
         provider=settings.portkey_provider,
-        request_timeout=TIMEOUT_S,
+        request_timeout=TIMEOUT_S * 1000,  # Portkey's gateway timeout is in milliseconds
     )
     # The SDK retries internally; turn that off so call_agent's single retry is the only one.
     inner = getattr(client, "openai_client", None)
@@ -109,7 +137,9 @@ def _usage(raw: Any) -> tuple[int, int]:
 
 
 def _demo_response(agent_name, model, system, messages, max_tokens, response_schema, key, session_id, s, db_path):
-    budget.check_before_call(session_id, estimate_tokens(system, messages), max_tokens, model, settings=s, db_path=db_path)
+    # Demo replays are free: budget them as the $0 demo model (the per-call token limit still applies).
+    budget.check_before_call(session_id, estimate_tokens(system, messages), max_tokens, budget.DEMO_MODEL,
+                             settings=s, db_path=db_path)
     recording = _load_recording(agent_name, key)
     if recording is None:
         log.warning("Demo mode: no recording for agent=%s key=%s in %s", agent_name, key, DEMO_DIR)
@@ -121,7 +151,7 @@ def _demo_response(agent_name, model, system, messages, max_tokens, response_sch
         log.warning("Demo recording for agent=%s does not match its schema", agent_name, exc_info=True)
         raise LLMError(GENERIC_ERROR) from None
     in_tok, out_tok = int(recording.get("input_tokens", 0)), int(recording.get("output_tokens", 0))
-    budget.record_after_call(session_id, agent_name, model or "demo", in_tok, out_tok, 0.0, billable=False, db_path=db_path)
+    budget.record_after_call(session_id, agent_name, budget.DEMO_MODEL, in_tok, out_tok, 0.0, billable=False, db_path=db_path)
     return LLMResponse(agent_name, model, text, parsed, in_tok, out_tok, 0.0, 0.0, demo=True)
 
 
@@ -154,7 +184,8 @@ def call_agent(
         return replace(cached, cost_usd=0.0, latency_s=0.0, cache_hit=True)
 
     if s.demo_mode:
-        response = _demo_response(agent_name, model, system, messages, max_tokens, response_schema, key, session_id, s, db_path)
+        response = _demo_response(agent_name, model, system, messages, max_tokens, response_schema,
+                                  demo_key(system, messages, response_schema), session_id, s, db_path)
         CACHE[key] = response
         return response
 
@@ -166,7 +197,8 @@ def call_agent(
     request = {
         "model": model,
         "messages": [{"role": "system", "content": system}, *messages],
-        "max_tokens": max_tokens,
+        # gpt-6 models reject "max_tokens"; this cap also covers any reasoning tokens.
+        "max_completion_tokens": max_tokens,
         "timeout": TIMEOUT_S,
     }
     if response_schema is not None:
@@ -192,6 +224,8 @@ def call_agent(
             continue
         response = LLMResponse(agent_name, model, text, parsed, in_tok, out_tok, cost, latency)
         CACHE[key] = response
+        if RECORD_DIR is not None:
+            _save_recording(agent_name, demo_key(system, messages, response_schema), response)
         return response
 
     raise LLMError(GENERIC_ERROR)
