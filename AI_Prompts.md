@@ -347,3 +347,5 @@ Fix these items from STATUS.md. Don't read .env. Run pytest after each item and 
 **Result (item 3):** Labeled the risk-profile stock ranges "Planning rule of thumb, not a recommendation." in data/reference/risk_profile_ranges.json and on the Retirement Plan tab (badge plus "rule-of-thumb range" wording); glide_path.json left for the owner; 477 tests passed.
 
 **Result (item 4):** README now marks the Windows install steps "tested" (Windows 11, Python 3.12) and the macOS steps "not yet tested on a Mac", with a test that keeps both labels; 479 tests passed.
+
+**Result (item 5):** Retook all 21 screenshots in the black and gold design from a demo-mode copy of the app (no AI charges), fixed the Admin screenshot address, and rebuilt report.html and slides.html with the new images cropped to the app content; 479 tests passed.

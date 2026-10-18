@@ -73,9 +73,11 @@ def slides() -> list[str]:
 <div class="diagram">{br.ARCH_SVG}</div>
 <p class="cap">Python computes. Agents explain. Verifier checks. At most 4 AI calls.</p>""", "wide"))
 
-    shots = [("06-midcareer-xray.png", "What you really own"), ("10-midcareer-top3.png", "Top 3 findings"),
-             ("18-midcareer-pause-sell-all.png", "Pause Button")]
-    figs = "".join(f"<figure>{br.crop_image(f, c, 0.0, 0.55, 700)}<figcaption>{c}</figcaption></figure>" for f, c in shots)
+    # (file, caption, top, bottom): the slice of each screenshot that shows the feature
+    shots = [("06-midcareer-xray.png", "What you really own", 0.17, 0.52), ("10-midcareer-top3.png", "Top 3 findings", 0.33, 0.66),
+             ("18-midcareer-pause-sell-all.png", "Pause Button", 0.54, 0.89)]
+    figs = "".join(f"<figure>{br.crop_image(f, c, top, bottom, 700, *br.APP_CONTENT)}<figcaption>{c}</figcaption></figure>"
+                   for f, c, top, bottom in shots)
     s.append(slide(5, "Demo", f'<div class="shots">{figs}</div>', "wide"))
 
     s.append(slide(6, "Cost to run", f"""
@@ -122,7 +124,7 @@ h1{font-size:110px;margin:8px 0 18px;letter-spacing:-.02em}h2{font-size:52px;mar
 .src{font-size:18px;color:var(--slate);margin-top:auto}ul.big{font-size:40px;line-height:1.5;padding-left:40px;margin:0}ul.big li::marker{color:var(--teal)}
 .wide{padding:44px 56px}.wide h2{margin-bottom:18px}.diagram svg{width:100%;height:480px}.cap{font-size:26px;margin:6px 0 0;text-align:center}
 .shots{display:flex;gap:22px;flex:1;min-height:0}.shots figure{flex:1;margin:0;display:flex;flex-direction:column;min-height:0}
-.shots img{width:100%;flex:1;min-height:0;object-fit:cover;object-position:top;border:1px solid var(--line);border-radius:10px}
+.shots img{width:100%;flex:1;min-height:0;object-fit:cover;object-position:left top;background:#000;border:1px solid var(--line);border-radius:10px}
 .shots figcaption{font-size:24px;text-align:center;margin-top:10px}
 .split{display:flex;gap:44px;align-items:flex-start}.split>div:first-child{flex:0 0 330px}.bars{flex:1;display:flex;flex-direction:column;gap:18px}
 .bar{display:grid;grid-template-columns:340px 1fr 70px;align-items:center;gap:14px;font-size:22px}.track{height:22px;background:var(--mist);border-radius:11px;overflow:hidden}

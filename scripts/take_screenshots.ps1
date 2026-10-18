@@ -10,7 +10,7 @@ New-Item -ItemType Directory -Force $out | Out-Null
 
 $top3 = "tab=Top+3+Things+Worth+Knowing"
 $shots = [ordered]@{
-    "00-landing"                   = @("/", 1100)
+    "00-landing"                   = @("/", 1330)
     "01-beginner-xray"              = @("/?sample=beginner&tab=X-Ray", 2500)
     "02-beginner-fees"              = @("/?sample=beginner&tab=Fee+Clock", 1300)
     "03-beginner-crash"             = @("/?sample=beginner&tab=Crash+Replay", 1950)
@@ -30,7 +30,7 @@ $shots = [ordered]@{
     "17-beginner-plan-assumptions" = @("/?sample=beginner&tab=Retirement+Plan&assumptions=open", 2300)
     "18-midcareer-pause-sell-all" = @("/?sample=midcareer&tab=Fee+Clock&pause=sell+everything", 2600)
     "19-retiree-pause-move-half"  = @("/?sample=retiree&tab=Fee+Clock&pause=move+half+to+cash", 2600)
-    "20-admin"                    = @("/?page=Admin", 1200)
+    "20-admin"                    = @("/admin", 1500)
 }
 
 foreach ($name in $shots.Keys) {

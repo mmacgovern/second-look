@@ -89,15 +89,20 @@ def image(name: str, alt: str, width: int = 900) -> str:
     return f'<img src="data:{mime};base64,{base64.b64encode(data).decode()}" alt="{esc(alt)}">'
 
 
-def crop_image(name: str, alt: str, top_frac: float, bottom_frac: float, width: int = 900) -> str:
-    """Embed only a vertical slice of a tall screenshot (fractions of its height)."""
+APP_CONTENT = (0.26, 0.95)  # left and right edges of the app's main column in a screenshot (drops the sidebar)
+
+
+def crop_image(name: str, alt: str, top_frac: float, bottom_frac: float, width: int = 900,
+               left_frac: float = 0.0, right_frac: float = 1.0) -> str:
+    """Embed only a slice of a tall screenshot (fractions of its height, and optionally of its width)."""
     path = SHOTS / name
     if not path.exists():
         return todo(f"screenshot {name} is missing")
     from PIL import Image
 
     img = Image.open(path).convert("RGB")
-    img = img.crop((0, int(img.height * top_frac), img.width, int(img.height * bottom_frac)))
+    img = img.crop((int(img.width * left_frac), int(img.height * top_frac),
+                    int(img.width * right_frac), int(img.height * bottom_frac)))
     if img.width > width:
         img = img.resize((width, round(img.height * width / img.width)))
     buf = io.BytesIO()
@@ -334,7 +339,7 @@ def build() -> str:
     the model review; the draft passed, so it is shown. Tokens recorded for this run:
     {table(["Agent", "Input tokens", "Output tokens"], ledger_rows)}</li>
   </ol>
-  <figure>{crop_image("10-midcareer-top3.png", "Top 3 tab for the mid-career sample", 0.25, 0.80)}<figcaption>The same run in the app (Top 3 Things Worth Knowing tab).</figcaption></figure>
+  <figure>{crop_image("10-midcareer-top3.png", "Top 3 tab for the mid-career sample", 0.33, 0.66, 900, *APP_CONTENT)}<figcaption>The same run in the app (Top 3 Things Worth Knowing tab).</figcaption></figure>
 </section>"""
 
     # --- 5 -----------------------------------------------------------------------
@@ -444,7 +449,7 @@ def build() -> str:
   {live_line} Source: <code>docs/redteam_results.json</code>.</p>
   {table(["Suite / surface", "Passed", "Rate"], suite_rows)}
   {table(["Case", "Surface", "Input", "What happened", "Result"], picks, "small")}
-  <figure>{crop_image("18-midcareer-pause-sell-all.png", "Pause Button result for sell everything", 0.42, 0.90)}<figcaption>A defense working: asked to "sell everything", the Pause Button shows consequences and history with no verdict on the trade.</figcaption></figure>
+  <figure>{crop_image("18-midcareer-pause-sell-all.png", "Pause Button result for sell everything", 0.54, 0.89, 900, *APP_CONTENT)}<figcaption>A defense working: asked to "sell everything", the Pause Button shows consequences and history with no verdict on the trade.</figcaption></figure>
 </section>"""
 
     # --- 7 -----------------------------------------------------------------------
