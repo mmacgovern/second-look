@@ -2,7 +2,7 @@
 
 Second Look reads a brokerage export of your investments and shows what you really own (including the companies hidden inside your funds), what your fees cost over time, how your mix would have held up in past crashes, and whether you are on track for retirement. Every number is calculated in plain Python; an AI only explains those numbers in everyday language, at the level you choose, and it never tells you to buy, sell or hold anything.
 
-![Second Look X-Ray view of a sample portfolio](docs/screenshots/11-xray-midcareer.png)
+![Second Look X-Ray view of a sample portfolio](docs/screenshots/06-midcareer-xray.png)
 
 More screenshots are in [`docs/screenshots/`](docs/screenshots/).
 

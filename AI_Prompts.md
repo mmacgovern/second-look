@@ -264,3 +264,5 @@ Run the full test suite, take fresh screenshots of every tab for all 3 personas 
 **Result:** Catch-up phase 7: added red-team cases for Roth amount, which account to sell from, retire-at-55 verdict, an impossible goal, negative and absurd ages, and a CSV claiming an invalid account type; demo red-team 63/63 passed (saved to docs/redteam_results.json); all 441 pytest tests passed.
 
 **Result:** Catch-up phase 8: measure_costs.py now reports mean cached input tokens, a response-cache pass and monthly cost for 100 and 10,000 users, with --max-usd enforced through budget.check_run_budget and a daily-budget pre-check; live run (quality comparison skipped by request) cost $0.0603: $0.001617 per analysis without the response cache, $0.000563 with it, about $32 a month for 10,000 users; all 444 pytest tests passed.
+
+**Result:** Catch-up phase 9: full suite green, 21 fresh screenshots (every tab for all 3 personas plus About you, assumptions, two pause checks and Admin) in docs/screenshots/, README image updated, tagged v1.0; all 444 pytest tests passed.
