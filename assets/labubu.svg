@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 190" width="140" height="190">
+  <title>Green Labubu-style monster</title>
+  <!-- ears -->
+  <ellipse cx="42" cy="40" rx="15" ry="38" transform="rotate(-12 42 40)" fill="#3FA34D" stroke="#1F6B2A" stroke-width="3"/>
+  <ellipse cx="98" cy="40" rx="15" ry="38" transform="rotate(12 98 40)" fill="#3FA34D" stroke="#1F6B2A" stroke-width="3"/>
+  <ellipse cx="43" cy="44" rx="6.5" ry="25" transform="rotate(-12 43 44)" fill="#F7C6D9"/>
+  <ellipse cx="97" cy="44" rx="6.5" ry="25" transform="rotate(12 97 44)" fill="#F7C6D9"/>
+  <!-- body and feet -->
+  <path d="M38 132 Q36 170 50 178 L90 178 Q104 170 102 132 Z" fill="#3FA34D" stroke="#1F6B2A" stroke-width="3"/>
+  <ellipse cx="54" cy="180" rx="14" ry="7" fill="#2F8A3C" stroke="#1F6B2A" stroke-width="3"/>
+  <ellipse cx="86" cy="180" rx="14" ry="7" fill="#2F8A3C" stroke="#1F6B2A" stroke-width="3"/>
+  <ellipse cx="34" cy="146" rx="8" ry="14" transform="rotate(20 34 146)" fill="#3FA34D" stroke="#1F6B2A" stroke-width="3"/>
+  <ellipse cx="106" cy="146" rx="8" ry="14" transform="rotate(-20 106 146)" fill="#3FA34D" stroke="#1F6B2A" stroke-width="3"/>
+  <!-- furry head -->
+  <path d="M70 52 l7 6 9-3 5 8 10 1 2 9 9 4-1 10 7 7-4 9 4 9-7 6 0 10-9 4-3 9-10 0-6 7-9-4-8 5-8-5-9 4-6-7-10 0-3-9-9-4 0-10-7-6 4-9-4-9 7-7-1-10 9-4 2-9 10-1 5-8 9 3 z"
+        fill="#4CB85A" stroke="#1F6B2A" stroke-width="3" stroke-linejoin="round"/>
+  <!-- pale face -->
+  <ellipse cx="70" cy="98" rx="33" ry="27" fill="#F4E6D2" stroke="#1F6B2A" stroke-width="2"/>
+  <!-- eyes -->
+  <ellipse cx="56" cy="90" rx="8" ry="9.5" fill="#1A1A1A"/>
+  <ellipse cx="84" cy="90" rx="8" ry="9.5" fill="#1A1A1A"/>
+  <circle cx="58.5" cy="86.5" r="2.8" fill="#FFFFFF"/>
+  <circle cx="86.5" cy="86.5" r="2.8" fill="#FFFFFF"/>
+  <ellipse cx="46" cy="102" rx="5" ry="3" fill="#F2A7B8" opacity="0.8"/>
+  <ellipse cx="94" cy="102" rx="5" ry="3" fill="#F2A7B8" opacity="0.8"/>
+  <!-- toothy grin -->
+  <path d="M50 104 Q70 124 90 104 Z" fill="#7A1F2B" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M51 104.5 L54 110 L57 106 L60 112 L63 107.5 L66.5 113.5 L70 108 L73.5 113.5 L77 107.5 L80 112 L83 106 L86 110 L89 104.5 Z"
+        fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- gold tag, to match the theme -->
+  <circle cx="70" cy="150" r="7" fill="#D4AF37" stroke="#8A6D1C" stroke-width="2"/>
+</svg>

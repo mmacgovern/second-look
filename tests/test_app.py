@@ -111,3 +111,13 @@ def test_landing_has_hero_steps_and_report_link(monkeypatch):
 def test_sidebar_controls_appear_with_a_portfolio(monkeypatch):
     at = open_app(monkeypatch, tab="X-Ray")
     assert [r.key for r in at.sidebar.radio] == ["fluency"]
+
+
+def test_black_and_gold_theme_with_mascot(monkeypatch):
+    monkeypatch.setattr(orchestrator, "run_analysis", no_ai)
+    at = AppTest.from_file(APP, default_timeout=120).run()
+    assert any('class="sl-mascot"' in m.value for m in at.markdown)  # green Labubu, bottom right
+    root = Path(APP).parent
+    assert (root / "assets" / "labubu.svg").exists()
+    config = (root / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    assert 'base = "dark"' in config and 'primaryColor = "#D4AF37"' in config

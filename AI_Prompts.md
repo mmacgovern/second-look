@@ -301,3 +301,11 @@ Ok - The app needs to look much more professional. When it opens in a Browser it
 ```
 
 **Result:** Redesigned the app as a three-page site with a top navigation bar (Analyze, Report & slides, Admin), a logo, a hero section with how-it-works steps, sample cards, an upload card, a project card linking to the new Report & slides page (embedded report and slide deck with downloads and headline metrics) and a regular footer; fixed the upload crash when Fluency was set; added a --live switch to scripts/run_app.py; all 469 tests passed.
+
+### #16 — 2026-10-17 23:00 — Phase 14 — Polish
+
+```text
+The theme for the professional background on the website with the App style should be black and gold. Have a green Labubu on the bottom right of the webpage. [Add this to Phase 14 Polish on the AI_Prompts.md]
+```
+
+**Result:** Switched the website to a black and gold theme (dark Streamlit theme, gold accents, restyled hero, cards, logo and charts with readable treemap labels) and added an original green Labubu-style mascot fixed to the bottom right of every page; all 470 tests passed.

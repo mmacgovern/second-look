@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 196 40" width="196" height="40">
-  <rect x="0.5" y="0.5" width="195" height="39" rx="9" fill="#0B1F3A" stroke="#2B4269"/>
-  <circle cx="20" cy="18" r="8.5" fill="none" stroke="#5EC4CC" stroke-width="2.8"/>
-  <line x1="26.2" y1="24.2" x2="31.5" y2="29.5" stroke="#5EC4CC" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M15.5 20.5 L18.5 16.8 L21 19 L24.5 14.5" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="42" y="26.5" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">Second Look</text>
+  <rect x="0.5" y="0.5" width="195" height="39" rx="9" fill="#0A0A0A" stroke="#D4AF37"/>
+  <circle cx="20" cy="18" r="8.5" fill="none" stroke="#D4AF37" stroke-width="2.8"/>
+  <line x1="26.2" y1="24.2" x2="31.5" y2="29.5" stroke="#D4AF37" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M15.5 20.5 L18.5 16.8 L21 19 L24.5 14.5" fill="none" stroke="#F5F1E6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="42" y="26.5" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#F1D67A">Second Look</text>
 </svg>

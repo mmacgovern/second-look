@@ -9,6 +9,7 @@ is shown. Uploaded files are processed in memory and never written to disk.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import html
 import json
@@ -39,7 +40,9 @@ from secondlook.ui_data import (
 
 ROOT = Path(__file__).resolve().parent
 ASSETS, DOCS = ROOT / "assets", ROOT / "docs"
-NAVY, ACCENT, SLATE, MIST = "#0B1F3A", "#0E7C86", "#64748B", "#E8EEF5"
+# Black and gold theme: INK is the main text colour, ACCENT the gold, SURFACE the card background.
+BG, SURFACE, LINE = "#0A0A0A", "#161616", "#2E2A1E"
+INK, ACCENT, GOLD_LIGHT, SLATE, MIST = "#F5F1E6", "#D4AF37", "#F1D67A", "#B8B0A0", "#5A5548"
 TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Retirement Plan", "Top 3 Things Worth Knowing"]
 DISCLAIMER = ("Second Look provides educational information only. It is not investment, tax or legal advice, "
               "and it does not recommend buying, selling or holding any security. Past results do not predict future results.")
@@ -50,57 +53,70 @@ st.set_page_config(page_title="Second Look", page_icon=":material/travel_explore
 st.markdown(f"""
 <style>
   #MainMenu, footer, [data-testid="stDecoration"] {{ display: none; }}
-  header[data-testid="stHeader"] {{ background: #FFFFFF; border-bottom: 1px solid #E2E8F0; }}
+  .stApp {{ background: radial-gradient(1200px 500px at 85% -10%, rgba(212,175,55,0.10), transparent 60%), {BG}; }}
+  header[data-testid="stHeader"] {{ background: #000000; border-bottom: 1px solid {ACCENT}55; }}
   .block-container {{ max-width: 1120px; padding-top: 4.6rem; padding-bottom: 2rem; }}
-  h1, h2, h3, h4 {{ color: {NAVY}; letter-spacing: -0.01em; }}
+  h1, h2, h3, h4, h5 {{ color: {INK}; letter-spacing: -0.01em; }}
   h1 {{ font-weight: 700; }}
-  .sl-hero {{ background: linear-gradient(135deg, {NAVY} 0%, #13294B 70%, #0E5F68 100%); color: #F3F6FA;
-              border-radius: 18px; padding: 2.6rem 2.8rem 2.3rem; margin: 0.4rem 0 1.8rem; }}
-  .sl-hero h1 {{ color: #FFFFFF; font-size: 2.7rem; margin: 0.2rem 0 0.6rem; line-height: 1.15; padding: 0; }}
-  .sl-kicker {{ color: #5EC4CC; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; margin: 0; }}
-  .sl-promise {{ font-size: 1.2rem; color: #CBD5E1; margin: 0 0 1.4rem 0; line-height: 1.55; max-width: 720px; }}
+  .stButton button[kind="primary"], .stDownloadButton button[kind="primary"] {{ color: #0A0A0A; font-weight: 600; }}
+  .sl-hero {{ background: linear-gradient(135deg, #000000 0%, #141109 65%, #2A2210 100%); color: {INK};
+              border: 1px solid {ACCENT}66; border-radius: 18px; padding: 2.6rem 2.8rem 2.3rem; margin: 0.4rem 0 1.8rem;
+              box-shadow: 0 10px 40px rgba(0,0,0,0.5); }}
+  .sl-hero h1 {{ color: {INK}; font-size: 2.7rem; margin: 0.2rem 0 0.6rem; line-height: 1.15; padding: 0; }}
+  .sl-hero h1 em {{ color: {ACCENT}; font-style: normal; }}
+  .sl-kicker {{ color: {ACCENT}; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; margin: 0; }}
+  .sl-promise {{ font-size: 1.2rem; color: #D9D2C3; margin: 0 0 1.4rem 0; line-height: 1.55; max-width: 720px; }}
   .sl-trust {{ display: flex; flex-wrap: wrap; gap: 0.6rem; }}
-  .sl-trust span {{ background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px;
-                    padding: 0.35rem 0.9rem; font-size: 0.86rem; color: #E2E8F0; }}
-  .sl-section {{ font-size: 1.25rem; font-weight: 700; color: {NAVY}; margin: 1.6rem 0 0.2rem; }}
+  .sl-trust span {{ background: rgba(212,175,55,0.08); border: 1px solid {ACCENT}66; border-radius: 999px;
+                    padding: 0.35rem 0.9rem; font-size: 0.86rem; color: {GOLD_LIGHT}; }}
+  .sl-section {{ font-size: 1.25rem; font-weight: 700; color: {INK}; margin: 1.6rem 0 0.2rem; }}
   .sl-section-sub {{ color: {SLATE}; font-size: 0.95rem; margin: 0 0 0.8rem; }}
   .sl-step {{ display: flex; gap: 0.8rem; align-items: flex-start; }}
-  .sl-step .n {{ flex: 0 0 2rem; height: 2rem; border-radius: 50%; background: #E6F3F4; color: {ACCENT}; font-weight: 700;
+  .sl-step .n {{ flex: 0 0 2rem; height: 2rem; border-radius: 50%; background: {ACCENT}; color: #0A0A0A; font-weight: 700;
                  display: flex; align-items: center; justify-content: center; }}
-  .sl-step b {{ color: {NAVY}; display: block; margin-bottom: 0.15rem; }}
-  .sl-step span {{ color: #475569; font-size: 0.92rem; line-height: 1.5; }}
-  .sl-sample-title {{ font-size: 1.1rem; font-weight: 700; color: {NAVY}; margin: 0; }}
-  .sl-sample-blurb {{ color: #475569; font-size: 0.92rem; min-height: 2.8rem; margin: 0.3rem 0 0.4rem; }}
+  .sl-step b {{ color: {INK}; display: block; margin-bottom: 0.15rem; }}
+  .sl-step span {{ color: {SLATE}; font-size: 0.92rem; line-height: 1.5; }}
+  .sl-sample-title {{ font-size: 1.1rem; font-weight: 700; color: {GOLD_LIGHT}; margin: 0; }}
+  .sl-sample-blurb {{ color: {SLATE}; font-size: 0.92rem; min-height: 2.8rem; margin: 0.3rem 0 0.4rem; }}
   .sl-muted {{ color: {SLATE}; font-size: 0.92rem; }}
-  .sl-privacy {{ color: #475569; font-size: 0.9rem; border-left: 3px solid {ACCENT}; padding: 0.3rem 0 0.3rem 0.8rem; margin-top: 0.6rem; }}
-  .sl-badge {{ display: inline-block; border: 1px solid #D5DCE6; border-radius: 999px; padding: 0.3rem 0.9rem;
-               font-size: 0.85rem; color: #334155; background: #F7F9FC; }}
-  .sl-card {{ border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.1rem 1.3rem; margin-bottom: 0.9rem; background: #FFFFFF; }}
-  .sl-card h4 {{ margin: 0 0 0.4rem 0; font-size: 1.08rem; }}
-  .sl-card p {{ margin: 0; color: #1E293B; line-height: 1.6; }}
-  .sl-callout {{ background: #F3F6FA; border-radius: 12px; padding: 1.1rem 1.3rem; }}
-  .sl-callout .big {{ font-size: 1.9rem; font-weight: 700; color: {NAVY}; }}
+  .sl-privacy {{ color: {SLATE}; font-size: 0.9rem; border-left: 3px solid {ACCENT}; padding: 0.3rem 0 0.3rem 0.8rem; margin-top: 0.6rem; }}
+  .sl-badge {{ display: inline-block; border: 1px solid {ACCENT}66; border-radius: 999px; padding: 0.3rem 0.9rem;
+               font-size: 0.85rem; color: {GOLD_LIGHT}; background: {SURFACE}; }}
+  .sl-card {{ border: 1px solid {LINE}; border-left: 3px solid {ACCENT}; border-radius: 12px; padding: 1.1rem 1.3rem;
+              margin-bottom: 0.9rem; background: {SURFACE}; }}
+  .sl-card h4 {{ margin: 0 0 0.4rem 0; font-size: 1.08rem; color: {GOLD_LIGHT}; }}
+  .sl-card p {{ margin: 0; color: {INK}; line-height: 1.6; }}
+  .sl-callout {{ background: {SURFACE}; border: 1px solid {LINE}; border-radius: 12px; padding: 1.1rem 1.3rem; }}
+  .sl-callout .big {{ font-size: 1.9rem; font-weight: 700; color: {ACCENT}; }}
   .sl-source {{ font-size: 0.8rem; color: {SLATE}; margin-bottom: 0.8rem; }}
-  .sl-footer {{ margin-top: 3rem; border-top: 1px solid #E2E8F0; padding: 1.2rem 0 0.4rem; color: {SLATE};
+  .sl-footer {{ margin-top: 3rem; border-top: 1px solid {ACCENT}44; padding: 1.2rem 9rem 0.4rem; color: {SLATE};
                 font-size: 0.8rem; line-height: 1.6; text-align: center; }}
-  .sl-footer b {{ color: {NAVY}; }}
-  div[data-testid="stMetricValue"] {{ color: {NAVY}; }}
-  .sl-risk {{ border: 1px solid rgba(243,246,250,0.35); border-radius: 10px; padding: 0.6rem 0.8rem; margin-top: 0.3rem; }}
-  .sl-risk .label {{ font-size: 1.05rem; font-weight: 700; }}
+  .sl-footer b {{ color: {ACCENT}; }}
+  div[data-testid="stMetricValue"] {{ color: {ACCENT}; }}
+  .sl-risk {{ border: 1px solid {ACCENT}55; border-radius: 10px; padding: 0.6rem 0.8rem; margin-top: 0.3rem; }}
+  .sl-risk .label {{ font-size: 1.05rem; font-weight: 700; color: {GOLD_LIGHT}; }}
   .sl-risk .sub {{ font-size: 0.8rem; opacity: 0.8; }}
   .sl-estimate {{ font-size: 0.8rem; color: {SLATE}; font-style: italic; }}
-  .sl-headline {{ font-size: 1.6rem; font-weight: 700; color: {NAVY}; margin: 0.2rem 0 0.1rem 0; }}
-  .sl-portfolio {{ background: #F3F6FA; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1rem 1.3rem; margin: 0.4rem 0 1rem; }}
+  .sl-headline {{ font-size: 1.6rem; font-weight: 700; color: {ACCENT}; margin: 0.2rem 0 0.1rem 0; }}
+  .sl-portfolio {{ background: {SURFACE}; border: 1px solid {LINE}; border-left: 3px solid {ACCENT}; border-radius: 14px;
+                   padding: 1rem 1.3rem; margin: 0.4rem 0 1rem; }}
   .sl-portfolio h3 {{ margin: 0; padding: 0; font-size: 1.3rem; }}
   .sl-portfolio p {{ margin: 0.2rem 0 0; }}
+  .sl-mascot {{ position: fixed; right: 18px; bottom: 12px; width: 104px; z-index: 999990; pointer-events: none;
+                filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6)); }}
   @media (max-width: 640px) {{
     .sl-hero {{ padding: 1.6rem 1.3rem; border-radius: 14px; }}
     .sl-hero h1 {{ font-size: 1.85rem; }}
     .sl-promise {{ font-size: 1.02rem; }}
+    .sl-mascot {{ width: 64px; right: 8px; bottom: 8px; }}
+    .sl-footer {{ padding: 1.2rem 4.5rem 0.4rem 0; text-align: left; }}
   }}
 </style>
 """, unsafe_allow_html=True)
 st.logo(str(ASSETS / "logo.svg"), size="large")
+MASCOT = base64.b64encode((ASSETS / "labubu.svg").read_bytes()).decode()
+st.markdown(f'<img class="sl-mascot" src="data:image/svg+xml;base64,{MASCOT}" alt="Green Labubu mascot">',
+            unsafe_allow_html=True)
 
 
 def footer() -> None:
@@ -240,7 +256,7 @@ def hero() -> None:
     st.markdown("""
 <div class="sl-hero">
   <p class="sl-kicker">An AI second opinion on your portfolio</p>
-  <h1>Take a second look at what you own.</h1>
+  <h1>Take a <em>second look</em> at what you own.</h1>
   <p class="sl-promise">See what you really own, what it costs you, and how it would have held up in past crashes,
   explained in plain English.</p>
   <div class="sl-trust"><span>&#10003; Every number computed in Python</span>
@@ -376,8 +392,8 @@ def about_you(inputs: Inputs) -> None:
 # --- tabs ---------------------------------------------------------------------------
 
 def plot_layout(fig: go.Figure, height: int = 420) -> go.Figure:
-    fig.update_layout(template="simple_white", height=height, margin=dict(l=10, r=10, t=30, b=10),
-                      font=dict(family="Source Sans Pro, Helvetica, Arial, sans-serif", color=NAVY, size=13),
+    fig.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=height, margin=dict(l=10, r=10, t=30, b=10),
+                      font=dict(family="Source Sans Pro, Helvetica, Arial, sans-serif", color=INK, size=13),
                       legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
     return fig
 
@@ -393,11 +409,13 @@ def xray_tab(inputs: Inputs) -> None:
     c.metric("Cash", f"{100 * xr.cash_weight:.1f}%")
 
     frame = treemap_frame(xr)
-    colors = {"root": "#FFFFFF", "company": "#2B6C8F", "part": "#7FB3C8", "other": "#9FB4C9",
-              "untraced": "#CBD5E1", "cash": "#E2E8F0"}
+    colors = {"root": BG, "company": "#D4AF37", "part": "#B8902A", "other": "#8A6D1C",
+              "untraced": "#3A362C", "cash": "#2A2720"}
+    dark_text = {"company", "part"}  # black labels on the brighter gold tiles, light labels elsewhere
     fig = go.Figure(go.Treemap(
         ids=frame["id"], labels=frame["label"], parents=frame["parent"], values=frame["value"], branchvalues="total",
-        marker=dict(colors=[colors[k] for k in frame["kind"]], line=dict(color="#FFFFFF", width=2)),
+        marker=dict(colors=[colors[k] for k in frame["kind"]], line=dict(color=BG, width=2)),
+        textfont=dict(color=["#0A0A0A" if k in dark_text else INK for k in frame["kind"]], size=13),
         customdata=frame["pct"], texttemplate="%{label}<br>%{customdata:.1f}%",
         hovertemplate="%{label}<br>$%{value:,.0f} (%{customdata:.1f}% of portfolio)<extra></extra>",
         maxdepth=2,
@@ -456,7 +474,7 @@ def xray_tab(inputs: Inputs) -> None:
         frame = pd.DataFrame([{"Sector": SECTOR_LABELS.get(x.sector, x.sector), "You": 100 * x.portfolio,
                                "Total market": 100 * x.reference} for x in conc.sectors_vs_market])
         fig = go.Figure([go.Bar(name="Your stocks", x=frame["Sector"], y=frame["You"], marker_color=ACCENT),
-                         go.Bar(name="Total US market (VTI)", x=frame["Sector"], y=frame["Total market"], marker_color="#94A3B8")])
+                         go.Bar(name="Total US market (VTI)", x=frame["Sector"], y=frame["Total market"], marker_color="#8C877A")])
         fig.update_layout(barmode="group")
         fig.update_yaxes(ticksuffix="%", title="Share of stocks")
         st.plotly_chart(plot_layout(fig, 320), key=f"sectors-{inputs.key}")
@@ -488,10 +506,10 @@ def fee_tab(inputs: Inputs) -> None:
                                         "Per year ($)": round(f.annual_cost_usd)} for f in fees.funds[:5]]), hide_index=True)
     with b:
         fig = go.Figure()
-        styles = [(MIST, "dot"), ("#94A3B8", "dash"), (ACCENT, "solid")]
+        styles = [(MIST, "dot"), ("#8C877A", "dash"), (ACCENT, "solid")]
         for (color, dash), column in zip(styles, curves.columns[1:]):
             fig.add_trace(go.Scatter(x=curves["year"], y=curves[column], name=column, mode="lines",
-                                     line=dict(color=color if color != MIST else "#94A3B8", width=3 if dash == "solid" else 2, dash=dash),
+                                     line=dict(color=color if color != MIST else "#8C877A", width=3 if dash == "solid" else 2, dash=dash),
                                      hovertemplate="Year %{x}: $%{y:,.0f}<extra>" + column + "</extra>"))
         fig.update_yaxes(tickprefix="$", tickformat=",.0f", title=None)
         fig.update_xaxes(title="Years from today")
@@ -515,7 +533,7 @@ def crash_tab(inputs: Inputs) -> None:
                  f"{r.months_to_recover:.1f}" if r.months_to_recover is not None else "Not recovered in data")
         frame = crash_frame(inputs.values, inputs.adj, scenario, r.recovery_date)
         fig = go.Figure(go.Scatter(x=frame["date"], y=frame["drawdown_pct"], fill="tozeroy", mode="lines",
-                                   line=dict(color=NAVY, width=2), fillcolor="rgba(14,124,134,0.18)",
+                                   line=dict(color=INK, width=2), fillcolor="rgba(212,175,55,0.18)",
                                    customdata=frame["value_usd"],
                                    hovertemplate="%{x|%b %Y}: %{y:.1f}% below peak ($%{customdata:,.0f})<extra></extra>"))
         fig.update_yaxes(ticksuffix="%", title="Below previous peak")
@@ -569,12 +587,12 @@ def plan_tab(inputs: Inputs) -> None:
         band = plan_band_frame(plan)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=band["age"], y=band["strong"], line=dict(width=0), showlegend=False, hoverinfo="skip"))
-        fig.add_trace(go.Scatter(x=band["age"], y=band["cautious"], fill="tonexty", fillcolor="rgba(14,124,134,0.16)",
+        fig.add_trace(go.Scatter(x=band["age"], y=band["cautious"], fill="tonexty", fillcolor="rgba(212,175,55,0.16)",
                                  line=dict(width=0), name="Cautious to strong range",
                                  hovertemplate="Age %{x}: cautious $%{y:,.0f}<extra></extra>"))
         fig.add_trace(go.Scatter(x=band["age"], y=band["middle"], line=dict(color=ACCENT, width=3), name="Middle scenario",
                                  hovertemplate="Age %{x}: $%{y:,.0f}<extra>Middle</extra>"))
-        fig.add_trace(go.Scatter(x=band["age"], y=band["target"], line=dict(color=NAVY, width=2, dash="dash"),
+        fig.add_trace(go.Scatter(x=band["age"], y=band["target"], line=dict(color=INK, width=2, dash="dash"),
                                  name="Target nest egg", hovertemplate="Target $%{y:,.0f}<extra></extra>"))
         fig.update_yaxes(tickprefix="$", tickformat=",.0f", title=None)
         fig.update_xaxes(title="Age")
@@ -595,7 +613,7 @@ def plan_tab(inputs: Inputs) -> None:
     with left:
         st.markdown("##### Balances by account type")
         frame = balances_frame(balances, tax)
-        fig = go.Figure([go.Bar(name="Balance", y=frame["Account type"], x=frame["Balance"], orientation="h", marker_color="#94A3B8"),
+        fig = go.Figure([go.Bar(name="Balance", y=frame["Account type"], x=frame["Balance"], orientation="h", marker_color="#8C877A"),
                          go.Bar(name="Counted toward retirement", y=frame["Account type"], x=frame["Counted toward retirement"],
                                 orientation="h", marker_color=ACCENT)])
         fig.update_layout(barmode="group")
@@ -726,7 +744,7 @@ def pause_panel(inputs: Inputs) -> None:
 
 
 def docs_page() -> None:
-    st.markdown('<p class="sl-kicker" style="color:#0E7C86">Project documents</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sl-kicker" style="color:#D4AF37">Project documents</p>', unsafe_allow_html=True)
     st.title("Report and slide deck")
     st.markdown('<p class="sl-muted">The final project report and presentation. Every number in them is generated from '
                 'the project\'s measured results (costs, red-team tests and the prompt log).</p>', unsafe_allow_html=True)

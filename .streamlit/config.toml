@@ -1,18 +1,18 @@
 [theme]
-base = "light"
-primaryColor = "#0E7C86"              # the one accent: calm teal
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F3F6FA"
-textColor = "#0B1F3A"                 # navy
+base = "dark"
+primaryColor = "#D4AF37"              # the one accent: gold
+backgroundColor = "#0A0A0A"           # near-black page
+secondaryBackgroundColor = "#161616"
+textColor = "#F5F1E6"                 # warm off-white
 font = "sans serif"
-borderColor = "#DCE3EC"
+borderColor = "#2E2A1E"
 showWidgetBorder = true
 baseRadius = "0.6rem"
 
 [theme.sidebar]
-backgroundColor = "#0B1F3A"
-textColor = "#F3F6FA"
-secondaryBackgroundColor = "#13294B"
+backgroundColor = "#000000"
+textColor = "#F5F1E6"
+secondaryBackgroundColor = "#161616"
 
 [server]
 headless = false   # open the browser on "streamlit run app.py"; scripts/run_app.py passes true
