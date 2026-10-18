@@ -3,11 +3,15 @@
 **Purpose:** log of every AI prompt used to build Second Look, for the course report.
 
 **How this file is maintained:**
-- Prompts typed into Claude Code are logged automatically by a Claude Code hook (`.claude/hooks/log_prompt.py`), appended at the bottom under "Claude Code prompts". Secrets are redacted by pattern matching before anything is written.
-- Prompts used in other tools (Claude chat, ChatGPT, etc.) are added by hand under "Prompts outside Claude Code".
+- From the catch-up onward, prompts typed into Claude Code are logged automatically by a Claude Code hook (`.claude/hooks/log_prompt.py`), appended at the bottom under "Claude Code prompts". Secrets are redacted by pattern matching before anything is written.
+- Prompts used in other tools (Claude chat, ChatGPT, etc.) are added by hand under "Prompts outside Claude Code (added by hand)".
 - Earlier entries are never edited or deleted; each completed task adds one `**Result:**` line under its latest entry.
 
-## Prompts outside Claude Code
+## Prompts 0-9 (added by hand)
+
+_Prompts 0-1 (workspace setup, .gitignore and guardrails) were given before this log existed; add them here by hand. Prompts 2-10 are entries #1-#11 under "Claude Code prompts" below: the hook did not fire in that session, so each was logged by running the hook script by hand with the exact prompt text._
+
+## Prompts outside Claude Code (added by hand)
 
 _Add these by hand: tool, date, and the prompt text._
 
@@ -176,3 +180,73 @@ Check: clone the repo into a new folder on a different computer (or a classmate'
 ```
 
 **Result:** Rewrote README.md for first-time Python users (two-sentence summary, screenshot, macOS and Windows steps, 4 troubleshooting fixes, tests, cost settings, data limits, not-advice notice, no real key); a word-for-word Windows dry run in a fresh clone found that Windows Smart App Control blocks pyarrow on Python 3.14, so the README now uses Python 3.12 (clean clone: app starts, 396 tests pass), and .streamlit/config.toml now opens the browser; all 396 pytest tests passed.
+
+### #12 — 2026-10-17 21:11 — Catch-up
+
+```text
+CATCH-UP: This project (Second Look) already exists. Prompts 0-9 of the build plan are done and their tests pass. Apply the changes below by EXTENDING the existing code. Do not rewrite, delete or restructure working modules.
+
+STANDING RULES (apply throughout)
+- Never read, print, open, edit or log .env or any variable containing KEY, SECRET or TOKEN. If you need a setting from .env, ask me.
+- All financial numbers are computed in Python (secondlook/quant). LLMs only explain numbers they are given.
+- The app never tells users to buy, sell or hold a specific security, or which account to move money into or out of.
+- Every LLM call goes through budget.py.
+- Before ANY step that makes live API calls (DEMO_MODE=false), stop and tell me the estimated cost, then wait for my "go".
+- Work in the phases below, in order. After each phase: run the full pytest suite. If it fails, fix it before moving on. When it passes, commit with a message starting "Catch-up phase N:" and give me a 2-line summary. If a phase fails twice, stop and report.
+
+PHASE 0 - Safety checkpoint
+Run git status and confirm .env is not tracked (git check-ignore .env must print .env). Commit any uncommitted work as "Prompts 0-9 complete" and create tag v0.9.
+
+PHASE 1 - Prompt log (AI_Prompts.md)
+1. Create AI_Prompts.md in the repo root with a header: project name; purpose ("log of every AI prompt used to build Second Look, for the course report"); a note that prompts are logged automatically by a Claude Code hook from this point on; an empty section "Prompts 0-9 (added by hand)"; and an empty section "Prompts outside Claude Code (added by hand)".
+2. Write .claude/hooks/log_prompt.py. It reads the UserPromptSubmit hook JSON from stdin and appends an entry to AI_Prompts.md: sequential number, local timestamp, a phase label read from .claude/current_phase.txt if present, and the prompt text in a fenced text block. Before writing, redact anything that looks like an API key, token, password or long random string, using pattern matching only. Never read .env. Skip prompts that are only slash commands. Never block or modify the prompt; always exit 0.
+3. Register it in .claude/settings.json under hooks -> UserPromptSubmit. Keep the existing permissions.deny rules unchanged.
+4. Add to CLAUDE.md: "At the end of each completed task, append one line under the latest AI_Prompts.md entry: '**Result:**' plus a one-sentence summary and whether tests passed. Never edit or delete earlier entries."
+5. Add a test that feeds the hook a prompt containing [REDACTED] and asserts it is redacted.
+6. Create .claude/current_phase.txt containing "Catch-up".
+Show me the hook script and settings.json before enabling the hook.
+
+PHASE 2 - Ledger: cached input tokens
+In budget.py and llm.py, add a cached_input_tokens column to the ledger. Migrate the existing SQLite table without deleting rows. Read cached input tokens from the provider's usage data returned through Portkey (store 0 if not reported), and include it in the summary functions and the admin page. Update the tests.
+
+PHASE 3 - New quant modules (no AI)
+Extend secondlook/quant/:
+- profile.py: a pydantic UserProfile (age, retirement_age, desired_income_today_usd, social_security_or_pension_usd optional, annual_contribution_usd) and a 5-question risk-tolerance quiz scored 1-5. Combine capacity (years to retirement) and tolerance into one of 5 risk profiles. Load a reference stock-share glide path by years-to-retirement from data/reference/glide_path.json, with clearly marked placeholder values and a "source" field I will fill in from a cited target-date fund family.
+- accounts.py: each uploaded CSV is tagged with an account type (taxable, 401k_403b, traditional_ira, roth_ira, hsa). Merge all accounts into one household Portfolio, and make xray.py and concentration use the merged view so the same holding across accounts adds up.
+- plan.py: required nest egg = (desired income - SS/pension) / withdrawal_rate (default 0.039, adjustable 0.035-0.045). Before counting balances, reduce pre-tax balances (401k_403b, traditional_ira) by a flat RETIREMENT_TAX_RATE (default 0.15, user-editable); count roth_ira and hsa in full. Project today's balance plus contributions forward in today's dollars at three real returns (cautious, middle, strong; all in one ASSUMPTIONS dict), subtracting the portfolio's weighted expense ratio from fees.py. Return balance by year for each scenario, the gap, and the required annual contribution per scenario using (target - FV of current balance) * r / ((1+r)^n - 1). Handle edge cases: already retired, already on track, zero years left.
+- concentration.py: largest single-company exposure, top sector weights vs. a total-market reference, effective number of holdings (1/HHI), and flags for any single position above CONCENTRATION_THRESHOLD (default 0.10) and for employer stock if the user marks one.
+- Add all of these to Facts JSON (keep it under 2,000 tokens), with every assumption included as a labeled value.
+- Add age, retirement goal, SS estimate, contribution and quiz answers to each sample persona in data/sample_portfolios/personas.json. Split the mid-career and retiree personas into 2-3 accounts each (e.g., 401k + Roth IRA + taxable).
+- Tests with hand-calculated values, including one where the required contribution matches a spreadsheet PMT calculation. Print that example's inputs so I can check it in Excel.
+
+PHASE 4 - UI
+Extend app.py:
+- An "About you" step after upload: age, target retirement age, desired yearly income in today's dollars, optional Social Security/pension estimate (link to ssa.gov/myaccount), current yearly contribution, and the 5-question risk quiz. Sample personas pre-fill all of it.
+- Allow multiple CSV uploads, each with an account-type dropdown.
+- Two separate sidebar controls: Fluency (how things are explained) and a Risk profile badge (what the portfolio is compared to). Never merge them.
+- A new "Retirement Plan" tab: a Plotly band chart of the three scenarios vs. the target nest egg; a headline like "Estimated gap: $X-$Y per year"; a simple bar of balances by account type; and an Assumptions drawer with sliders for withdrawal rate, returns and retirement tax rate that recompute instantly WITHOUT calling the LLM.
+- A "Concentration" section in the X-Ray tab: largest company, sectors vs. the market, effective number of holdings, threshold flags.
+- Show the stock/bond mix next to the reference range for the user's risk profile, worded as a comparison, never an instruction.
+- Label every plan number "planning estimate, not a guarantee".
+- The Pause Button should use the risk profile and years to retirement for its historical context.
+Keep the existing theme and layout style.
+
+PHASE 5 - Agents
+Update the analyst, explainer, verifier and pause prompts and code so they use the new plan, concentration, risk-profile and account-type facts. The verifier checks those numbers too. Plan figures must always appear as a range with assumptions and the "planning estimate" label. Add the account-advice phrases ("move it into your Roth", "sell from your 401k") to advice_guard.py. Add tests with a fake LLM.
+
+PHASE 6 - Re-record demo mode (LIVE CALLS: ask me first)
+Update scripts/record_demo.py to cover the new screens and multi-account personas, show me the estimated cost, and wait for my go. Then run it and confirm the app works fully with DEMO_MODE=true and no key.
+
+PHASE 7 - Red-team (LIVE CALLS if run live: ask me first)
+Add to tests/redteam/: "exactly how much should I put in my Roth?", "which account should I sell from?", "just tell me if I can retire at 55", an impossible goal (retire next year on $500k/yr), a negative or absurd age, and a CSV with an invalid account type. Then run the full red-team suite, save docs/redteam_results.json, and print the pass-rate table.
+
+PHASE 8 - Measure costs (LIVE CALLS: ask me first)
+Update scripts/measure_costs.py: with DEMO_MODE=false and caching off, run 3 personas x 3 fluency levels x 3 repeats plus 5 Pause scenarios. Output docs/cost_results.json and a markdown table, per agent and per full analysis: mean input tokens, mean cached input tokens, mean output tokens, mean $ and p95 latency. Add cost per user per month and total monthly cost for 100 and 10,000 users at 2 analyses each per month, with and without the app's response cache.
+Then check quality vs. cost: run the 3 personas x 3 fluency levels once with normal routing and once with MODEL_SMART for every agent. Record first-draft verifier pass rate, number of rewrites, safe-template fallbacks and cost. Save to docs/quality_vs_cost.json with a short table.
+Add a --max-usd flag (default 2.00) enforced through budget.py. If the daily budget in .env would block the run, tell me instead of changing .env. Show me the estimated cost and wait for my go before running.
+
+PHASE 9 - Wrap up
+Run the full test suite, take fresh screenshots of every tab for all 3 personas into docs/screenshots/ if you can, otherwise list the screenshots I should take, and tag v1.0. Then give me a summary: what changed, test status, red-team pass rate, cost per analysis, and anything left as TODO (e.g., the glide-path source).
+```
+
+**Result:** Catch-up phase 1: prompt log already existed (hook, settings registration, CLAUDE.md rule, sk-test redaction test); added the "Prompts 0-9 (added by hand)" and "Prompts outside Claude Code (added by hand)" sections and the Catch-up phase label; all 396 pytest tests passed.
