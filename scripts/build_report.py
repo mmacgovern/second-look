@@ -4,8 +4,8 @@ Every number is read at build time from the project's own outputs:
   docs/cost_results.json, docs/quality_vs_cost.json, docs/redteam_results.json,
   docs/cost_results_default_effort.json, earlier results in git history,
   the demo recordings (one real run, replayed for $0), the sample personas' Facts JSON,
-  and AI_Prompts.md. Anything that does not exist yet (for example docs/user_test_results.md)
-  is shown as a visible TODO instead of a number.
+  and AI_Prompts.md. Anything that does not exist yet is shown as a visible TODO instead of a number.
+  No user study was run, so no user numbers appear anywhere.
 
 Usage:
     python scripts/build_report.py
@@ -205,7 +205,6 @@ def build() -> str:
     default_effort = load_json(DOCS / "cost_results_default_effort.json")
     low_effort = git_json(LOW_EFFORT_COMMIT, "docs/cost_results.json")
     live_redteam = git_json(LIVE_REDTEAM_COMMIT, "docs/redteam_results.json")
-    user_test = (DOCS / "user_test_results.md").read_text(encoding="utf-8") if (DOCS / "user_test_results.md").exists() else None
     run = real_run()
     pn = persona_numbers()
     log = prompt_log()
@@ -255,7 +254,6 @@ def build() -> str:
     <li>Fear: a repeat of the {esc(pn['mid_gfc']['scenario'])} would have cut the mid-career portfolio by
     {pn['mid_gfc']['max_drawdown_pct']}% (${pn['mid_gfc']['max_drawdown_usd']:,}) at the worst point. People who sold near
     the bottom locked that in.</li>
-    <li>Time and frustration: {todo("time spent by real users today (from the user test)")}.</li>
     <li>How many people this affects: {todo("public data on how many households hold several funds without an advisor, with source")}.</li>
   </ul>
   <p><strong>Why anyone should care.</strong> These are expensive, slow-to-notice mistakes made by people who are trying
@@ -290,7 +288,8 @@ def build() -> str:
   <p><strong>Said honestly:</strong> professionals and paid tools go deeper than this (full holdings instead of top 10,
   tax-lot detail, live account links). Second Look's contribution is a free, explainable, guard-railed second opinion:
   the AI is used only to explain, a verifier checks every number it writes, and a safe template replaces anything that
-  fails. Whether that is enough for real users is untested ({todo("user test results")}).</p>
+  fails. Whether that is enough for real users has not been measured: no user study was run, and running one
+  is the first next step (Section 8).</p>
 </section>"""
 
     # --- 4 -----------------------------------------------------------------------
@@ -453,22 +452,49 @@ def build() -> str:
 </section>"""
 
     # --- 7 -----------------------------------------------------------------------
-    ut = (f"<pre>{esc(user_test[:1500])}</pre>" if user_test else
-          f"<p>{todo('docs/user_test_results.md does not exist yet: run the user test (time to find hidden concentration with and without the app, comprehension at each fluency level, trust ratings) and record the results there')}</p>")
+    m_wo, m_w = cost["monthly"]["without_cache"], cost["monthly"]["with_cache"]
+    est = '<span class="est">estimate</span>'
+    cost_rows = [
+        ["Cost of one full analysis", usd(pa["mean_usd"], 4), "Measured", "docs/cost_results.json"],
+        ["Cost of one analysis with the response cache", usd(cost["response_cache"]["mean_usd_per_analysis"], 4), "Measured",
+         "docs/cost_results.json"],
+    ] + [[f"Monthly cost, {u['users']:,} users", f"{usd(u['total_usd'])} ({usd(uc['total_usd'])} with cache)",
+          f"{est}: assumes 2 analyses per user per month", "docs/cost_results.json"]
+         for u, uc in zip(m_wo["users"], m_w["users"])]
+    persona_rows = []
+    for name, label in (("beginner", "Starting out"), ("midcareer", "Mid-career"), ("retiree", "Retired")):
+        f = persona_facts(name)
+        fees, top = f["fees"], f["look_through"]["top_companies"][0]
+        p30 = fees["projection"][-1]
+        direct = top.get("via_pct", {}).get("direct")
+        persona_rows.append([
+            label, usd(f["portfolio"]["total_usd"], 0), f"{fees['weighted_expense_ratio_pct']}%", usd(fees["annual_fees_usd"], 0),
+            f"{usd(p30['fees_cost_usd'], 0)} ({est})",
+            f"{esc(top['name'])}: {top['pct']}%" + (f" ({direct}% held directly)" if direct is not None else " (not broken down)"),
+        ])
     s7 = f"""
 <section>
   <h2>7. Impact</h2>
-  <h3>User test</h3>
-  {ut}
-  <h3>Careful estimates from the sample personas</h3>
-  {table(["What the app surfaces", "Number", "Source"], [
-      ["Apple share of the mid-career portfolio, counting funds vs held directly", f"{pn['apple']['pct']}% vs {pn['apple']['via_pct'].get('direct')}%", "Facts JSON, mid-career sample"],
-      ["Largest fund overlap in the mid-career sample", f"{esc(pn['overlap']['funds'])}: {pn['overlap']['overlap_pct']}% shared", "Facts JSON, mid-career sample"],
-      ["Retiree fees over 30 years at 6% (and the part above index funds)", f"${pn['ret_fees30']['fees_cost_usd']:,} (${pn['ret_fees30']['extra_vs_baseline_usd']:,})", "Facts JSON, retiree sample"],
-      ["Cost to run one analysis", usd(pa["mean_usd"], 4), "docs/cost_results.json"],
-  ])}
-  <p>These are illustrations from made-up personas, not measured outcomes. Real impact needs the user test and a pilot:
-  {todo("pilot results")}; {todo("public data on fee and concentration mistakes among self-directed investors, with source")}.</p>
+  <p>Every number below is either measured or computed by the app's Python engine from the sample portfolios. Anything
+  that depends on an assumption is marked <span class="est">estimate</span>. The sample people are made up; their
+  holdings use real tickers and real closing prices.</p>
+  <h3>Cost to run</h3>
+  {table(["", "Number", "Type", "Source"], cost_rows)}
+  <h3>What the app surfaces in the sample portfolios</h3>
+  {table(["Sample", "Portfolio", "Weighted fee", "Fees this year", "Fees over 30 years", "Largest company, counting funds"], persona_rows)}
+  <p class="note">Fees over 30 years assume 6% growth a year before fees and no new deposits. Source: the Facts JSON the
+  app computes for each sample (<code>secondlook/demo_runs.py</code>).</p>
+  <h3>The fee figures from Section 2</h3>
+  <ul>
+    <li>The retiree sample pays {pn['ret_er']}% a year in fund fees; over {pn['ret_fees30']['years']} years that is about
+    ${pn['ret_fees30']['fees_cost_usd']:,} ({est}), of which ${pn['ret_fees30']['extra_vs_baseline_usd']:,} is more than
+    index funds would charge ({est}).</li>
+    <li>Its costliest fund, GFACX ({pn['gfacx']['expense_ratio_pct']}%), costs ${pn['gfacx']['annual_usd']:,} this year.</li>
+    <li>In the mid-career sample, Apple is {pn['apple']['pct']}% of the portfolio counting funds, against
+    {pn['apple']['via_pct'].get('direct')}% held directly.</li>
+  </ul>
+  <p><strong>A user study was not run</strong>, so there are no measured numbers on time saved, understanding or trust.
+  Running one is the first item in the next steps (Section 8).</p>
 </section>"""
 
     # --- 8 -----------------------------------------------------------------------
@@ -481,15 +507,17 @@ def build() -> str:
     <li>Prices come from Yahoo Finance (unofficial) with an offline snapshot through 2026-10-16; sample portfolios always use the snapshot.</li>
     <li>The retirement plan is simple: constant real returns, a flat 15% tax on pre-tax accounts and no other taxes.</li>
     <li>The glide-path reference and the risk-profile ranges are placeholders until a cited source is added.</li>
-    <li>The stricter plan-range rule makes the model verifier send more first drafts back for a rewrite; its reasons are not logged yet.</li>
+    <li>The stricter plan-range rule makes the model verifier send more first drafts back for a rewrite. Its reasons are now
+    recorded on the Admin page, but the rule has not been tuned yet.</li>
     <li>Demo mode has saved answers only for the three samples with their default answers; uploads get the standard summary.</li>
-    <li>Not yet tested with real users, not deployed online, macOS setup unverified.</li>
+    <li>No user study has been run; the app is not deployed online; the macOS setup is untested.</li>
   </ul>
   <h3>With another month</h3>
   <ul>
+    <li><strong>Run a user study (5-6 people, timed against a spreadsheet, with a comprehension check).</strong></li>
     <li>Full fund holdings from fund filings instead of top 10.</li>
-    <li>Log and tune the verifier's reasons to cut rewrites; run the MODEL_SMART quality comparison.</li>
-    <li>A proper user test and a small pilot; deploy with real secret handling.</li>
+    <li>Tune the verifier using its recorded reasons to cut rewrites; run the MODEL_SMART quality comparison.</li>
+    <li>Deploy online with proper secret handling.</li>
     <li>Monte Carlo ranges instead of three fixed scenarios; basic tax awareness.</li>
     <li>Parking-lot ideas: {todo("add the parking-lot list (none is recorded in the repository yet)")}</li>
   </ul>
@@ -503,7 +531,9 @@ def build() -> str:
         p["results"] += e["results"]
     rows = [["Prompts 0-1 (setup)", "2", "Workspace, .gitignore and guardrails (before the log existed; see the hand-entry section)"]]
     for phase, p in phases.items():
-        produced = " ".join(r.split(";")[0].rstrip(".") + "." for r in p["results"][:3]) or "No Result line under this entry; see AI_Prompts.md."
+        # first clause of each Result line, without bracketed details (the full text stays in AI_Prompts.md)
+        clauses = [re.sub(r"\s*\([^)]*\)", "", r.split(";")[0]).rstrip(".") + "." for r in p["results"][:3]]
+        produced = " ".join(clauses) or "No Result line under this entry; see AI_Prompts.md."
         rows.append([esc(phase), p["count"], esc(produced[:400])])
     log_link = f'<a href="{esc(REPO_URL)}/blob/main/AI_Prompts.md">AI_Prompts.md</a>' if REPO_URL else '<code>AI_Prompts.md</code> in the repository root'
     appendix = f"""
@@ -522,6 +552,7 @@ h1{font-size:44px;color:var(--navy);margin:8px 0}h2{color:var(--navy);font-size:
 h3{color:var(--navy);font-size:18px;margin:22px 0 8px}h4{margin:0 0 6px;color:var(--navy)}
 .kicker{color:var(--teal);font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:13px;margin:0}
 .lede{font-size:19px;color:#334155}.note{font-size:13px;color:var(--slate)}
+.est{background:#E6F3F4;border:1px solid #9CCFD3;border-radius:4px;padding:0 5px;font-size:12px;color:#0E5F68}
 .todo{background:#FFF4D6;border:1px solid #E5B94B;border-radius:4px;padding:1px 6px;font-size:13px;color:#7A5300}
 table{width:100%;border-collapse:collapse;margin:10px 0 14px;font-size:13.5px}th,td{border:1px solid #DCE3EC;padding:6px 8px;text-align:left;vertical-align:top}
 th{background:var(--mist);color:var(--navy)}table.small{font-size:12px}table.compare td:first-child{font-weight:600;width:22%}

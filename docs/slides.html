@@ -20,7 +20,8 @@ h1{font-size:110px;margin:8px 0 18px;letter-spacing:-.02em}h2{font-size:52px;mar
 .shots figcaption{font-size:24px;text-align:center;margin-top:10px}
 .split{display:flex;gap:44px;align-items:flex-start}.split>div:first-child{flex:0 0 330px}.bars{flex:1;display:flex;flex-direction:column;gap:18px}
 .bar{display:grid;grid-template-columns:340px 1fr 70px;align-items:center;gap:14px;font-size:22px}.track{height:22px;background:var(--mist);border-radius:11px;overflow:hidden}
-.fill{height:100%;background:var(--teal)}.todo{background:#FFF4D6;border:1px solid #E5B94B;border-radius:6px;padding:2px 10px;color:#7A5300}
+.fill{height:100%;background:var(--teal)}.est{font-size:15px;background:#E6F3F4;color:#0E5F68;border-radius:5px;padding:1px 7px;vertical-align:middle}
+.todo{background:#FFF4D6;border:1px solid #E5B94B;border-radius:6px;padding:2px 10px;color:#7A5300}
 .ut{font-size:18px;white-space:pre-wrap}
 #nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:2}
 #nav button{background:#13294B;color:#F3F6FA;border:1px solid #2B4269;border-radius:8px;padding:6px 14px;font-size:16px;cursor:pointer}
@@ -84,8 +85,13 @@ h1{font-size:110px;margin:8px 0 18px;letter-spacing:-.02em}h2{font-size:52px;mar
 <div class="stat"><div class="v">$11.26</div><div class="l">same, with response cache</div></div></div>
 <p class="src">Measured live, 27 analyses. Source: cost_results.json</p></section><section class="slide " id="s7" data-n="7"><h2>Safety</h2>
 <div class="split"><div><div class="stat"><div class="v">63/63</div><div class="l">red-team cases passed</div></div><p class="src">53/53 on the live model</p></div>
-<div class="bars"><div class="bar"><span>Attack prompts, Pause Button</span><div class="track"><div class="fill" style="width:100%"></div></div><b>23/23</b></div><div class="bar"><span>Attack prompts, pasted text</span><div class="track"><div class="fill" style="width:100%"></div></div><b>23/23</b></div><div class="bar"><span>Malicious CSVs</span><div class="track"><div class="fill" style="width:100%"></div></div><b>4/4</b></div><div class="bar"><span>Wrong numbers caught</span><div class="track"><div class="fill" style="width:100%"></div></div><b>10/10</b></div><div class="bar"><span>Bad profile input</span><div class="track"><div class="fill" style="width:100%"></div></div><b>3/3</b></div></div></div></section><section class="slide " id="s8" data-n="8"><h2>Impact: the numbers</h2><p class="lead"><span class="todo">TODO: user test numbers: docs/user_test_results.md does not exist yet</span></p></section><section class="slide " id="s9" data-n="9"><h2>What&#x27;s next</h2>
-<ul class="big"><li>Full fund holdings, not top 10</li><li>Real user test and pilot</li>
+<div class="bars"><div class="bar"><span>Attack prompts, Pause Button</span><div class="track"><div class="fill" style="width:100%"></div></div><b>23/23</b></div><div class="bar"><span>Attack prompts, pasted text</span><div class="track"><div class="fill" style="width:100%"></div></div><b>23/23</b></div><div class="bar"><span>Malicious CSVs</span><div class="track"><div class="fill" style="width:100%"></div></div><b>4/4</b></div><div class="bar"><span>Wrong numbers caught</span><div class="track"><div class="fill" style="width:100%"></div></div><b>10/10</b></div><div class="bar"><span>Bad profile input</span><div class="track"><div class="fill" style="width:100%"></div></div><b>3/3</b></div></div></div></section><section class="slide " id="s8" data-n="8"><h2>Impact: the numbers</h2>
+<div class="stats"><div class="stat"><div class="v">$0.0016</div><div class="l">per analysis, measured</div></div>
+<div class="stat"><div class="v">$32.34</div><div class="l">a month, 10,000 users <span class="est">estimate</span></div></div></div>
+<div class="stats"><div class="stat"><div class="v">$204,147</div><div class="l">retiree fees, 30 years <span class="est">estimate</span></div></div>
+<div class="stat"><div class="v">13.3%</div><div class="l">Apple via funds (7.6% direct)</div></div></div>
+<p class="src">Sample personas. No user study yet: first next step.</p></section><section class="slide " id="s9" data-n="9"><h2>What&#x27;s next</h2>
+<ul class="big"><li>Run a user study</li><li>Full fund holdings, not top 10</li>
 <li>Tune the verifier to cut rewrites</li><li>Deploy online</li></ul></section></div>
 <div id="nav"><button id="prev" aria-label="Previous slide">&larr;</button><button id="next" aria-label="Next slide">&rarr;</button></div>
 <script>

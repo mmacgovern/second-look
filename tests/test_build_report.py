@@ -41,9 +41,25 @@ def test_numbers_come_from_cost_and_redteam_results(page):
 
 
 def test_missing_inputs_are_todo_not_numbers(page):
-    if not (ROOT / "docs" / "user_test_results.md").exists():
-        assert "TODO: docs/user_test_results.md does not exist yet" in page
     assert "TODO: GitHub repository link" in page or br.REPO_URL
+
+
+def test_no_user_test_todos_and_study_is_first_next_step(page):
+    lowered = page.lower()
+    assert "user_test_results" not in page and "todo: user" not in lowered and "pilot results" not in lowered
+    assert "A user study was not run" in page
+    next_steps = page[page.index("<h3>With another month</h3>"):]
+    first = next_steps[next_steps.index("<li>"):next_steps.index("</li>")]
+    assert "Run a user study (5-6 people, timed against a spreadsheet, with a comprehension check)" in first
+
+
+def test_impact_uses_measured_and_persona_numbers(page):
+    cost = json.loads((ROOT / "docs" / "cost_results.json").read_text(encoding="utf-8"))
+    impact = page[page.index("<h2>7. Impact</h2>"):page.index("<h2>8. Limits")]
+    for u in cost["monthly"]["without_cache"]["users"]:
+        assert f"${u['total_usd']:,.2f}" in impact
+    assert impact.count('class="est"') >= 5  # assumption-based numbers are labelled
+    assert "Starting out" in impact and "Mid-career" in impact and "Retired" in impact
 
 
 def test_required_pieces(page):

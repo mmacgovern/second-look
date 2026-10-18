@@ -1,8 +1,7 @@
 """Build docs/slides.html: a 9-slide, 16:9, self-contained deck in the app's theme.
 
 Numbers are read at build time from docs/cost_results.json, docs/redteam_results.json,
-docs/user_test_results.md (shown as TODO while it does not exist) and the sample personas'
-Facts JSON. Arrow keys, space, Page Up/Down, Home/End and clicks move between slides.
+and the sample personas' Facts JSON. No user study was run, so no user numbers appear. Arrow keys, space, Page Up/Down, Home/End and clicks move between slides.
 
 Usage:
     python scripts/build_slides.py
@@ -46,7 +45,6 @@ def slides() -> list[str]:
     cost = br.load_json(br.DOCS / "cost_results.json")
     red = br.load_json(br.DOCS / "redteam_results.json")
     live_red = br.git_json(br.LIVE_REDTEAM_COMMIT, "docs/redteam_results.json")
-    user_test = br.DOCS / "user_test_results.md"
     pn = br.persona_numbers()
     pa = cost["per_analysis"]
     m_without, m_with = cost["monthly"]["without_cache"], cost["monthly"]["with_cache"]
@@ -96,14 +94,17 @@ def slides() -> list[str]:
 <div class="split"><div>{stat(f"{o['passed']}/{o['total']}", "red-team cases passed")}<p class="src">{live}</p></div>
 <div class="bars">{bars}</div></div>"""))
 
-    if user_test.exists():
-        impact = f'<pre class="ut">{br.esc(user_test.read_text(encoding="utf-8")[:600])}</pre>'
-    else:
-        impact = f'<p class="lead">{todo("user test numbers: docs/user_test_results.md does not exist yet")}</p>'
+    est = '<span class="est">estimate</span>'
+    impact = f"""
+<div class="stats">{stat(br.usd(pa['mean_usd'], 4), "per analysis, measured")}
+{stat(br.usd(big['total_usd']), f"a month, {big['users']:,} users {est}")}</div>
+<div class="stats">{stat(f"${pn['ret_fees30']['fees_cost_usd']:,}", f"retiree fees, 30 years {est}")}
+{stat(f"{pn['apple']['pct']}%", f"Apple via funds ({pn['apple']['via_pct'].get('direct')}% direct)")}</div>
+<p class="src">Sample personas. No user study yet: first next step.</p>"""
     s.append(slide(8, "Impact: the numbers", impact))
 
     s.append(slide(9, "What's next", """
-<ul class="big"><li>Full fund holdings, not top 10</li><li>Real user test and pilot</li>
+<ul class="big"><li>Run a user study</li><li>Full fund holdings, not top 10</li>
 <li>Tune the verifier to cut rewrites</li><li>Deploy online</li></ul>"""))
     return s
 
@@ -128,7 +129,8 @@ h1{font-size:110px;margin:8px 0 18px;letter-spacing:-.02em}h2{font-size:52px;mar
 .shots figcaption{font-size:24px;text-align:center;margin-top:10px}
 .split{display:flex;gap:44px;align-items:flex-start}.split>div:first-child{flex:0 0 330px}.bars{flex:1;display:flex;flex-direction:column;gap:18px}
 .bar{display:grid;grid-template-columns:340px 1fr 70px;align-items:center;gap:14px;font-size:22px}.track{height:22px;background:var(--mist);border-radius:11px;overflow:hidden}
-.fill{height:100%;background:var(--teal)}.todo{background:#FFF4D6;border:1px solid #E5B94B;border-radius:6px;padding:2px 10px;color:#7A5300}
+.fill{height:100%;background:var(--teal)}.est{font-size:15px;background:#E6F3F4;color:#0E5F68;border-radius:5px;padding:1px 7px;vertical-align:middle}
+.todo{background:#FFF4D6;border:1px solid #E5B94B;border-radius:6px;padding:2px 10px;color:#7A5300}
 .ut{font-size:18px;white-space:pre-wrap}
 #nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:2}
 #nav button{background:#13294B;color:#F3F6FA;border:1px solid #2B4269;border-radius:8px;padding:6px 14px;font-size:16px;cursor:pointer}

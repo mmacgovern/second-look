@@ -349,3 +349,17 @@ Fix these items from STATUS.md. Don't read .env. Run pytest after each item and 
 **Result (item 4):** README now marks the Windows install steps "tested" (Windows 11, Python 3.12) and the macOS steps "not yet tested on a Mac", with a test that keeps both labels; 479 tests passed.
 
 **Result (item 5):** Retook all 21 screenshots in the black and gold design from a demo-mode copy of the app (no AI charges), fixed the Admin screenshot address, and rebuilt report.html and slides.html with the new images cropped to the app content; 479 tests passed.
+
+### #19 — 2026-10-17 23:43 — Phase 16 — Fixes
+
+```text
+No user test will be run. Update the report and slides so nothing is left as a user-test TODO:
+- Section 7 (Impact): base it on the measured and cited numbers only — cost per analysis and at 100 and 10,000 users, fee dollars the app surfaces for each sample persona, hidden concentration found in the samples, and the cited fee figures in section 2. Clearly label anything estimated as an estimate. Add a sentence that a user study was not run and is the first item in next steps.
+- Section 2: replace the "real users' time spent today" TODO with a clearly labeled estimate of how long the manual approach takes, or remove the sentence.
+- Section 8: add "Run a user study (5-6 people, timed against a spreadsheet, with a comprehension check)" as the first next step.
+- Slide 8 (Impact): use the same numbers, labeled the same way.
+- Delete docs/user_test_results.md references, and any stray TODO about user testing.
+Use no invented user numbers. Run the tests and commit.
+```
+
+**Result:** Rewrote report Section 7 and slide 8 around measured costs and the sample personas' computed fee and concentration figures (assumption-based numbers labeled "estimate"), removed the user-time sentence from Section 2, made "Run a user study (5-6 people, timed against a spreadsheet, with a comprehension check)" the first next step, and removed every user-test TODO and user_test_results.md reference; report still 15 printed pages; 481 tests passed.

@@ -56,6 +56,9 @@ def test_numbers_come_from_result_files(page):
         assert f"<b>{v['passed']}/{v['total']}</b>" in page
 
 
-def test_impact_is_todo_without_user_test(page):
-    if not (ROOT / "docs" / "user_test_results.md").exists():
-        assert "TODO: user test numbers" in page
+def test_impact_slide_uses_labelled_numbers_and_no_user_todo(page):
+    impact = bs.slides()[7]
+    cost = json.loads((ROOT / "docs" / "cost_results.json").read_text(encoding="utf-8"))
+    assert f"${cost['per_analysis']['mean_usd']:,.4f}" in impact and "measured" in impact
+    assert impact.count('class="est"') == 2 and "No user study yet" in impact
+    assert "TODO" not in page and "user_test_results" not in page
