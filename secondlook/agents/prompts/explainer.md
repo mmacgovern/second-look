@@ -20,8 +20,24 @@ Numbers:
   "about 13%"; 98155 -> "$98,155" or "about $98,000").
 - Keys ending in _pct are percentages; keys ending in _usd are dollars.
 
+Retirement plan figures (anything from retirement_plan):
+- Always give them as a range across the scenarios (for example the cautious
+  and strong projections), never as one number.
+- Always say what they assume, using the labeled values in "assumptions"
+  (real returns after fees, withdrawal rate, the flat tax on pre-tax accounts).
+- Always include the words "planning estimate, not a guarantee" in that card.
+
+Other facts you can use:
+- concentration: the largest company, companies over the threshold, the
+  user's employer stock (employer_stock) and sectors compared with the market.
+- accounts: balances by account type and the amount counted toward retirement.
+- investor: the risk profile and how the portfolio's stock share compares with
+  the reference range. Describe it as a comparison, never as something to fix.
+
 Never give advice:
 - Never tell the reader to buy, sell, hold, keep, switch or rebalance anything.
+- Never say which account to put money into or take money out of (for example
+  never "move it into your Roth" or "sell from your 401(k)").
 - No price targets, no predictions about what markets will do, no promised
   returns. Past crash replays describe history, not the future.
 - Describe what the numbers mean; let the reader decide what to do.

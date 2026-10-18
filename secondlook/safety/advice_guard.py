@@ -37,6 +37,14 @@ RULES: list[Rule] = [
     Rule("directive", re.compile(r"\b(?:time to|now is the time to|it'?s time to|better to)\s+(?:buy|sell|get out|cash out|exit)\b", I), True),
     # Imperatives such as "Sell AAPL", "Buy more VOO", "Hold your shares" (case-sensitive verb, ticker or object).
     Rule("directive", re.compile(r"(?:^|[.!:;]\s+|\n)\s*(?:Buy|Sell|Hold|Dump|Short)\s+(?:more\s+|some\s+|all\s+)?(?:of\s+)?(?:[A-Z]{1,5}\b|your\b|the\b|it\b|them\b|now\b)"), True),
+    # Which account to move money into or out of is advice too.
+    Rule("account_directive", re.compile(
+        r"\b(?:mov(?:e|ing)|put(?:ting)?|shift(?:ing)?|transfer(?:ring)?|roll(?:ing)?(?:\s+it)?\s+over|contribut(?:e|ing)|deposit(?:ing)?|invest(?:ing)?)\b[^.?!]{0,40}?"
+        r"\b(?:into|to|in)\s+(?:your|a|an|the)\s+(?:roth(?:\s+ira)?|traditional\s+ira|ira|401\s*\(?k\)?|403\s*\(?b\)?"
+        r"|hsa|taxable(?:\s+account)?|brokerage(?:\s+account)?)", I), True),
+    Rule("account_directive", re.compile(
+        r"\b(?:sell|withdraw|take|pull|cash\s+out|draw\s+down)\b[^.?!]{0,30}?\bfrom\s+(?:your|the|a)\s+"
+        r"(?:roth(?:\s+ira)?|traditional\s+ira|ira|401\s*\(?k\)?|403\s*\(?b\)?|hsa|taxable(?:\s+account)?|brokerage(?:\s+account)?)", I), True),
     Rule("rating", re.compile(r"\bstrong (?:buy|sell)\b|\b(?:buy|sell|hold) rating\b|\b(?:overweight|underweight|outperform) rating\b", I)),
     Rule("price_target", re.compile(r"\bprice target\b|\btarget price\b|\b(?:will|could|should|is going to) (?:hit|reach|trade at) \$?\d", I)),
     Rule("promise", re.compile(r"\bguarantee(?:d|s)?\b|\brisk[- ]free\b|\bcan(?:'|no)?t lose\b|\bsure thing\b|\bno[- ]brainer\b|\bsafe bet\b", I),

@@ -109,21 +109,27 @@ def render_template(facts: dict, fluency: Fluency = "comfortable") -> ExplainerO
                           fact_keys=["crash_replays[0].max_drawdown_pct", "crash_replays[0].max_drawdown_usd"]))
 
     plan = facts.get("retirement_plan")
+    wr = (facts.get("assumptions") or {}).get("withdrawal_rate_pct")
+    wr_text = f" and a {wr}% withdrawal rate" if wr is not None else ""
     if plan and plan.get("status") in ("retired", "retiring_now") and "counted_balance_usd" in plan:
         cards.append(Card(
             title=w["plan_title"],
-            body=f"The balance counted toward retirement is ${_usd(plan['counted_balance_usd'])}, "
-                 f"against a target of ${_usd(plan['target_nest_egg_usd'])}.",
+            body=f"Planning estimate, not a guarantee: the balance counted toward retirement is "
+                 f"${_usd(plan['counted_balance_usd'])}, against a target of ${_usd(plan['target_nest_egg_usd'])}, "
+                 f"assuming today's dollars{wr_text}.",
             fact_keys=["retirement_plan.counted_balance_usd", "retirement_plan.target_nest_egg_usd"],
         ))
     elif plan and plan.get("scenarios"):
-        i = 1 if len(plan["scenarios"]) > 1 else 0
-        s = plan["scenarios"][i]
+        lo, hi = plan["scenarios"][0], plan["scenarios"][-1]
         cards.append(Card(
             title=w["plan_title"],
-            body=w["plan"].format(net=s["net_return_pct"], proj=_usd(s["projected_at_retirement_usd"]),
-                                  target=_usd(plan["target_nest_egg_usd"])),
-            fact_keys=[f"retirement_plan.scenarios[{i}].projected_at_retirement_usd", "retirement_plan.target_nest_egg_usd"],
+            body=(f"Planning estimate, not a guarantee: between ${_usd(lo['projected_at_retirement_usd'])} and "
+                  f"${_usd(hi['projected_at_retirement_usd'])} at retirement, against a target of "
+                  f"${_usd(plan['target_nest_egg_usd'])}, assuming {lo['net_return_pct']}% to {hi['net_return_pct']}% "
+                  f"a year after inflation and fees{wr_text}."),
+            fact_keys=["retirement_plan.scenarios[0].projected_at_retirement_usd",
+                       f"retirement_plan.scenarios[{len(plan['scenarios']) - 1}].projected_at_retirement_usd",
+                       "retirement_plan.target_nest_egg_usd"],
         ))
 
     if not cards:

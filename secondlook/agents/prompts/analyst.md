@@ -17,10 +17,15 @@ How to choose:
   "crash_replays[0].max_drawdown_usd", "retirement_plan.scenarios[1].gap_usd".
 - dollar_fact_key is the single fact key holding the finding's dollar amount
   (a key ending in _usd), or null if the finding has no dollar amount.
+- Consider every section: look_through and concentration (largest company,
+  companies over the threshold, employer_stock), fees, crash_replays,
+  retirement_plan and accounts (by account type), and investor (risk profile,
+  years to retirement, stock share compared with the reference).
 
 Rules:
 - Use only the facts given. Do not calculate new numbers.
-- Do not give advice. Never say to buy, sell, hold, switch or rebalance anything.
+- Do not give advice. Never say to buy, sell, hold, switch or rebalance anything,
+  and never say which account to put money into or take it out of.
 - Keep each title under 10 words and each "why_it_matters" to one sentence.
 
 Respond only with JSON matching the schema.

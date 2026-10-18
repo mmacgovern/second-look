@@ -225,11 +225,77 @@ def test_verifier_checks_plan_numbers():
     from secondlook.demo_runs import persona_facts
 
     facts = persona_facts("midcareer")
-    target = facts["retirement_plan"]["target_nest_egg_usd"]
-    good = ExplainerOutput(cards=[{"title": "Plan", "body": f"The target nest egg is ${target:,}.",
-                                   "fact_keys": ["retirement_plan.target_nest_egg_usd"]}],
+    plan = facts["retirement_plan"]
+    target = plan["target_nest_egg_usd"]
+    lo, hi = plan["scenarios"][0]["projected_at_retirement_usd"], plan["scenarios"][-1]["projected_at_retirement_usd"]
+    body = (f"Planning estimate, not a guarantee: between ${lo:,} and ${hi:,} at retirement against a ${target:,} target, "
+            "assuming the listed real returns after fees.")
+    good = ExplainerOutput(cards=[{"title": "Plan", "body": body, "fact_keys": ["retirement_plan.target_nest_egg_usd"]}],
                            advisor_questions=["What would you change in my plan?", "How realistic is my target?"])
     assert verifier.python_checks(facts, good).passed
-    bad = good.model_copy(update={"cards": [good.cards[0].model_copy(update={"body": "The target nest egg is $2,500,000."})]})
+    bad = good.model_copy(update={"cards": [good.cards[0].model_copy(update={"body": body.replace(f"{target:,}", "2,500,000")})]})
     result = verifier.python_checks(facts, bad)
     assert not result.passed and result.unmatched_numbers == ["$2,500,000"]
+
+
+
+# --- plan figures: range + assumptions + label (catch-up phase 5) --------------
+
+def _plan_card(body, keys=("retirement_plan.target_nest_egg_usd",)):
+    return ExplainerOutput(cards=[{"title": "Plan", "body": body, "fact_keys": list(keys)}],
+                           advisor_questions=["What would you change in my plan?", "How realistic is my target?"])
+
+
+@pytest.mark.parametrize("body, missing", [
+    ("The target nest egg is $1,974,359.", {"label", "range", "assumptions"}),
+    ("Planning estimate, not a guarantee: the target is $1,974,359, assuming a 3.9% withdrawal rate.", {"range"}),
+    ("Between $1,251,118 and $1,974,359, assuming 3.95% returns.", {"label"}),
+    ("Planning estimate, not a guarantee: between $1,251,118 and $1,974,359.", {"assumptions"}),
+    ("Planning estimate, not a guarantee: between $1,251,118 and $1,974,359, assuming 3.95% returns.", set()),
+])
+def test_plan_rule_by_part(body, missing):
+    # FACTS retirement_plan: target 1,974,359; middle projection 1,251,118; gap 723,241
+    problems = verifier.plan_problems(FACTS, _plan_card(body))
+    found = {word for word in ("label", "range", "assumptions") if any(word in p for p in problems)}
+    assert found == missing, problems
+
+
+def test_plan_rule_ignores_cards_without_plan_figures():
+    assert verifier.plan_problems(FACTS, ExplainerOutput(**GOOD_DRAFT)) == []
+
+
+@pytest.mark.parametrize("name", ["beginner", "midcareer", "retiree"])
+@pytest.mark.parametrize("fluency", ["new", "comfortable", "pro"])
+def test_templates_meet_the_plan_rule_for_every_persona(name, fluency):
+    from secondlook.agents.template import render_template
+    from secondlook.demo_runs import persona_facts
+
+    facts = persona_facts(name)
+    draft = render_template(facts, fluency)
+    check = verifier.python_checks(facts, draft)
+    assert check.passed, check.reasons
+    plan_card = next(c for c in draft.cards if "retirement_plan.target_nest_egg_usd" in c.fact_keys)
+    assert "Planning estimate, not a guarantee" in plan_card.body and "assuming" in plan_card.body
+
+
+def test_prompts_mention_new_facts_and_account_rule():
+    assert "employer_stock" in system_prompt("analyst") and "accounts" in system_prompt("analyst")
+    assert "planning estimate, not a guarantee" in system_prompt("explainer")
+    assert "move it into your Roth" in system_prompt("explainer")
+    assert "investor_context" in system_prompt("pause") and "which account" in system_prompt("pause")
+    assert "planning estimate" in system_prompt("verifier")
+
+
+def test_single_number_plan_card_is_rewritten_with_fake_llm(make_ctx):
+    from secondlook import orchestrator
+
+    bad = {"cards": [{"title": "Plan", "body": "The target is $1,974,359.", "fact_keys": ["retirement_plan.target_nest_egg_usd"]}],
+           "advisor_questions": ["What would you change?", "How realistic is it?"]}
+    good = {"cards": [{"title": "Plan", "body": "Planning estimate, not a guarantee: between $1,251,118 and $1,974,359, "
+                       "assuming the listed returns.", "fact_keys": ["retirement_plan.target_nest_egg_usd"]}],
+            "advisor_questions": ["What would you change?", "How realistic is it?"]}
+    ctx = make_ctx(reply(ANALYST_REPLY), reply(bad), reply(good), reply(PASS))
+    result = orchestrator.run_analysis(FACTS, "comfortable", ctx)
+    assert result.source == "ai_rewrite"
+    assert any("range" in r for r in result.verifier_reasons)
+    assert any("planning estimate" in r for r in result.verifier_reasons)

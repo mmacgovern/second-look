@@ -113,3 +113,35 @@ def test_negated_promises_pass(text):
 
 def test_promise_still_caught_after_a_negated_one():
     assert not advice_guard.is_safe("Not guaranteed today, but this fund is a guaranteed winner long term.")
+
+
+
+# --- account advice (catch-up phase 5) ---------------------------------------
+
+@pytest.mark.parametrize("text", [
+    "Move it into your Roth before the end of the year.",
+    "You could put the extra cash in your Roth IRA.",
+    "Consider rolling it over to an IRA.",
+    "Contribute more to your 401(k).",
+    "Sell from your 401k first.",
+    "Withdraw the money from your taxable account.",
+    "Take it from the traditional IRA.",
+])
+def test_flags_account_advice(text):
+    assert "account_directive" in {h.rule for h in advice_guard.check(text)}, text
+
+
+@pytest.mark.parametrize("text", [
+    "Your Roth IRA holds $44,837.",
+    "Pre-tax 401(k) balances are counted after a flat 15% tax.",
+    "Contributions of $23,500 a year are assumed.",
+    "Money invested in a taxable account counts in full.",
+    "Balances by account type: 401(k)/403(b), Roth IRA, taxable.",
+])
+def test_neutral_account_descriptions_pass(text):
+    assert advice_guard.check(text) == [], text
+
+
+def test_account_questions_allowed_for_an_advisor():
+    assert advice_guard.is_safe("Should I contribute more to my 401(k) or my Roth IRA?", allow_questions=True)
+    assert advice_guard.is_safe("Which account should I sell from first?", allow_questions=True)

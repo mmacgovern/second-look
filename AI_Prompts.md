@@ -256,3 +256,5 @@ Run the full test suite, take fresh screenshots of every tab for all 3 personas 
 **Result:** Catch-up phase 3: quant modules already existed; added the employer-stock flag (UserProfile.employer_ticker, concentration and Facts JSON), split the mid-career and retiree personas into 3 accounts each (VTI held in two accounts and added up in the household view), and a printed PMT example (=PMT(5%, 20, -100000, 1000000) = -22,218.33); all 407 pytest tests passed.
 
 **Result:** Catch-up phase 4: UI screens already existed; added an optional employer-stock field to About you (shown in X-Ray concentration) and gave the Pause Button the investor's years to retirement, risk profile and the range of past recovery times (in the UI and in the pause facts); all 410 pytest tests passed.
+
+**Result:** Catch-up phase 5: updated the analyst, explainer, verifier and pause prompts for plan, concentration, employer, risk-profile and account facts; the verifier now rejects plan figures without a range, assumptions and the "planning estimate" label; templates comply; advice_guard flags account directives (move it into your Roth, sell from your 401k); all 440 pytest tests passed.
