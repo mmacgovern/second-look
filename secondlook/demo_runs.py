@@ -1,5 +1,5 @@
 """The fixed set of runs that demo mode can replay: 3 sample personas x 3 fluency
-levels (analysis and Possible Shifts), plus 5 Pause Button scenarios.
+levels (analysis, Possible Shifts and Try a Shift), plus 5 Pause Button scenarios.
 
 Facts are built from the offline snapshot (never live prices), so every prompt,
 and therefore every demo key, is the same when recording and when replaying.
@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from secondlook import orchestrator
 from secondlook.agents.base import AgentContext
+from secondlook.quant import sandbox as sandbox_engine
 from secondlook.quant import shifts as shift_rules
 from secondlook.quant.benchmark import load_benchmark
 from secondlook.quant.facts import build_facts, load_market_inputs
@@ -33,7 +34,7 @@ PAUSE_SCENARIOS: list[tuple[str, Action]] = [
 
 class RunResult(BaseModel):
     label: str
-    kind: Literal["analysis", "pause", "shifts"]
+    kind: Literal["analysis", "pause", "shifts", "sandbox"]
     source: str            # "ai", "ai_rewrite", "template" or (shifts with nothing to suggest) "none"
     steps: list[str] = []
     note: str | None = None
@@ -52,6 +53,14 @@ def persona_shifts(name: str) -> tuple[dict, list[str], list[str]]:
     profiles, _ = load_market_inputs(household.portfolio(), prefer_live=False, extra=["VOO", "VTI", "QQQ"])
     return shift_rules.prepare(household.portfolio().values_by_symbol(), profiles, load_benchmark(),
                                household=household, risk_label=risk_profile(user, list(answers)).label)
+
+
+def persona_sandbox(name: str) -> tuple[dict, list[str]]:
+    """The Try a Shift facts and banned names for a sample persona, exactly as the app builds them."""
+    user, household, answers = load_persona(name)
+    profiles, adj = load_market_inputs(household.portfolio(), prefer_live=False, extra=["VOO", "VTI", "QQQ"])
+    _, facts, banned = sandbox_engine.prepare(household.portfolio().values_by_symbol(), profiles, adj, load_benchmark())
+    return facts, banned
 
 
 def run_all(
@@ -81,6 +90,14 @@ def run_all(
             r = orchestrator.run_shifts(facts, details, fluency, session(len(results)), banned)
             results.append(RunResult(label=f"{name} / shifts / {fluency}", kind="shifts", source=r.source,
                                      steps=["shifts"] if r.source != "none" else [], note=r.note))
+            if on_result:
+                on_result(results[-1])
+    for name in personas:
+        facts, banned = persona_sandbox(name)
+        for fluency in fluencies:
+            r = orchestrator.run_sandbox(facts, fluency, session(len(results)), banned)
+            results.append(RunResult(label=f"{name} / try a shift / {fluency}", kind="sandbox", source=r.source,
+                                     steps=["sandbox"], note=r.note))
             if on_result:
                 on_result(results[-1])
     for name, action in pauses:

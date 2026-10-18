@@ -155,3 +155,15 @@ def test_possible_shifts_tab_has_ai_disclaimer_and_no_securities(monkeypatch):
     assert 1 <= len(cards) <= 4
     for card in cards:
         assert "AAPL" not in card and "Apple" not in card and "VOO" not in card
+
+
+def test_try_a_shift_tab_shows_three_mixes_and_hindsight_note(monkeypatch):
+    at = open_app(monkeypatch, tab="Try a Shift")
+    text = " ".join(m.value for m in at.markdown)
+    assert "Pretend money only." in text
+    for name in ("Conservative", "Moderate", "Risky"):
+        assert name in text
+    assert any("hindsight built in" in c.value for c in at.caption)
+    assert [m.label for m in at.metric if m.label == "Value today"] == ["Value today"] * 3
+    for tick in ("SPY", "EFA", "AGG"):  # stand-ins stay internal
+        assert tick not in text

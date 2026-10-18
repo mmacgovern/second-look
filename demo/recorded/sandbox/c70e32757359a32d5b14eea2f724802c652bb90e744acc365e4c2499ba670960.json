@@ -1,0 +1,6 @@
+{
+ "agent": "sandbox",
+ "text": "{\"summary\":\"Over this period, the mixes with more stocks ended with more money, but they also fell further during downturns. These are results from a replay of past markets, not a forecast; past results do not predict future results.\",\"points\":[\"The conservative mix, with more US bonds and cash, ended at $2,397 with a 4.5% yearly return. Its worst drop was 17.6%; the drops were 17.6% in the 2008-09 financial crisis, 11.7% in the Covid crash, and 15.4% in the 2022 decline.\",\"The moderate mix ended at $3,915 with a 7.1% yearly return and a 36.1% worst drop. Its drops were 36.1% in the 2008-09 financial crisis, 21.5% in the Covid crash, and 20.2% in the 2022 decline.\",\"The risky mix, with more US and international stocks, ended at $5,637 with a 9.1% yearly return. It had the largest worst drop, 54.2%, and fell 54.2% in the 2008-09 financial crisis, 32.0% in the Covid crash, and 24.9% in the 2022 decline.\",\"Your portfolio ended at $4,630 with an 8.1% yearly return and a 40.3% worst drop. Its drops were 40.3% in the 2008-09 financial crisis, 24.6% in the Covid crash, and 21.5% in the 2022 decline. Its replay has hindsight built in: today’s holdings are replayed backward, so this is not a fair comparison with the mixes.\"]}",
+ "input_tokens": 882,
+ "output_tokens": 378
+}

@@ -18,7 +18,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
-from secondlook.agents import analyst, explainer, intake, pause, shifts, verifier
+from secondlook.agents import analyst, explainer, intake, pause, sandbox, shifts, verifier
 from secondlook.agents.analyst import RankedFinding
 from secondlook.agents.base import AgentContext, Fluency
 from secondlook.agents.explainer import Card, ExplainerInput, ExplainerOutput
@@ -175,6 +175,42 @@ def run_shifts(shifts_facts: dict, details: list[str], fluency: Fluency = "comfo
     except (BudgetExceeded, LLMError, ValidationError, ValueError) as exc:
         log.warning("Shifts explanation fell back to template: %r", exc)
         return shifts_template(shifts_facts, details).model_copy(update={"note": _note_for(exc)})
+
+
+class SandboxExplanation(BaseModel):
+    summary: str
+    points: list[str]
+    source: Literal["ai", "template"]
+    reasons: list[str] = []
+    note: str | None = None
+
+
+def sandbox_template(sandbox_facts: dict) -> SandboxExplanation:
+    """A standard summary built straight from the replay numbers."""
+    rows = sandbox_facts["strategies"]
+    points = [f"{r['name']}: ${r['value_today_usd']:,} today, {r['yearly_return_pct']}% a year, worst drop "
+              f"{r['worst_drop_pct']}%." for r in rows]
+    summary = (f"A pretend ${sandbox_facts['pretend_amount_usd']:,} replayed from {sandbox_facts['period']}: mixes with "
+               "more stocks grew more and fell further in crashes. Your portfolio's replay has hindsight built in. "
+               "Past results do not predict future results.")
+    return SandboxExplanation(summary=summary, points=points, source="template")
+
+
+def run_sandbox(sandbox_facts: dict, fluency: Fluency = "comfortable", ctx: AgentContext | None = None,
+                banned_names: list[str] | None = None) -> SandboxExplanation:
+    """One AI call to explain the sandbox replay, checked in Python; falls back to the standard summary."""
+    ctx = ctx or AgentContext()
+    try:
+        output = sandbox.run(sandbox.SandboxInput(sandbox_facts=sandbox_facts, fluency=fluency), ctx)
+        problems = sandbox.check(output, sandbox_facts, banned_names or [])
+        if not problems:
+            return SandboxExplanation(summary=output.summary, points=output.points, source="ai")
+        budget.record_rewrite(ctx.session_id, "template", problems, fluency, db_path=ctx.db_path)
+        return sandbox_template(sandbox_facts).model_copy(update={
+            "reasons": problems, "note": "The AI explanation did not pass review, so this is the standard summary."})
+    except (BudgetExceeded, LLMError, ValidationError, ValueError) as exc:
+        log.warning("Sandbox explanation fell back to template: %r", exc)
+        return sandbox_template(sandbox_facts).model_copy(update={"note": _note_for(exc)})
 
 
 def run_intake(text: str, ctx: AgentContext | None = None) -> Portfolio:

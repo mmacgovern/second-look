@@ -1,0 +1,6 @@
+{
+ "agent": "sandbox",
+ "text": "{\"summary\":\"In this replay, mixes with more stocks grew more, but also fell further in crashes. These are past results, and past results do not predict future results.\",\"points\":[\"The conservative mix, with more bonds and cash, grew $1,000 to $2,397, with a 4.5% yearly return. Its worst drop was 17.6%.\",\"The moderate mix grew to $3,915, with a 7.1% yearly return and a 36.1% worst drop. The risky mix grew to $5,637, with a 9.1% yearly return and a 54.2% worst drop.\",\"Your portfolio replay shows $27,701, an 18.3% yearly return and a 56.4% worst drop. It replays today's holdings backward, so it has hindsight built in; it is not a fair comparison with the mixes.\"]}",
+ "input_tokens": 882,
+ "output_tokens": 196
+}

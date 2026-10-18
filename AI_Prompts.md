@@ -404,3 +404,11 @@ Do items 1, 3 and 5: fix the .env location and live default, add a per-agent run
 **Result (item 3 fix):** Fixed the new trace test, which replayed recordings inside the per-test isolation (no recordings there) and now checks the built report instead; 512 tests passed. (Correction: when item 3 was committed, 1 of 512 tests was failing, not all passing.)
 
 **Result (item 5):** Report Section 4 and the README now explain why the agents deliberately have no tools (the tools run first in Python, the verifier checks every draft), backed by this project's own numbers (10 of 10 wrong-number drafts caught; the larger model's first drafts passed the verifier only 11% of the time); report still 15 pages; 513 tests passed.
+
+### #23 — 2026-10-18 08:52 — Phase 20 — Try a shift sandbox
+
+```text
+Build the Try a shift sandbox: a fake $1,000 in conservative / moderate / risky mixes of asset types (index stand-ins, no stock picks), replayed through real history and compared with my portfolio; Python computes, AI explains. Ask before any live AI calls.
+```
+
+**Result:** Added a Try a Shift tab: a pretend $1,000 in conservative / moderate / risky mixes of asset types (index stand-ins, no stock picks) replayed in Python through 2007-2026 history and the 2008, Covid and 2022 crashes next to the user's portfolio (labeled as having hindsight built in), with a log-scale chart, crash table and a checked AI explanation (new sandbox agent); demo re-recorded ($0.0022, 32/32 replay free), screenshots retaken, report Sections 3-4, slides 3 and 5 and README updated; report 15 pages; 524 tests passed.

@@ -1,0 +1,6 @@
+{
+ "agent": "sandbox",
+ "text": "{\"summary\":\"In this replay, mixes with more stocks grew more, but also fell further during bad periods. These are past results, and they do not predict future results.\",\"points\":[\"The conservative mix grew $1,000 to $2,397, with a 4.5% yearly return. Its biggest drop was 17.6%.\",\"The moderate mix grew to $3,915, with a 7.1% yearly return and a biggest drop of 36.1%. The risky mix grew to $5,637, with a 9.1% yearly return and a biggest drop of 54.2%.\",\"The crash drops show the same trade-off: in the 2008–09 financial crisis, the conservative, moderate, and risky mixes fell 17.6%, 36.1%, and 54.2%.\",\"Your portfolio replay grew to $22,642, with a 17.1% yearly return and a biggest drop of 54.2%. It uses today's holdings replayed backward, so it has hindsight built in and is not a fair comparison with the mixes.\"]}",
+ "input_tokens": 882,
+ "output_tokens": 237
+}

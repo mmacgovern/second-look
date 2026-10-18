@@ -1,0 +1,6 @@
+{
+ "agent": "sandbox",
+ "text": "{\"summary\":\"From 2007-01 to 2026-10, the stock-heavier mixes grew more, but also fell further in downturns. These are historical replay results, not a forecast: past results do not predict future results.\",\"points\":[\"The conservative mix ended at $2,397, with a 4.5% yearly return and a 17.6% worst drop; its drops were 17.6% in the 2008-09 financial crisis, 11.7% in the Covid crash, and 15.4% in the 2022 decline.\",\"The moderate mix ended at $3,915, with a 7.1% yearly return and a 36.1% worst drop; its crash drops were 36.1%, 21.5%, and 20.2%, respectively.\",\"The risky mix ended at $5,637, with a 9.1% yearly return and a 54.2% worst drop; its crash drops were 54.2%, 32.0%, and 24.9%, respectively.\",\"Your portfolio replay ended at $27,701, with an 18.3% yearly return and a 56.4% worst drop. Its crash drops were 56.4%, 30.7%, and 32.8%, respectively. This is not a fair comparison with the mixes: today's holdings are replayed backward, so the result has hindsight built in.\"]}",
+ "input_tokens": 882,
+ "output_tokens": 309
+}

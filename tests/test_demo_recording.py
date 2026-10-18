@@ -98,6 +98,9 @@ class RoutingClient(FakeClient):
     def _create(self, **kwargs):
         self.calls.append(kwargs)
         system, user = kwargs["messages"][0]["content"], kwargs["messages"][1]["content"]
+        if system == system_prompt("sandbox"):
+            return reply({"summary": "More stocks grew more and fell further; your replay has hindsight built in.",
+                          "points": ["Mixes trade growth for steadiness.", "Past results do not predict the future."]})
         if system == system_prompt("shifts"):  # one item per computed shift, no numbers
             n = user.count('"kind":')
             return reply({"summary": "A few shifts stand out.",
@@ -120,11 +123,11 @@ def test_record_then_check_demo_end_to_end(ledger, capsys):
 
     files = list(llm.DEMO_DIR.rglob("*.json"))
     by_agent = {a: len(list((llm.DEMO_DIR / a).glob("*.json")))
-                for a in ("analyst", "explainer", "verifier", "pause", "shifts")}
+                for a in ("analyst", "explainer", "verifier", "pause", "shifts", "sandbox")}
     # analyst once per persona (same facts for every fluency), explainer per persona x fluency,
-    # verifier once per persona (same draft and facts), pause once per scenario (5), shifts per persona x fluency
-    assert by_agent == {"analyst": 3, "explainer": 9, "verifier": 3, "pause": 5, "shifts": 9}
-    assert len(files) == 29
+    # verifier once per persona (same draft and facts), pause once per scenario (5), shifts and sandbox per persona x fluency
+    assert by_agent == {"analyst": 3, "explainer": 9, "verifier": 3, "pause": 5, "shifts": 9, "sandbox": 9}
+    assert len(files) == 38
     for f in files:
         text = f.read_text(encoding="utf-8")
         assert ODD_KEY not in text and FAKE_KEY not in text and "test-smart-model" not in text

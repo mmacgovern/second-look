@@ -65,7 +65,8 @@ def slides() -> list[str]:
     s.append(slide(3, "What's new", """
 <ul class="big"><li>Overlap, fees, crash replay and retirement plan in one place</li>
 <li>AI only explains; a verifier checks every number</li>
-<li>Suggests sector and asset shifts, never specific stocks</li></ul>"""))
+<li>Suggests sector and asset shifts, never specific stocks</li>
+<li>Try a shift with pretend $1,000 first</li></ul>"""))
 
     s.append(slide(4, "How the agents work", f"""
 <div class="diagram">{br.ARCH_SVG}</div>
@@ -73,7 +74,7 @@ def slides() -> list[str]:
 
     # (file, caption, top, bottom): the slice of each screenshot that shows the feature
     shots = [("06-midcareer-xray.png", "What you own vs. S&P 500", 0.145, 0.34), ("10-midcareer-top3.png", "Top 3 findings", 0.33, 0.66),
-             ("18-midcareer-pause-sell-all.png", "Pause Button", 0.54, 0.89)]
+             ("22-midcareer-try-a-shift.png", "Try a Shift (pretend $1,000)", 0.20, 0.47)]
     figs = "".join(f"<figure>{br.crop_image(f, c, top, bottom, 700, *br.APP_CONTENT)}<figcaption>{c}</figcaption></figure>"
                    for f, c, top, bottom in shots)
     s.append(slide(5, "Demo", f'<div class="shots">{figs}</div>', "wide"))

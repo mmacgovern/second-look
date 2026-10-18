@@ -13,6 +13,7 @@ import base64
 import hashlib
 import html
 import json
+import math
 import uuid
 from pathlib import Path
 
@@ -23,6 +24,7 @@ import streamlit as st
 from secondlook import budget, demo_runs, orchestrator
 from secondlook.agents.base import AgentContext
 from secondlook.config import get_settings
+from secondlook.quant import sandbox as sandbox_engine
 from secondlook.quant import shifts as shift_rules
 from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, RETIREMENT_TAX_RATE, counted_balance, household_from_csvs
 from secondlook.quant.benchmark import (
@@ -47,7 +49,8 @@ ASSETS, DOCS = ROOT / "assets", ROOT / "docs"
 # Black and gold theme: INK is the main text colour, ACCENT the gold, SURFACE the card background.
 BG, SURFACE, LINE = "#0A0A0A", "#161616", "#2E2A1E"
 INK, ACCENT, GOLD_LIGHT, SLATE, MIST = "#F5F1E6", "#D4AF37", "#F1D67A", "#B8B0A0", "#5A5548"
-TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Retirement Plan", "Top 3 Things Worth Knowing", "Possible Shifts"]
+TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Retirement Plan", "Top 3 Things Worth Knowing", "Possible Shifts",
+        "Try a Shift"]
 AI_DISCLAIMER = ("Suggestions are general shifts between "
                  "industries, asset types and account types computed from your numbers; they never name a specific "
                  "stock or security. Check any change with a licensed, fiduciary financial advisor.")
@@ -823,6 +826,82 @@ def shifts_tab(inputs: Inputs, fluency: str) -> None:
         notes.append("Fee dollars over 30 years are an estimate.")
     if notes:
         st.caption(" ".join(notes))
+    st.markdown('<p class="sl-muted">Want to see how a shift toward more or fewer stocks would have played out? Open the '
+                '<b>Try a Shift</b> tab to replay a pretend $1,000 through real market history.</p>', unsafe_allow_html=True)
+
+
+def sandbox_run(inputs: Inputs, fluency: str):
+    """The pretend-$1,000 replay (Python) and its AI explanation, cached per portfolio and fluency."""
+    state.setdefault("sandbox", {})
+    cache_key = (inputs.key, fluency)
+    if cache_key not in state.sandbox:
+        result, facts, banned = sandbox_engine.prepare(inputs.values, inputs.profiles, inputs.adj, sp500_benchmark())
+        explanation = orchestrator.run_sandbox(facts, fluency, context(), banned)
+        if explanation.source == "template" and not settings.demo_mode and inputs.sample:
+            saved = orchestrator.run_sandbox(facts, fluency, context(demo=True), banned)
+            if saved.source == "ai":
+                explanation = saved.model_copy(update={"note": "The AI spending limit was reached, so this is a saved explanation."})
+        state.sandbox[cache_key] = (result, explanation)
+    return state.sandbox[cache_key]
+
+
+LINE_STYLES = {"Conservative": ("#8C877A", "dot"), "Moderate": ("#F1D67A", "dash"), "Risky": ("#D4AF37", "solid"),
+               sandbox_engine.YOURS: ("#4CB85A", "longdash")}
+
+
+def sandbox_tab(inputs: Inputs, fluency: str) -> None:
+    st.markdown(f'<div class="sl-ai-warning"><b>Pretend money only.</b> See how ${sandbox_engine.AMOUNT_USD:,} would '
+                'have done in three mixes of asset types, replayed through real market history, next to your own '
+                'portfolio. The mixes use index stand-ins for each asset type and are illustrations, not '
+                'recommendations. Generative AI, not a professional financial advisor.</div>', unsafe_allow_html=True)
+    with st.spinner("Replaying market history..."):
+        result, explanation = sandbox_run(inputs, fluency)
+
+    cols = st.columns(3)
+    for col, s in zip(cols, result.strategies[:3]):
+        with col, st.container(border=True):
+            mix = "<br>".join(f"{v:.0f}% {safe(k)}" for k, v in s.mix_pct.items())
+            st.markdown(f'<p class="sl-sample-title">{safe(s.name)}</p><p class="sl-muted">{mix}</p>',
+                        unsafe_allow_html=True)
+            st.metric("Value today", money(s.end_usd), f"{s.annual_return_pct}% a year", delta_color="off")
+            st.markdown(f'<p class="sl-muted">Worst drop: <b>{s.worst_drop_pct}%</b></p>', unsafe_allow_html=True)
+
+    fig = go.Figure()
+    end_values = {x.name: x.end_usd for x in result.strategies}  # labels use the same rounded value as the cards
+    for name, values in result.paths.items():
+        color, dash = LINE_STYLES[name]
+        fig.add_trace(go.Scatter(x=result.dates, y=values, name=name, mode="lines", line=dict(color=color, dash=dash, width=3),
+                                 hovertemplate=name + ": $%{y:,.0f} on %{x}<extra></extra>"))
+        # on a log axis, annotation positions are given as log10 of the value
+        fig.add_annotation(x=result.dates[-1], y=math.log10(values[-1]), text=f"{name} {money(end_values[name])}",
+                           showarrow=False, xanchor="left", xshift=6, font=dict(color=color, size=12))
+    top = max(max(v) for v in result.paths.values())
+    ticks = [t for t in (250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000) if t <= top * 1.5]
+    fig = plot_layout(fig, 460)  # shared styling first, then this chart's own margin and axes
+    fig.update_yaxes(type="log", tickvals=ticks, ticktext=[f"${t:,}" for t in ticks])
+    fig.update_xaxes(range=[result.dates[0], result.dates[-1]])
+    fig.update_layout(margin=dict(l=10, r=190, t=30, b=10))
+    st.markdown(f"##### ${sandbox_engine.AMOUNT_USD:,} from {result.start[:7]} to {result.end[:7]}")
+    st.plotly_chart(fig, key=f"sandbox-{inputs.key}")
+    st.caption("The value axis grows by multiples so every line fits; each line also has its own dash pattern.")
+
+    st.markdown("##### How far each one fell in past crashes")
+    crashes = list(result.strategies[0].crash_drop_pct)
+    st.dataframe(pd.DataFrame([{"Strategy": s.name, "Worst drop (%)": s.worst_drop_pct,
+                                **{f"{c} (%)": s.crash_drop_pct.get(c) for c in crashes}} for s in result.strategies]),
+                 hide_index=True)
+    st.caption(f"{sandbox_engine.HINDSIGHT_NOTE} Cash is assumed not to grow. Past results do not predict future results.")
+
+    labels = {"ai": "AI explanation, checked against the replay numbers",
+              "template": "Standard summary built from the replay numbers"}
+    st.markdown("##### What this shows")
+    st.markdown(f'<div class="sl-source">{labels[explanation.source]}</div>', unsafe_allow_html=True)
+    message = friendly_note(explanation.note, settings.demo_mode)
+    if message:
+        st.info(message)
+    st.markdown(f'<div class="sl-card"><p>{safe(explanation.summary)}</p></div>', unsafe_allow_html=True)
+    for point in explanation.points:
+        st.markdown(f"- {safe(point)}")
 
 
 def pause_panel(inputs: Inputs) -> None:
@@ -972,7 +1051,8 @@ def analysis_page() -> None:
     badge_slot = badge.empty()
     about_you(inputs)
 
-    xray_t, fee_t, crash_t, plan_t, top3_t, shifts_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
+    xray_t, fee_t, crash_t, plan_t, top3_t, shifts_t, sandbox_t = st.tabs(TABS, key="tab", bind="query-params",
+                                                                          on_change="rerun")
     with xray_t:
         if xray_t.open:
             xray_tab(inputs)
@@ -991,6 +1071,9 @@ def analysis_page() -> None:
     with shifts_t:
         if shifts_t.open:
             shifts_tab(inputs, fluency)
+    with sandbox_t:
+        if sandbox_t.open:
+            sandbox_tab(inputs, fluency)
 
     st.write("")
     pause_panel(inputs)

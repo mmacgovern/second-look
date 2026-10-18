@@ -1,0 +1,6 @@
+{
+ "agent": "sandbox",
+ "text": "{\"summary\":\"Over this replay, mixes with more stocks grew more, but also fell further in downturns. This is a historical illustration, not a forecast: past results do not predict future results.\",\"points\":[\"Conservative ended at $2,397 from $1,000, with a 4.5% yearly return and a 17.6% worst drop. Its drops were 17.6% in the 2008–09 financial crisis, 11.7% in the Covid crash, and 15.4% in the 2022 decline.\",\"Moderate ended at $3,915, with a 7.1% yearly return and a 36.1% worst drop; its crash drops were 36.1%, 21.5%, and 20.2%, respectively. Risky ended at $5,637, with a 9.1% yearly return and a 54.2% worst drop; its crash drops were 54.2%, 32.0%, and 24.9%.\",\"Your portfolio ended at $22,642, with a 17.1% yearly return and a 54.2% worst drop. Its drops were 54.2% in the 2008–09 crisis, 31.2% in the Covid crash, and 31.4% in 2022.\",\"Your portfolio replay has hindsight built in: it replays today’s holdings backward, so holdings that did well are more likely to appear. That makes it an unfair comparison with the mixes.\"]}",
+ "input_tokens": 882,
+ "output_tokens": 327
+}

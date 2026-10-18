@@ -32,12 +32,13 @@ $shots = [ordered]@{
     "19-retiree-pause-move-half"  = @("/?sample=retiree&tab=Fee+Clock&pause=move+half+to+cash", 2600)
     "20-admin"                    = @("/admin", 1500)
     "21-midcareer-shifts"         = @("/?sample=midcareer&tab=Possible+Shifts", 1500)
+    "22-midcareer-try-a-shift"    = @("/?sample=midcareer&tab=Try+a+Shift", 2300)
 }
 
 foreach ($name in $shots.Keys) {
     if ($Only.Count -and -not ($Only -contains $name)) { continue }
     $url, $height = $shots[$name]
-    # A capture under 30 KB is a blank page that had not finished loading; try again (up to 4 times).
+    # A capture under 100 KB is a page that had not finished loading (every real page is larger); try again (up to 4 times).
     for ($attempt = 1; $attempt -le 4; $attempt++) {
         $edgeProfile = Join-Path $env:TEMP ("sl-edge-" + [guid]::NewGuid())
         $tmp = Join-Path $env:TEMP "$name.png"
@@ -45,7 +46,7 @@ foreach ($name in $shots.Keys) {
             "--headless", "--disable-gpu", "--hide-scrollbars", "--user-data-dir=$edgeProfile",
             "--window-size=1400,$height", "--virtual-time-budget=$(20000 + 10000 * $attempt)", "--screenshot=$tmp", "$Base$url")
         Remove-Item -Recurse -Force $edgeProfile -ErrorAction SilentlyContinue
-        if ((Test-Path $tmp) -and (Get-Item $tmp).Length -gt 30KB) { break }
+        if ((Test-Path $tmp) -and (Get-Item $tmp).Length -gt 100KB) { break }
     }
     Move-Item -Force $tmp (Join-Path $out "$name.png")
     Write-Output "$name.png  $([math]::Round((Get-Item (Join-Path $out "$name.png")).Length / 1KB)) KB  (attempts: $attempt)"

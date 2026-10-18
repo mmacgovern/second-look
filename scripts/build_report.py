@@ -30,6 +30,7 @@ if str(ROOT) not in sys.path:
 
 from secondlook import budget, orchestrator  # noqa: E402
 from secondlook.agents import analyst, explainer, intake, pause, verifier  # noqa: E402
+from secondlook.agents import sandbox as sandbox_agent  # noqa: E402
 from secondlook.agents import shifts as shifts_agent  # noqa: E402
 from secondlook.agents.base import AgentContext  # noqa: E402
 from secondlook.config import load_settings  # noqa: E402
@@ -227,7 +228,7 @@ ARCH_SVG = """
   <rect class="b" x="705" y="200" width="180" height="40" rx="8"/><text class="t" x="795" y="225" text-anchor="middle">shown to the user</text>
   <rect class="b" x="705" y="252" width="180" height="40" rx="8"/><text class="t" x="795" y="270" text-anchor="middle">safe template</text>
   <text class="s" x="795" y="285" text-anchor="middle">after a second failure</text>
-  <rect class="ai" x="470" y="320" width="190" height="50" rx="8"/><text class="t" x="565" y="342" text-anchor="middle">pause + shifts agents (smart)</text>
+  <rect class="ai" x="470" y="320" width="190" height="50" rx="8"/><text class="t" x="565" y="342" text-anchor="middle">pause, shifts, sandbox (smart)</text>
   <text class="s" x="565" y="358" text-anchor="middle">neutral pause; rule-based shifts</text>
   <rect class="b" x="40" y="395" width="560" height="62" rx="8"/><text class="t" x="320" y="418" text-anchor="middle">llm.py: the only Portkey caller (budget check, cache, 1 retry, demo replay)</text>
   <text class="s" x="320" y="440" text-anchor="middle">budget.py: per-call, per-session and daily limits; SQLite ledger of every call</text>
@@ -338,7 +339,7 @@ def build() -> str:
         ["Robo-advisors", "Manage the money for you", "They take over the portfolio; not a second opinion on one you already have"],
         ["ChatGPT and similar chatbots", "Answers any question in plain English",
          "Does the math itself and can get numbers wrong; no look-through data; may answer 'should I sell?'"],
-        ["<strong>Second Look</strong>", "Look-through, fees, crash replay, retirement plan and a pause check in one place, explained at three levels",
+        ["<strong>Second Look</strong>", "Look-through, fees, crash replay, retirement plan and a pause check in one place, explained at three levels; then try a suggested shift with pretend money against real history before acting",
          "Every number from Python; AI output checked against the numbers; general sector, asset-type and account-type shifts, never stock picks; demo mode free"],
     ]
     s3 = f"""
@@ -354,8 +355,12 @@ def build() -> str:
   <p><strong>Said honestly:</strong> professionals and paid tools go deeper than this (full holdings instead of top 10,
   tax-lot detail, live account links). Second Look's contribution is a free, explainable, guard-railed second opinion:
   the AI is used only to explain, a verifier checks every number it writes, and a safe template replaces anything that
-  fails. Whether that is enough for real users has not been measured: no user study was run, and running one
+  fails. The newest piece, <strong>Try a Shift</strong>, closes the loop from analysis to action without risk: after
+  the app suggests shifts, the user can see how a pretend $1,000 would have done in conservative, moderate and risky
+  mixes of asset types, replayed through real market history (2008, Covid, 2022) next to their own portfolio, with
+  the AI explaining the trade-off between growth and drops. Whether that is enough for real users has not been measured: no user study was run, and running one
   is the first next step (Section 8).</p>
+  <figure>{crop_image("22-midcareer-try-a-shift.png", "Try a Shift tab for the mid-career sample", 0.20, 0.66, 900, *APP_CONTENT)}<figcaption>Try a Shift: a pretend $1,000 in three mixes of asset types (index stand-ins, no stock picks), replayed through real market history in Python next to the user's portfolio, whose replay is labeled as having hindsight built in.</figcaption></figure>
 </section>"""
 
     # --- 4 -----------------------------------------------------------------------
@@ -364,6 +369,7 @@ def build() -> str:
         ["intake", "Turns messy pasted text into holdings (uploads skip AI entirely)", "None; text arrives inside &lt;user_data&gt; tags. Python keeps only rows whose ticker and numbers appear in the text", f"MODEL_FAST, {intake.SPEC.max_tokens} tokens"],
         ["analyst", "Reads the Facts JSON and picks the 3 findings most worth knowing, each tied to fact keys; Python ranks them by the dollar amount at the cited key", "None (data only)", f"MODEL_SMART, {analyst.SPEC.max_tokens} tokens"],
         ["explainer", "Writes the cards for the chosen fluency level using only numbers in the facts, plus 2-3 questions for a fiduciary advisor", "None (data only)", f"MODEL_SMART, {explainer.SPEC.max_tokens} tokens"],
+        ["sandbox", "Explains the Try a Shift replay (pretend $1,000 in three asset mixes vs. the user's portfolio); must mention hindsight, may not name a security or predict", "None (data only)", f"MODEL_SMART, {sandbox_agent.SPEC.max_tokens} tokens"],
         ["shifts", "Words the Possible Shifts that Python computed (sector, asset type, account type) for the chosen fluency level; any named stock, fund or ticker is rejected", "None (data only)", f"MODEL_SMART, {shifts_agent.SPEC.max_tokens} tokens"],
         ["verifier", "Python checks every number, advice wording and plan ranges first; then a model review", "None; its Python half uses the advice guard and number matcher", f"MODEL_FAST, {verifier.SPEC.max_tokens} tokens"],
         ["pause", "Explains a proposed trade neutrally: before/after and market history next to the user's time horizon", "None (data only)", f"MODEL_SMART, {pause.SPEC.max_tokens} tokens"],
