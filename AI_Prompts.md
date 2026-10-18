@@ -166,3 +166,13 @@ Check: compare one run's cost with Portkey's log for the same request.
 ```
 
 **Result:** Built scripts/measure_costs.py (27 analyses + 5 pause checks, live, caches off, $1 cap) writing docs/cost_results.json/.md; found and fixed the Portkey gateway cache skewing results (hits now recorded at $0) and empty answers from hidden reasoning (REASONING_EFFORT=low): $0.001217 per analysis, p95 17.1 s, 0 fallbacks, about $122/month for 50,000 users; Portkey dashboard check left for the user (export API not permitted); all 396 pytest tests passed.
+
+### #11 — 2026-10-17 20:51 — Phase 11 — README
+
+```text
+Prompt 10 — README
+Write README.md for someone who has never used Python: what the app does in two sentences, a screenshot, prerequisites (Python 3.11+, git), then numbered steps for macOS and Windows: clone, create a virtual environment, pip install -r requirements.txt, copy .env.example to .env, optionally add a Portkey key (or leave DEMO_MODE=true to run free), streamlit run app.py. Add troubleshooting for the 4 most likely errors, how to run tests, the cost harness settings, the data limitations, and the not-investment-advice notice. Never include a real key.
+Check: clone the repo into a new folder on a different computer (or a classmate's) and follow the README word for word.
+```
+
+**Result:** Rewrote README.md for first-time Python users (two-sentence summary, screenshot, macOS and Windows steps, 4 troubleshooting fixes, tests, cost settings, data limits, not-advice notice, no real key); a word-for-word Windows dry run in a fresh clone found that Windows Smart App Control blocks pyarrow on Python 3.14, so the README now uses Python 3.12 (clean clone: app starts, 396 tests pass), and .streamlit/config.toml now opens the browser; all 396 pytest tests passed.

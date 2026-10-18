@@ -15,7 +15,7 @@ textColor = "#F3F6FA"
 secondaryBackgroundColor = "#13294B"
 
 [server]
-headless = true
+headless = false   # open the browser on "streamlit run app.py"; scripts/run_app.py passes true
 maxUploadSize = 1
 
 [browser]
