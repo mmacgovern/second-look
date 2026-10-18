@@ -1,6 +1,0 @@
-{
- "agent": "verifier",
- "text": "{\"passed\":false,\"problems\":[\"The retirement estimate says it assumes “a flat 15.0% tax on pre-tax accounts,” but the facts show the counted balance is entirely in a Roth IRA, so this may mislead readers about how the estimate applies to their account.\"]}",
- "input_tokens": 2405,
- "output_tokens": 428
-}

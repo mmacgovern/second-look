@@ -14,6 +14,8 @@ Second Look is a Streamlit app that gives an AI second opinion on an investment 
 ## Numbers and advice
 - All financial numbers are computed in Python (`secondlook/quant`). LLMs only explain numbers they are given.
 - The app never tells users to buy, sell or hold a specific security.
+- Only the Possible Shifts tab makes suggestions: shifts between industries, asset types and account types, computed by
+  rules in `secondlook/quant/shifts.py`. It never names a specific stock, fund or ticker. Top 3 and the Pause Button stay neutral.
 
 ## Testing
 - Write a pytest test for every module.

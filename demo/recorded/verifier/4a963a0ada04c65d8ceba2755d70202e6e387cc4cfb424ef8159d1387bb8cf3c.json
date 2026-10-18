@@ -1,6 +1,0 @@
-{
- "agent": "verifier",
- "text": "{\"passed\":false,\"problems\":[\"Replace “a 15% flat tax on pre-tax accounts”: the facts specify a 15% reduction for pre-tax accounts, and the listed account is a Roth IRA.\"]}",
- "input_tokens": 2341,
- "output_tokens": 365
-}

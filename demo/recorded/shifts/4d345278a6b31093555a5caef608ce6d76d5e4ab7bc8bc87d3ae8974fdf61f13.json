@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"These shifts focus on balancing your stock holdings across sectors and asset types, and reducing reliance on one company.\",\"items\":[{\"title\":\"Balance sector exposure\",\"body\":\"Consider shifting some stock money out of Information Technology, which is 57.1% of your stocks compared with 40.5% of the S&P 500. You could move some toward Financials or Health Care, which are 5.4% and 5.0% of your stocks, compared with 11.1% and 9.3% of the S&P 500.\"},{\"title\":\"Add bonds or cash\",\"body\":\"Consider shifting some money from stocks toward bonds or cash. Stocks make up 99.2% of your holdings; the 65% to 85% stock range is a planning rule of thumb, not a recommendation.\"},{\"title\":\"Spread out company exposure\",\"body\":\"Consider reducing how much you rely on your largest company holding, which makes up 13.3% of your portfolio. That is above the 10.0% threshold, so spreading some money into broad index funds could reduce reliance on one company.\"}]}",
+ "input_tokens": 791,
+ "output_tokens": 370
+}

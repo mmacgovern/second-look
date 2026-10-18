@@ -31,6 +31,7 @@ $shots = [ordered]@{
     "18-midcareer-pause-sell-all" = @("/?sample=midcareer&tab=Fee+Clock&pause=sell+everything", 2600)
     "19-retiree-pause-move-half"  = @("/?sample=retiree&tab=Fee+Clock&pause=move+half+to+cash", 2600)
     "20-admin"                    = @("/admin", 1500)
+    "21-midcareer-shifts"         = @("/?sample=midcareer&tab=Possible+Shifts", 1500)
 }
 
 foreach ($name in $shots.Keys) {

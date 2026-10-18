@@ -18,7 +18,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
-from secondlook.agents import analyst, explainer, intake, pause, verifier
+from secondlook.agents import analyst, explainer, intake, pause, shifts, verifier
 from secondlook.agents.analyst import RankedFinding
 from secondlook.agents.base import AgentContext, Fluency
 from secondlook.agents.explainer import Card, ExplainerInput, ExplainerOutput
@@ -140,6 +140,41 @@ def run_pause(facts: dict, ctx: AgentContext | None = None) -> PauseExplanation:
         log.warning("Pause explanation fell back to template: %r", exc)
         template = render_pause_template(pause_facts)
         return PauseExplanation(summary=template.summary, points=template.points, source="template", note=_note_for(exc))
+
+
+class ShiftsExplanation(BaseModel):
+    summary: str
+    items: list[shifts.ShiftItem]
+    source: Literal["ai", "template", "none"]
+    reasons: list[str] = []
+    note: str | None = None
+
+
+def shifts_template(shifts_facts: dict, details: list[str]) -> ShiftsExplanation:
+    """The Python wording of each computed shift, used when the AI draft is unavailable or fails review."""
+    items = [shifts.ShiftItem(title=s["title"], body=d) for s, d in zip(shifts_facts["shifts"], details)]
+    return ShiftsExplanation(summary="Based on your numbers, these shifts could bring your portfolio closer to the "
+                                     "reference points shown.", items=items, source="template")
+
+
+def run_shifts(shifts_facts: dict, details: list[str], fluency: Fluency = "comfortable",
+               ctx: AgentContext | None = None, banned_names: list[str] | None = None) -> ShiftsExplanation:
+    """One AI call to word the computed shifts, checked in Python; falls back to the Python wording.
+    No call is made when no shift was computed."""
+    ctx = ctx or AgentContext()
+    if not shifts_facts.get("shifts"):
+        return ShiftsExplanation(summary="No shifts stand out from your numbers.", items=[], source="none")
+    try:
+        output = shifts.run(shifts.ShiftsInput(shifts_facts=shifts_facts, fluency=fluency), ctx)
+        problems = shifts.check(output, shifts_facts, banned_names or [])
+        if not problems:
+            return ShiftsExplanation(summary=output.summary, items=output.items, source="ai")
+        budget.record_rewrite(ctx.session_id, "template", problems, fluency, db_path=ctx.db_path)
+        return shifts_template(shifts_facts, details).model_copy(update={
+            "reasons": problems, "note": "The AI wording did not pass review, so this is the standard wording."})
+    except (BudgetExceeded, LLMError, ValidationError, ValueError) as exc:
+        log.warning("Shifts explanation fell back to template: %r", exc)
+        return shifts_template(shifts_facts, details).model_copy(update={"note": _note_for(exc)})
 
 
 def run_intake(text: str, ctx: AgentContext | None = None) -> Portfolio:

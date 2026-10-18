@@ -1,6 +1,0 @@
-{
- "agent": "verifier",
- "text": "{\"passed\":false,\"problems\":[\"Replace “These are planning estimates, not a guarantee” with the required wording “planning estimate, not a guarantee.”\"]}",
- "input_tokens": 2965,
- "output_tokens": 351
-}

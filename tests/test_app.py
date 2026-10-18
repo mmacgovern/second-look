@@ -35,7 +35,7 @@ def test_landing_without_sample(monkeypatch):
     assert not at.exception
     assert any("See what you really own" in m.value for m in at.markdown)
     assert any("processed in memory" in m.value for m in at.markdown)
-    assert any("educational information only" in m.value for m in at.markdown)
+    assert any("generative AI and is not a professional financial advisor" in m.value for m in at.markdown)
 
 
 def test_assumption_sliders_recompute_plan_without_ai(monkeypatch):
@@ -144,3 +144,14 @@ def test_what_you_own_headline_and_direct_toggle(monkeypatch):
     assert not at.exception
     direct = " ".join(m.value for m in at.markdown)
     assert "(direct holdings only)" in direct and "Top 10 = 57.4%" not in direct
+
+
+def test_possible_shifts_tab_has_ai_disclaimer_and_no_securities(monkeypatch):
+    at = open_app(monkeypatch, tab="Possible Shifts")
+    text = " ".join(m.value for m in at.markdown)
+    assert "Generative AI, not a financial advisor." in text and "never name a specific" in text
+    assert "Information Technology" in text  # the mid-career sample's sector shift
+    cards = [m.value for m in at.markdown if 'class="sl-card"' in m.value]
+    assert 1 <= len(cards) <= 4
+    for card in cards:
+        assert "AAPL" not in card and "Apple" not in card and "VOO" not in card

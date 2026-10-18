@@ -1,0 +1,6 @@
+{
+ "agent": "verifier",
+ "text": "{\"passed\":false,\"problems\":[\"Replace “a 15% flat tax on pre-tax accounts” because the facts show the counted balance is entirely in a Roth IRA, not a pre-tax account.\"]}",
+ "input_tokens": 2351,
+ "output_tokens": 358
+}

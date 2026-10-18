@@ -1,0 +1,6 @@
+{
+ "agent": "verifier",
+ "text": "{\"passed\":false,\"problems\":[\"Replace “a flat 15% tax on pre-tax accounts” with the stated assumption, “a 15% reduction to pre-tax accounts”; the facts do not identify that reduction as a tax.\"]}",
+ "input_tokens": 2674,
+ "output_tokens": 419
+}

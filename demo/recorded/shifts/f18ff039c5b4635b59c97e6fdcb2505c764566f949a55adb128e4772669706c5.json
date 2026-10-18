@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"The figures point to three possible shifts: reduce concentration in one sector, consider a more balanced stock-and-bond mix, and spread out single-company exposure.\",\"items\":[{\"title\":\"Reduce Consumer Discretionary concentration\",\"body\":\"Consider shifting some stock money from Consumer Discretionary toward Communication Services and Health Care. Consumer Discretionary is 21.4% of your stocks versus 8.8% of the S&P 500; Communication Services is 3.7% versus 10.0%, and Health Care is 4.7% versus 9.3%.\"},{\"title\":\"Shift some stocks toward bonds or cash\",\"body\":\"Consider moving some money from stocks toward bonds or cash. Stocks are 92.0% of your portfolio, above the 50%-70% range shown as a planning rule of thumb for a moderate risk profile.\"},{\"title\":\"Spread out single-company exposure\",\"body\":\"Consider shifting some money from your largest single-company holding toward broad index funds. That holding is 14.3% of your portfolio, above the 10.0% threshold.\"}]}",
+ "input_tokens": 794,
+ "output_tokens": 334
+}

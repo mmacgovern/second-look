@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"These shifts point to holding less in stocks and lowering fund fees. They are based on the numbers below.\",\"items\":[{\"title\":\"Move some stocks toward bonds or cash\",\"body\":\"Consider shifting some money from stocks toward bonds or cash. Your stock share is 71.5%, while a planning rule of thumb for a conservative plan is 20% to 40% in stocks.\"},{\"title\":\"Move toward lower-cost index funds\",\"body\":\"You could shift money from higher-cost funds toward lower-cost index funds. Your funds have an average fee of 0.196%, compared with 0.05% for index funds; the estimated extra cost over 30 years is $151,094.\"}]}",
+ "input_tokens": 710,
+ "output_tokens": 265
+}

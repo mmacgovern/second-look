@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"These shifts focus on aligning your mix with a conservative planning range and lowering fund costs. The figures point to areas you could review.\",\"items\":[{\"title\":\"Shift some stocks toward bonds or cash\",\"body\":\"Stocks make up 71.5% of your mix, above the 20% to 40% planning range for a conservative profile. That range is a rule of thumb, not a recommendation; consider shifting some money from stocks toward bonds or cash.\"},{\"title\":\"Consider lower-cost index funds\",\"body\":\"Your funds have a weighted fee of 0.196%, compared with 0.05% for index funds. Shifting from higher-cost funds toward lower-cost index funds could reduce estimated costs by $151094 over 30 years.\"}]}",
+ "input_tokens": 710,
+ "output_tokens": 280
+}

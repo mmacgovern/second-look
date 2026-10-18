@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"These shifts point to spreading your stock money across more areas and adding more balance to your investments.\",\"items\":[{\"title\":\"Shift some money out of tech\",\"body\":\"Consider shifting some stock money out of Information Technology and toward Financials or Health Care. Information Technology is 57.1% of your stocks, compared with 40.5% of the S&P 500; Financials and Health Care are 5.4% and 5.0% of your stocks, compared with 11.1% and 9.3% of the S&P 500.\"},{\"title\":\"Add bonds or cash\",\"body\":\"Consider shifting some money from stocks toward bonds or cash. Stocks are 99.2% of your investments; a range of 65% to 85% in stocks is a planning rule of thumb, not a recommendation.\"},{\"title\":\"Spread out company exposure\",\"body\":\"Consider shifting some money from your largest company holding into broad index funds. That company is 13.3% of your investments, above the 10.0% threshold used for this shift.\"}]}",
+ "input_tokens": 791,
+ "output_tokens": 386
+}

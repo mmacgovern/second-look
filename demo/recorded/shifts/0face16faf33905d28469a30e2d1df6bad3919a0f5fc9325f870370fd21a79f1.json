@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"These shifts could spread your money across more areas and balance stocks with other types of investments.\",\"items\":[{\"title\":\"Reduce Consumer Discretionary stocks\",\"body\":\"Consider shifting some stock money out of Consumer Discretionary, which is 21.4% of your stocks compared with 8.8% of the S&P 500. You could move some toward Communication Services or Health Care, which are smaller parts of your stocks than they are of the S&P 500.\"},{\"title\":\"Move some stocks to bonds or cash\",\"body\":\"Consider shifting some money from stocks toward bonds or cash. A 50%–70% stock range is a planning rule of thumb for a moderate plan; your stock share is 92.0%.\"},{\"title\":\"Spread out company exposure\",\"body\":\"Consider spreading your money across more companies. Your largest company is 14.3% of your investments, above the 10.0% level used here.\"}]}",
+ "input_tokens": 794,
+ "output_tokens": 336
+}

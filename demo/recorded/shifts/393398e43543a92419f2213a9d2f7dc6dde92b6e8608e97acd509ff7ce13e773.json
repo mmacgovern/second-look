@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"These shifts point to reducing concentration in one sector and one company, and bringing your stock share closer to a planning range for a moderate risk profile.\",\"items\":[{\"title\":\"Broaden your sector mix\",\"body\":\"Consider shifting some stock money out of Consumer Discretionary, which is 21.4% of your stocks compared with 8.8% of the S&P 500. Communication Services and Health Care are smaller parts of your portfolio than of the index: 3.7% versus 10.0%, and 4.7% versus 9.3%, respectively.\"},{\"title\":\"Consider more bonds or cash\",\"body\":\"Your portfolio is 92.0% stocks. A planning rule of thumb for a moderate risk profile is 50% to 70% stocks, so you could move some money toward bonds or cash.\"},{\"title\":\"Spread out company exposure\",\"body\":\"Your largest company holding is 14.3% of your portfolio, above the 10.0% threshold used here. Consider shifting some money from that single company into broader investments to spread out your exposure.\"}]}",
+ "input_tokens": 794,
+ "output_tokens": 335
+}

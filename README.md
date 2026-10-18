@@ -1,12 +1,12 @@
 # Second Look
 
-Second Look reads a brokerage export of your investments and shows what you really own (including the companies hidden inside your funds), what your fees cost over time, how your mix would have held up in past crashes, and whether you are on track for retirement. Every number is calculated in plain Python; an AI only explains those numbers in everyday language, at the level you choose, and it never tells you to buy, sell or hold anything.
+Second Look reads a brokerage export of your investments and shows what you really own (including the companies hidden inside your funds), what your fees cost over time, how your mix would have held up in past crashes, and whether you are on track for retirement. Every number is calculated in plain Python; an AI explains those numbers in everyday language, at the level you choose. A **Possible Shifts** tab suggests general shifts between industries, asset types and account types, worked out by fixed rules from your numbers; it never recommends a specific stock, fund or other security.
 
 ![Second Look X-Ray view of a sample portfolio](docs/screenshots/06-midcareer-xray.png)
 
 More screenshots are in [`docs/screenshots/`](docs/screenshots/).
 
-> **Not investment advice.** Second Look provides educational information only. It is not investment, tax or legal advice, and it does not recommend buying, selling or holding any security. Past results do not predict future results. Talk to a fiduciary financial advisor before making decisions.
+> **Generative AI, not a financial advisor.** Second Look uses generative AI and is not a professional financial advisor. It provides educational information and general suggestions only, never recommendations of specific stocks or securities, and it is not investment, tax or legal advice. Past results do not predict future results. Talk to a licensed, fiduciary financial advisor before making decisions.
 
 ---
 
@@ -112,7 +112,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
 - Click **Starting out**, **Mid-career** or **Retired** to explore a sample portfolio, or open **Or upload your own brokerage CSV** and add one file per account.
 - Fill in **About you** (age, retirement goal, Social Security estimate, and a five-question risk quiz). Samples come pre-filled.
 - Choose how things are explained under **Fluency** in the left sidebar: *New to investing*, *Comfortable* or *Pro*. The **Risk profile** badge below it shows what your mix is compared to.
-- Tabs: **X-Ray** (what you really own), **Fee Clock** (what fees cost), **Crash Replay** (past crises), **Retirement Plan** (with adjustable assumptions), **Top 3 Things Worth Knowing** (the AI explanation).
+- Tabs: **X-Ray** (what you really own), **Fee Clock** (what fees cost), **Crash Replay** (past crises), **Retirement Plan** (with adjustable assumptions), **Top 3 Things Worth Knowing** (the AI explanation), **Possible Shifts** (suggested shifts between industries, asset types and account types; never specific securities).
 - The **Pause button** shows what a trade you are considering would change, and what happened to people who made similar moves in past crashes. It never says whether to do it.
 
 **Demo mode** (the default, `DEMO_MODE=true`) costs nothing and needs no key. It replays saved AI explanations for the three sample portfolios. For your own uploads, or if you change a sample's answers, it shows a standard summary built straight from the numbers instead.

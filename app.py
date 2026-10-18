@@ -23,6 +23,7 @@ import streamlit as st
 from secondlook import budget, demo_runs, orchestrator
 from secondlook.agents.base import AgentContext
 from secondlook.config import get_settings
+from secondlook.quant import shifts as shift_rules
 from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, RETIREMENT_TAX_RATE, counted_balance, household_from_csvs
 from secondlook.quant.benchmark import (
     BENCHMARK_FILE, comparison_sentence, donut_slices, load_benchmark, sector_rows, stock_sector_weights, top_ten,
@@ -46,9 +47,13 @@ ASSETS, DOCS = ROOT / "assets", ROOT / "docs"
 # Black and gold theme: INK is the main text colour, ACCENT the gold, SURFACE the card background.
 BG, SURFACE, LINE = "#0A0A0A", "#161616", "#2E2A1E"
 INK, ACCENT, GOLD_LIGHT, SLATE, MIST = "#F5F1E6", "#D4AF37", "#F1D67A", "#B8B0A0", "#5A5548"
-TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Retirement Plan", "Top 3 Things Worth Knowing"]
-DISCLAIMER = ("Second Look provides educational information only. It is not investment, tax or legal advice, "
-              "and it does not recommend buying, selling or holding any security. Past results do not predict future results.")
+TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Retirement Plan", "Top 3 Things Worth Knowing", "Possible Shifts"]
+AI_DISCLAIMER = ("Suggestions are general shifts between "
+                 "industries, asset types and account types computed from your numbers; they never name a specific "
+                 "stock or security. Check any change with a licensed, fiduciary financial advisor.")
+DISCLAIMER = ("Second Look uses generative AI and is not a professional financial advisor. It provides educational "
+              "information and general suggestions only, never recommendations of specific stocks or securities, and "
+              "it is not investment, tax or legal advice. Past results do not predict future results.")
 
 st.set_page_config(page_title="Second Look", page_icon=":material/travel_explore:", layout="wide",
                    initial_sidebar_state="auto")
@@ -105,6 +110,9 @@ st.markdown(f"""
                    padding: 1rem 1.3rem; margin: 0.4rem 0 1rem; }}
   .sl-portfolio h3 {{ margin: 0; padding: 0; font-size: 1.3rem; }}
   .sl-portfolio p {{ margin: 0.2rem 0 0; }}
+  .sl-ai-warning {{ background: rgba(212,175,55,0.08); border: 1px solid {ACCENT}88; border-radius: 12px;
+                    padding: 0.8rem 1.1rem; margin: 0.2rem 0 1rem; color: {INK}; font-size: 0.92rem; line-height: 1.55; }}
+  .sl-ai-warning b {{ color: {GOLD_LIGHT}; }}
   .sl-mascot {{ position: fixed; right: 18px; bottom: 12px; width: 104px; z-index: 999990; pointer-events: none;
                 filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6)); }}
   @media (max-width: 640px) {{
@@ -768,6 +776,55 @@ def top3_tab(inputs: Inputs, fluency: str) -> None:
         st.markdown(f"- {safe(q)}")
 
 
+def possible_shifts(inputs: Inputs, fluency: str):
+    """The Python-computed shifts for this portfolio, worded by the shifts agent (cached per portfolio and fluency)."""
+    state.setdefault("shifts", {})
+    cache_key = (inputs.key, fluency)
+    if cache_key not in state.shifts:
+        user, answers = inputs.extra["user"], inputs.extra["answers"]
+        risk_label = risk_profile(user, answers).label if user is not None and answers else None
+        facts, details, banned = shift_rules.prepare(inputs.values, inputs.profiles, sp500_benchmark(),
+                                                     household=inputs.extra.get("household"), risk_label=risk_label)
+        result = orchestrator.run_shifts(facts, details, fluency, context(), banned)
+        if result.source == "template" and not settings.demo_mode and inputs.sample:
+            saved = orchestrator.run_shifts(facts, details, fluency, context(demo=True), banned)
+            if saved.source == "ai":
+                result = saved.model_copy(update={"note": "The AI spending limit was reached, so this is a saved explanation."})
+        state.shifts[cache_key] = (facts, result)
+    return state.shifts[cache_key]
+
+
+def shifts_tab(inputs: Inputs, fluency: str) -> None:
+    st.markdown(f'<div class="sl-ai-warning"><b>Generative AI, not a financial advisor.</b> {safe(AI_DISCLAIMER)}</div>',
+                unsafe_allow_html=True)
+    with st.spinner("Working out possible shifts..."):
+        facts, result = possible_shifts(inputs, fluency)
+    kinds = {x["kind"] for x in facts["shifts"]}
+    if result.source == "none":
+        st.markdown('<p class="sl-muted">No shifts stand out: your sector mix, stock share, single-company exposure, fees '
+                    'and account placement are all within the reference points this app uses.</p>', unsafe_allow_html=True)
+        return
+    labels = {"ai": "Suggestions computed in Python from your numbers; wording by AI, checked against those numbers",
+              "template": "Suggestions computed in Python from your numbers (standard wording)"}
+    st.markdown(f'<div class="sl-source">{labels[result.source]}</div>', unsafe_allow_html=True)
+    message = friendly_note(result.note, settings.demo_mode)
+    if message:
+        st.info(message)
+    st.markdown(f"**{safe(result.summary)}**")
+    for item in result.items:
+        st.markdown(f'<div class="sl-card"><h4>{safe(item.title)}</h4><p>{safe(item.body)}</p></div>',
+                    unsafe_allow_html=True)
+    notes = []
+    if "asset_mix" in kinds:
+        notes.append("Stock ranges per risk profile are a planning rule of thumb, not a recommendation.")
+    if "sector" in kinds:
+        notes.append(sp500_benchmark().label + ".")
+    if "fees" in kinds:
+        notes.append("Fee dollars over 30 years are an estimate.")
+    if notes:
+        st.caption(" ".join(notes))
+
+
 def pause_panel(inputs: Inputs) -> None:
     with st.container(border=True):
         st.markdown("### Pause button")
@@ -915,7 +972,7 @@ def analysis_page() -> None:
     badge_slot = badge.empty()
     about_you(inputs)
 
-    xray_t, fee_t, crash_t, plan_t, top3_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
+    xray_t, fee_t, crash_t, plan_t, top3_t, shifts_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
     with xray_t:
         if xray_t.open:
             xray_tab(inputs)
@@ -931,6 +988,9 @@ def analysis_page() -> None:
     with top3_t:
         if top3_t.open:
             top3_tab(inputs, fluency)
+    with shifts_t:
+        if shifts_t.open:
+            shifts_tab(inputs, fluency)
 
     st.write("")
     pause_panel(inputs)

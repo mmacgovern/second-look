@@ -53,7 +53,7 @@ def slides() -> list[str]:
     s = []
     s.append(slide(1, "", f"""
 <p class="kicker">AI Foundations final project</p><h1>Second Look</h1>
-<p class="pitch">An AI second opinion on your portfolio: numbers computed in Python, explained plainly, never advice.</p>
+<p class="pitch">An AI second opinion on your portfolio: numbers computed in Python, explained plainly, never stock picks.</p>
 <p class="by">{br.esc(br.AUTHOR)}</p>""", "title"))
 
     s.append(slide(2, "The problem", f"""
@@ -65,7 +65,7 @@ def slides() -> list[str]:
     s.append(slide(3, "What's new", """
 <ul class="big"><li>Overlap, fees, crash replay and retirement plan in one place</li>
 <li>AI only explains; a verifier checks every number</li>
-<li>Never says buy, sell or hold</li></ul>"""))
+<li>Suggests sector and asset shifts, never specific stocks</li></ul>"""))
 
     s.append(slide(4, "How the agents work", f"""
 <div class="diagram">{br.ARCH_SVG}</div>

@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"The figures point to two possible shifts: reducing stock exposure and lowering fund costs.\",\"items\":[{\"title\":\"Shift stocks toward bonds or cash\",\"body\":\"Consider shifting some money from stocks toward bonds or cash. Stocks are 71.5% of your mix, above the 20%–40% planning rule of thumb for a conservative profile; this range is a guide, not a recommendation.\"},{\"title\":\"Shift toward lower-cost index funds\",\"body\":\"Consider shifting from higher-cost funds toward lower-cost index funds. Your weighted fee is 0.196%, compared with 0.05% for index funds; the estimated extra cost over 30 years is $151094.\"}]}",
+ "input_tokens": 710,
+ "output_tokens": 292
+}

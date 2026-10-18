@@ -97,7 +97,12 @@ class RoutingClient(FakeClient):
 
     def _create(self, **kwargs):
         self.calls.append(kwargs)
-        return reply(self.by_prompt[kwargs["messages"][0]["content"]])
+        system, user = kwargs["messages"][0]["content"], kwargs["messages"][1]["content"]
+        if system == system_prompt("shifts"):  # one item per computed shift, no numbers
+            n = user.count('"kind":')
+            return reply({"summary": "A few shifts stand out.",
+                          "items": [{"title": f"Shift {chr(65 + i)}", "body": "Consider shifting some money."} for i in range(n)]})
+        return reply(self.by_prompt[system])
 
 
 def test_persona_facts_are_deterministic():
@@ -114,11 +119,12 @@ def test_record_then_check_demo_end_to_end(ledger, capsys):
     assert total > 0 and total == pytest.approx(budget.summary(ledger)["total_usd"])
 
     files = list(llm.DEMO_DIR.rglob("*.json"))
-    by_agent = {a: len(list((llm.DEMO_DIR / a).glob("*.json"))) for a in ("analyst", "explainer", "verifier", "pause")}
+    by_agent = {a: len(list((llm.DEMO_DIR / a).glob("*.json")))
+                for a in ("analyst", "explainer", "verifier", "pause", "shifts")}
     # analyst once per persona (same facts for every fluency), explainer per persona x fluency,
-    # verifier once per persona (same draft and facts), pause once per scenario (5)
-    assert by_agent == {"analyst": 3, "explainer": 9, "verifier": 3, "pause": 5}
-    assert len(files) == 20
+    # verifier once per persona (same draft and facts), pause once per scenario (5), shifts per persona x fluency
+    assert by_agent == {"analyst": 3, "explainer": 9, "verifier": 3, "pause": 5, "shifts": 9}
+    assert len(files) == 29
     for f in files:
         text = f.read_text(encoding="utf-8")
         assert ODD_KEY not in text and FAKE_KEY not in text and "test-smart-model" not in text

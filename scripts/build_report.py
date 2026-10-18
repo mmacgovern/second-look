@@ -30,6 +30,7 @@ if str(ROOT) not in sys.path:
 
 from secondlook import budget, orchestrator  # noqa: E402
 from secondlook.agents import analyst, explainer, intake, pause, verifier  # noqa: E402
+from secondlook.agents import shifts as shifts_agent  # noqa: E402
 from secondlook.agents.base import AgentContext  # noqa: E402
 from secondlook.config import load_settings  # noqa: E402
 from secondlook.demo_runs import persona_facts  # noqa: E402
@@ -183,8 +184,8 @@ ARCH_SVG = """
   <rect class="b" x="705" y="200" width="180" height="40" rx="8"/><text class="t" x="795" y="225" text-anchor="middle">shown to the user</text>
   <rect class="b" x="705" y="252" width="180" height="40" rx="8"/><text class="t" x="795" y="270" text-anchor="middle">safe template</text>
   <text class="s" x="795" y="285" text-anchor="middle">after a second failure</text>
-  <rect class="ai" x="470" y="320" width="190" height="50" rx="8"/><text class="t" x="565" y="342" text-anchor="middle">pause agent (smart)</text>
-  <text class="s" x="565" y="358" text-anchor="middle">neutral before/after + history</text>
+  <rect class="ai" x="470" y="320" width="190" height="50" rx="8"/><text class="t" x="565" y="342" text-anchor="middle">pause + shifts agents (smart)</text>
+  <text class="s" x="565" y="358" text-anchor="middle">neutral pause; rule-based shifts</text>
   <rect class="b" x="40" y="395" width="560" height="62" rx="8"/><text class="t" x="320" y="418" text-anchor="middle">llm.py: the only Portkey caller (budget check, cache, 1 retry, demo replay)</text>
   <text class="s" x="320" y="440" text-anchor="middle">budget.py: per-call, per-session and daily limits; SQLite ledger of every call</text>
   <rect class="b" x="660" y="405" width="225" height="44" rx="8"/><text class="t" x="772" y="432" text-anchor="middle">Portkey → gpt-6-luna</text>
@@ -231,7 +232,9 @@ def build() -> str:
     <p>{f'<a href="{esc(VIDEO_URL)}">Watch the demo video</a>' if VIDEO_URL else todo("demo video link")}</p>
   </div>
   {image("00-landing.png", "Second Look landing page", 820)}
-  <p class="note">Educational information only; not investment advice. Sample portfolios and personas are made up.</p>
+  <p class="note">Second Look uses generative AI and is not a professional financial advisor. Its suggestions are general
+  shifts between industries, asset types and account types, never specific stocks or securities. Sample portfolios and
+  personas are made up.</p>
 </section>"""
 
     # --- 2 -----------------------------------------------------------------------
@@ -261,7 +264,7 @@ def build() -> str:
     <li>How many people this affects: {todo("public data on how many households hold several funds without an advisor, with source")}.</li>
   </ul>
   <p><strong>Why anyone should care.</strong> These are expensive, slow-to-notice mistakes made by people who are trying
-  to do the right thing. A tool that explains them plainly, never sells anything and never tells anyone what to trade
+  to do the right thing. A tool that explains them plainly, never sells anything and never picks specific stocks or funds
   could help without adding a new risk.</p>
 </section>"""
 
@@ -277,7 +280,7 @@ def build() -> str:
         ["ChatGPT and similar chatbots", "Answers any question in plain English",
          "Does the math itself and can get numbers wrong; no look-through data; may answer 'should I sell?'"],
         ["<strong>Second Look</strong>", "Look-through, fees, crash replay, retirement plan and a pause check in one place, explained at three levels",
-         "Every number from Python; AI output checked against the numbers; never gives trade or account advice; demo mode free"],
+         "Every number from Python; AI output checked against the numbers; general sector, asset-type and account-type shifts, never stock picks; demo mode free"],
     ]
     s3 = f"""
 <section class="cont">
@@ -302,6 +305,7 @@ def build() -> str:
         ["intake", "Turns messy pasted text into holdings (uploads skip AI entirely)", "None; text arrives inside &lt;user_data&gt; tags. Python keeps only rows whose ticker and numbers appear in the text", f"MODEL_FAST, {intake.SPEC.max_tokens} tokens"],
         ["analyst", "Reads the Facts JSON and picks the 3 findings most worth knowing, each tied to fact keys; Python ranks them by the dollar amount at the cited key", "None (data only)", f"MODEL_SMART, {analyst.SPEC.max_tokens} tokens"],
         ["explainer", "Writes the cards for the chosen fluency level using only numbers in the facts, plus 2-3 questions for a fiduciary advisor", "None (data only)", f"MODEL_SMART, {explainer.SPEC.max_tokens} tokens"],
+        ["shifts", "Words the Possible Shifts that Python computed (sector, asset type, account type) for the chosen fluency level; any named stock, fund or ticker is rejected", "None (data only)", f"MODEL_SMART, {shifts_agent.SPEC.max_tokens} tokens"],
         ["verifier", "Python checks every number, advice wording and plan ranges first; then a model review", "None; its Python half uses the advice guard and number matcher", f"MODEL_FAST, {verifier.SPEC.max_tokens} tokens"],
         ["pause", "Explains a proposed trade neutrally: before/after and market history next to the user's time horizon", "None (data only)", f"MODEL_SMART, {pause.SPEC.max_tokens} tokens"],
     ]
@@ -344,6 +348,7 @@ def build() -> str:
   </ol>
   <figure>{crop_image("10-midcareer-top3.png", "Top 3 tab for the mid-career sample", 0.33, 0.66, 900, *APP_CONTENT)}<figcaption>The same run in the app (Top 3 Things Worth Knowing tab).</figcaption></figure>
   <figure>{crop_image("06-midcareer-xray.png", "What you own: top 10 companies and industry mix vs. the S&P 500", 0.14, 0.46, 900, *APP_CONTENT)}<figcaption>The X-Ray tab's "What you own" view for the same sample: top 10 companies and industry mix next to the S&P 500. Pure Python, no AI calls; the comparison numbers also go into the Facts JSON so the explainer can mention them and the verifier checks them.</figcaption></figure>
+  <figure>{crop_image("21-midcareer-shifts.png", "Possible Shifts tab for the mid-career sample", 0.35, 0.81, 900, *APP_CONTENT)}<figcaption>The Possible Shifts tab: Python rules pick the shifts (sector, asset type, account type) from the numbers; the AI words them and is rejected if it names any stock, fund or ticker. The generative-AI disclaimer sits on top.</figcaption></figure>
 </section>"""
 
     # --- 5 -----------------------------------------------------------------------
@@ -448,9 +453,12 @@ def build() -> str:
     s6 = f"""
 <section>
   <h2>6. Safety</h2>
-  <div class="policy"><strong>Safety policy.</strong> Second Look explains numbers; it never gives advice. It never tells
-  anyone to buy, sell or hold a specific security, never says which account to move money into or out of, never sets
-  price targets and never promises returns. Every number shown is computed in Python; the AI may only explain numbers it
+  <div class="policy"><strong>Safety policy.</strong> Second Look explains numbers and, in its Possible Shifts tab, suggests
+  general shifts between industries, asset types (stocks, bonds, cash, low-cost index funds) and account types. Those
+  suggestions come from fixed Python rules applied to the user's numbers, and the AI only words them. It never
+  recommends a specific stock, fund or other security, never sets price targets, never predicts markets and never
+  promises returns; the Top 3 explanations and the Pause Button stay neutral. Every page carries a disclaimer that this
+  is generative AI, not a professional financial advisor. Every number shown is computed in Python; the AI may only explain numbers it
   is given, and a verifier rejects any draft with a number that is not in the facts, advice-like wording, or a
   retirement figure that is not a labeled range. Uploaded files are processed in memory, account numbers and free text
   are removed before anything reaches the AI, and the API key lives only in <code>.env</code>, which git never tracks.
@@ -460,7 +468,7 @@ def build() -> str:
       ["Prompt injection in pasted text or CSV fields", "Pause Button text is parsed by Python and never sent to the AI; pasted text goes inside &lt;user_data&gt; tags with closing tags neutralised; CSV descriptions and notes are dropped; intake rows are kept only if their ticker and numbers appear in the text"],
       ["Data leaks (key, account numbers, system prompts)", "Only config.py reads settings; logs and errors are redacted; account numbers become 'Account 1'; a secret scanner checks every tracked file and the rendered app (tests/test_secrets.py); gitleaks runs on every commit"],
       ["Invented facts", "The verifier matches every number to the Facts JSON within the writer's rounding; the analyst's ranking uses Python-looked-up dollars, not numbers the model wrote"],
-      ["Wrong actions", "Agents have no tools and cannot trade or send anything; advice_guard flags buy/sell/hold, account moves, price targets and promises"],
+      ["Wrong actions", "Agents have no tools and cannot trade or send anything; advice_guard flags buy/sell/hold, account moves, price targets and promises in the neutral sections, and in Possible Shifts rejects any named stock, fund or ticker"],
       ["Loops", "At most 4 AI calls per analysis and one retry per call; then a safe template"],
       ["Overspending", "budget.py checks per-call ($0.05), per-session ($0.10) and daily ($2.00) limits before every call; scripts add --max-usd; every call is recorded in the ledger and shown on the Admin page"],
   ])}
@@ -495,7 +503,7 @@ def build() -> str:
             f"{esc(top['name'])}: {top['pct']}%" + (f" ({direct}% held directly)" if direct is not None else " (not broken down)"),
         ])
     s7 = f"""
-<section>
+<section class="cont">
   <h2>7. Impact</h2>
   <p>Every number below is either measured or computed by the app's Python engine from the sample portfolios. Anything
   that depends on an assumption is marked <span class="est">estimate</span>. The sample people are made up; their
@@ -585,7 +593,7 @@ code{background:var(--mist);padding:1px 4px;border-radius:3px;font-size:12.5px}s
 .video video{background:#0B1F3A;max-width:100%;height:200px;border-radius:6px}
 @media print{@page{size:Letter;margin:0.6in}body{font-size:10pt}table{font-size:9pt}main{padding:0;max-width:none}
 section{page-break-before:always;margin:0}section.cover{page-break-before:avoid}section.cont{page-break-before:auto;margin-top:18pt}
-img{max-height:3.1in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
+img{max-height:2.6in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
 table,figure,.card,.policy{page-break-inside:avoid}a{color:inherit}.video video{display:none}}
 """
     return f"""<!doctype html>

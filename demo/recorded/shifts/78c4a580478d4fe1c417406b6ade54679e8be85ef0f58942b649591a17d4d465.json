@@ -1,0 +1,6 @@
+{
+ "agent": "shifts",
+ "text": "{\"summary\":\"The figures point to concentration in one sector and one company, alongside a stock-heavy asset mix. The shifts below address those areas.\",\"items\":[{\"title\":\"Diversify sector exposure\",\"body\":\"Consider shifting some stock money out of Information Technology, which is 57.1% of your portfolio versus 40.5% of the S&P 500. Financials and Health Care are smaller in your portfolio—5.4% and 5.0%, respectively—than in the index, at 11.1% and 9.3%.\"},{\"title\":\"Add bonds or cash\",\"body\":\"Consider shifting some stocks toward bonds or cash. Stocks are 99.2% of your portfolio; a 65%–85% stock allocation is a planning rule of thumb for a moderately aggressive profile, not a recommendation.\"},{\"title\":\"Spread out company exposure\",\"body\":\"Consider reducing your exposure to your largest company and spreading some money across other holdings. That company is 13.3% of your portfolio, above the 10.0% threshold.\"}]}",
+ "input_tokens": 791,
+ "output_tokens": 299
+}

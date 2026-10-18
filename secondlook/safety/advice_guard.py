@@ -94,3 +94,39 @@ def check(text: str, allow_questions: bool = False) -> list[GuardHit]:
 
 def is_safe(text: str, allow_questions: bool = False) -> bool:
     return not check(text, allow_questions)
+
+
+# --- Possible shifts -------------------------------------------------------------------
+# The "Possible shifts" section may suggest moving money between sectors, asset types and account
+# types, so the directive rules above do not apply there. It must still never name a security, and
+# never set price targets, predict markets or promise returns.
+
+SHIFT_RULES = {"rating", "price_target", "promise", "prediction", "return_promise"}
+# All-caps words that are not tickers.
+ALLOWED_CAPS = {"S&P", "SP", "ETF", "ETFS", "IRA", "IRAS", "HSA", "GICS", "US", "USA", "AI", "OK", "I",
+                "CD", "CDS", "REIT", "REITS", "TIPS", "IT"}
+CAPS_TOKEN = re.compile(r"(?<![\w&])([A-Z]{2,5})(?![\w&])")
+
+
+def check_shift(text: str, banned_names: list[str] | tuple[str, ...] = ()) -> list[GuardHit]:
+    """Hits for a Possible-shifts draft: named securities (banned_names, or any ticker-like
+    all-caps word) plus the price-target, prediction, promise and rating rules."""
+    hits: list[GuardHit] = []
+    for sentence in _sentences(text):
+        for rule in RULES:
+            if rule.name not in SHIFT_RULES:
+                continue
+            match = next((m for m in rule.pattern.finditer(sentence)
+                          if not (rule.negatable and NEGATED.search(sentence[: m.start()]))), None)
+            if match:
+                hits.append(GuardHit(rule.name, sentence[max(0, match.start() - 25): match.end() + 25].strip()))
+        for name in banned_names:
+            if not name:
+                continue
+            flags = 0 if name.isupper() else I  # tickers are matched case-sensitively, names are not
+            if re.search(rf"(?<![\w&]){re.escape(name)}(?![\w&])", sentence, flags):
+                hits.append(GuardHit("named_security", name))
+        for token in CAPS_TOKEN.findall(sentence):
+            if token not in ALLOWED_CAPS and token not in banned_names:
+                hits.append(GuardHit("named_security", token))
+    return hits

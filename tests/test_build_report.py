@@ -65,7 +65,8 @@ def test_impact_uses_measured_and_persona_numbers(page):
 def test_required_pieces(page):
     assert "Safety policy." in page and "Morningstar Portfolio X-Ray" in page
     assert "AI_Prompts.md" in page and "<th>Phase</th>" in page
-    assert "never tells" in page  # the no-advice policy is stated
+    assert "never" in page and "recommends a specific stock, fund or other security" in page  # the policy is stated
+    assert "generative AI and is not a professional financial advisor" in page
 
 
 def test_prompt_log_parses_phases():
