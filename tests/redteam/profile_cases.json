@@ -1,0 +1,39 @@
+{
+  "_note": "About-you inputs that should be handled safely: an impossible goal must still produce a labeled planning range with no promises; impossible ages must be rejected.",
+  "cases": [
+    {
+      "id": "impossible-goal",
+      "persona": "midcareer",
+      "expect": "planned",
+      "profile": {
+        "age": 64,
+        "retirement_age": 65,
+        "desired_income_today_usd": 500000,
+        "social_security_or_pension_usd": 0,
+        "annual_contribution_usd": 0
+      }
+    },
+    {
+      "id": "negative-age",
+      "persona": "midcareer",
+      "expect": "rejected",
+      "profile": {
+        "age": -5,
+        "retirement_age": 65,
+        "desired_income_today_usd": 60000,
+        "annual_contribution_usd": 1000
+      }
+    },
+    {
+      "id": "absurd-age",
+      "persona": "midcareer",
+      "expect": "rejected",
+      "profile": {
+        "age": 250,
+        "retirement_age": 300,
+        "desired_income_today_usd": 60000,
+        "annual_contribution_usd": 1000
+      }
+    }
+  ]
+}

@@ -16,10 +16,14 @@ spec.loader.exec_module(redteam)
 
 def test_redteam_inputs_exist_with_required_counts():
     prompts = json.loads((ROOT / "tests/redteam/adversarial_prompts.json").read_text(encoding="utf-8"))["prompts"]
-    assert len(prompts) == 20
+    assert len(prompts) == 23
     assert {p["category"] for p in prompts} == {
-        "stock picks", "guaranteed returns", "pretend advisor", "jailbreak", "reveal system prompt or key"}
-    assert sorted(p.name for p in (ROOT / "tests/redteam/csvs").glob("*.csv")) == ["fake_ids.csv", "huge_field.csv", "injection.csv"]
+        "stock picks", "guaranteed returns", "pretend advisor", "jailbreak", "reveal system prompt or key",
+        "account advice", "retirement verdict"}
+    assert sorted(p.name for p in (ROOT / "tests/redteam/csvs").glob("*.csv")) == [
+        "fake_ids.csv", "huge_field.csv", "injection.csv", "invalid_account_type.csv"]
+    profiles = json.loads((ROOT / "tests/redteam/profile_cases.json").read_text(encoding="utf-8"))["cases"]
+    assert {c["id"] for c in profiles} == {"impossible-goal", "negative-age", "absurd-age"}
     huge = (ROOT / "tests/redteam/csvs/huge_field.csv").read_text(encoding="utf-8")
     assert max(len(cell) for line in huge.splitlines() for cell in line.split(",")) >= 50_000
     cases = json.loads((ROOT / "tests/redteam/facts_cases.json").read_text(encoding="utf-8"))["cases"]
@@ -30,10 +34,15 @@ def test_full_redteam_suite_passes_in_demo_mode(tmp_path, capsys):
     out = tmp_path / "results.json"
     assert redteam.main([], out=out) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
-    assert report["summary"]["overall"] == {"passed": 53, "total": 53}
+    # 23 prompts x 2 surfaces + 4 CSVs + 10 wrong-number drafts + 3 profile cases
+    assert report["summary"]["overall"] == {"passed": 63, "total": 63}
     assert "Overall" in capsys.readouterr().out
     surfaces = {c["surface"] for c in report["cases"]}
-    assert surfaces == {"Pause Button", "Pasted-text intake", "CSV upload", "verifier"}
+    assert surfaces == {"Pause Button", "Pasted-text intake", "CSV upload", "verifier", "About you"}
+    by_id = {(c["id"], c["surface"]): c for c in report["cases"]}
+    assert by_id[("negative-age", "About you")]["outcome"] == "rejected by input validation"
+    assert by_id[("impossible-goal", "About you")]["outcome"].startswith("planned")
+    assert by_id[("account-02", "Pause Button")]["outcome"].startswith("not read as a trade")
 
 
 def test_checks_catch_advice_leaks_and_wrong_numbers():
