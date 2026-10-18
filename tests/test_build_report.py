@@ -91,3 +91,10 @@ def test_report_traces_each_agent_and_a_verifier_rejection(page):
         assert f"<strong>{agent}</strong>" in trace
     assert '"findings"' in trace and '"passed"' in trace
     assert "When the verifier says no" in trace and "explainer_rewrite" in trace
+
+
+def test_no_tools_choice_is_explained(page):
+    assert "Why the agents have no tools (a deliberate choice)." in page
+    red = json.loads((ROOT / "docs" / "redteam_results.json").read_text(encoding="utf-8"))
+    wrong = red["summary"]["by_suite"]["wrong-number drafts / verifier"]
+    assert f"caught {wrong['passed']} of {wrong['total']} red-team drafts" in page

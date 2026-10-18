@@ -255,6 +255,21 @@ def build() -> str:
         live_source = f"docs/redteam_results.json at commit {LIVE_REDTEAM_COMMIT}"
     run = real_run()
     rw = rewrite_example()
+    wrong = redteam["summary"]["by_suite"].get("wrong-number drafts / verifier")
+    smart_q = quality["routings"].get("MODEL_SMART for every agent")
+    evidence = []
+    if wrong:
+        evidence.append(f"the verifier caught {wrong['passed']} of {wrong['total']} red-team drafts that contained a wrong number")
+    if smart_q:
+        evidence.append(f"even the larger model's first drafts passed the verifier only "
+                        f"{100 * smart_q['first_draft_pass_rate']:.0f}% of the time")
+    no_tools_html = f"""<p><strong>Why the agents have no tools (a deliberate choice).</strong> The tools are real, but they run
+  <em>before</em> the agents, in Python: live and snapshot market data (yfinance), fund look-through, fee projections,
+  crash replays, the retirement plan, the S&P 500 comparison and the Possible-Shifts rules. Their results go to the
+  agents as the Facts JSON, and the verifier's checks (number matcher, advice guard) are tools the orchestrator runs on
+  every draft. Letting a model call calculators itself would make the money math depend on the model's choices, add
+  calls and cost, and give the model actions it does not need. Keeping the agents tool-free means every number can be
+  traced to Python, and nothing an agent writes can trigger an action.{(" In this project, " + " and ".join(evidence) + ", which is why numbers are computed, not generated.") if evidence else ""}</p>"""
     pn = persona_numbers()
     log = prompt_log()
 
@@ -379,6 +394,7 @@ def build() -> str:
   which checks the budget before each one.</p>
   <figure>{ARCH_SVG}<figcaption>Agent architecture and hand-offs. Teal boxes are AI agents; dashed boxes are plain Python.</figcaption></figure>
   {table(["Agent", "Job", "Tools", "Model and cap"], agents)}
+  {no_tools_html}
   <p><strong>Which models and why.</strong> Both MODEL_FAST and MODEL_SMART are <code>gpt-6-luna</code> through Portkey,
   the course default at $0.10 / $0.50 per million input / output tokens, with <code>reasoning_effort=low</code>. The
   larger models are priced in the code (gpt-6-sol $2 / $10, gpt-6-astra $10 / $50) but were not needed: on luna,

@@ -195,6 +195,8 @@ Prices per model are in `secondlook/budget.py` (gpt-6-luna: $0.10 per million in
 
 ## How it works (for developers)
 
+The agents deliberately have no tools to call. The tools (market data, look-through, fees, crash replay, plan, the S&P 500 comparison and the Possible-Shifts rules) run first in Python, and the agents only receive their results as a Facts JSON and explain them. The verifier's number matcher and advice guard then check every draft. This keeps every number traceable to Python and means nothing an agent writes can trigger an action.
+
 ```
 app.py                     Streamlit interface
 secondlook/quant/          All calculations (parsing, look-through, fees, crash replay, plan, concentration, Facts JSON)
