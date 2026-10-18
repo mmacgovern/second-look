@@ -29,7 +29,9 @@ Type each command, press Enter, and wait for it to finish before typing the next
 
 ---
 
-## Install and run on macOS
+## Install and run on macOS (not yet tested on a Mac)
+
+> **Not yet tested on a Mac.** These steps mirror the Windows steps but have not been run on a Mac yet. If something differs, please note it.
 
 1. **Check Python.** You should see `Python 3.12` (3.11 or 3.13 also work).
    ```bash
@@ -66,7 +68,9 @@ Type each command, press Enter, and wait for it to finish before typing the next
    streamlit run app.py
    ```
 
-## Install and run on Windows
+## Install and run on Windows (tested)
+
+> **Tested** on Windows 11 with Python 3.12.
 
 1. **Check Python.** You should see `Python 3.12` followed by more numbers. (The `-3.12` picks that version even if you have others installed.)
    ```powershell

@@ -345,3 +345,5 @@ Fix these items from STATUS.md. Don't read .env. Run pytest after each item and 
 **Result (item 2):** The orchestrator now records every verifier rejection (stage rewrite or template, fluency and redacted reasons) in a new rewrites table in the ledger, and the Admin page lists them under "Verifier rewrites"; 476 tests passed.
 
 **Result (item 3):** Labeled the risk-profile stock ranges "Planning rule of thumb, not a recommendation." in data/reference/risk_profile_ranges.json and on the Retirement Plan tab (badge plus "rule-of-thumb range" wording); glide_path.json left for the owner; 477 tests passed.
+
+**Result (item 4):** README now marks the Windows install steps "tested" (Windows 11, Python 3.12) and the macOS steps "not yet tested on a Mac", with a test that keeps both labels; 479 tests passed.
