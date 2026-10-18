@@ -121,3 +121,13 @@ def test_black_and_gold_theme_with_mascot(monkeypatch):
     assert (root / "assets" / "labubu.svg").exists()
     config = (root / ".streamlit" / "config.toml").read_text(encoding="utf-8")
     assert 'base = "dark"' in config and 'primaryColor = "#D4AF37"' in config
+
+
+def test_risk_ranges_are_labelled_rule_of_thumb(monkeypatch):
+    from secondlook.ui_data import RANGE_LABEL, load_risk_ranges
+
+    assert RANGE_LABEL == "Planning rule of thumb, not a recommendation."
+    assert load_risk_ranges()["label"] == RANGE_LABEL
+    at = open_app(monkeypatch, tab="Retirement Plan")  # the stock-mix comparison lives on the plan tab
+    text = " ".join(m.value for m in at.markdown)
+    assert RANGE_LABEL in text and "rule-of-thumb range" in text

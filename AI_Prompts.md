@@ -343,3 +343,5 @@ Fix these items from STATUS.md. Don't read .env. Run pytest after each item and 
 **Result (item 1):** The prompt logger now redacts a named value only when the name looks like a setting (e.g. PORTKEY_API_KEY) or the value looks like a key, so prose such as "Tokenomics: measured tokens" survives while fake keys are still redacted; old entries unchanged; 472 tests passed.
 
 **Result (item 2):** The orchestrator now records every verifier rejection (stage rewrite or template, fluency and redacted reasons) in a new rewrites table in the ledger, and the Admin page lists them under "Verifier rewrites"; 476 tests passed.
+
+**Result (item 3):** Labeled the risk-profile stock ranges "Planning rule of thumb, not a recommendation." in data/reference/risk_profile_ranges.json and on the Retirement Plan tab (badge plus "rule-of-thumb range" wording); glide_path.json left for the owner; 477 tests passed.

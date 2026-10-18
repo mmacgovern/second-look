@@ -219,6 +219,7 @@ def holdings_for_buy(values: dict[str, float]) -> list[str]:
 # --- Retirement Plan tab -----------------------------------------------------------
 
 PLAN_LABEL = "Planning estimate, not a guarantee."
+RANGE_LABEL = "Planning rule of thumb, not a recommendation."
 RISK_RANGES_FILE = Path(__file__).resolve().parents[1] / "data" / "reference" / "risk_profile_ranges.json"
 NON_STOCK = {"bonds", "cash", "other", "unclassified"}
 

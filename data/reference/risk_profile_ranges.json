@@ -1,12 +1,28 @@
 {
+  "label": "Planning rule of thumb, not a recommendation.",
   "is_illustrative": true,
   "source": "Illustrative rule-of-thumb ranges, not from a cited source. Replace with a cited model-portfolio table (publisher, document, date) and set is_illustrative to false.",
-  "notes": "Stock share of the portfolio, in percent, for each risk profile. The app shows these next to the portfolio's own mix as a reference point, never as a recommendation.",
+  "notes": "Stock share of the portfolio, in percent, for each risk profile. This is a planning rule of thumb, not a recommendation: the app shows it next to the portfolio's own mix as a reference point only.",
   "stock_pct": {
-    "Conservative": [20, 40],
-    "Moderately conservative": [35, 55],
-    "Moderate": [50, 70],
-    "Moderately aggressive": [65, 85],
-    "Aggressive": [80, 100]
+    "Conservative": [
+      20,
+      40
+    ],
+    "Moderately conservative": [
+      35,
+      55
+    ],
+    "Moderate": [
+      50,
+      70
+    ],
+    "Moderately aggressive": [
+      65,
+      85
+    ],
+    "Aggressive": [
+      80,
+      100
+    ]
   }
 }

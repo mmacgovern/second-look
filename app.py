@@ -33,9 +33,9 @@ from secondlook.quant.profile import QUIZ, UserProfile, load_persona, risk_profi
 from secondlook.quant.replay import SCENARIOS, replay
 from secondlook.quant.xray import SECTOR_LABELS, xray
 from secondlook.ui_data import (
-    FLUENCY, PLAN_LABEL, SAMPLES, Inputs, asset_mix, balances_frame, company_table, crash_frame, fee_curves,
-    friendly_note, gap_headline, holdings_for_buy, load_risk_ranges, mix_vs_range, overlap_table, params_to_reset,
-    parse_action, plan_band_frame, session_cost, treemap_frame,
+    FLUENCY, PLAN_LABEL, RANGE_LABEL, SAMPLES, Inputs, asset_mix, balances_frame, company_table, crash_frame,
+    fee_curves, friendly_note, gap_headline, holdings_for_buy, load_risk_ranges, mix_vs_range, overlap_table,
+    params_to_reset, parse_action, plan_band_frame, session_cost, treemap_frame,
 )
 
 ROOT = Path(__file__).resolve().parent
@@ -640,14 +640,15 @@ def plan_tab(inputs: Inputs) -> None:
             ranges = load_risk_ranges()
             band, position = mix_vs_range(mix["Stocks"], risk.label, ranges)
             if band:
-                st.markdown(f"Stocks are **{mix['Stocks']:.1f}%** of your portfolio. The reference range for a "
+                label = ranges.get("label", RANGE_LABEL)
+                st.markdown(f"Stocks are **{mix['Stocks']:.1f}%** of your portfolio. The rule-of-thumb range for a "
                             f"**{risk.label.lower()}** profile is **{band[0]:.0f}% to {band[1]:.0f}%** stocks, "
                             f"so your mix is **{position}** that range.")
+                st.markdown(f'<span class="sl-badge">{safe(label)}</span>', unsafe_allow_html=True)
                 if ranges.get("is_illustrative"):
-                    st.caption("Reference ranges are illustrative rules of thumb, not personal advice "
-                               "(data/reference/risk_profile_ranges.json).")
+                    st.caption("These ranges are not from a cited source yet (data/reference/risk_profile_ranges.json).")
         else:
-            st.markdown('<p class="sl-muted">Answer the risk quiz in About you to compare your mix with a reference range.</p>',
+            st.markdown('<p class="sl-muted">Answer the risk quiz in About you to compare your mix with a planning rule of thumb (not a recommendation).</p>',
                         unsafe_allow_html=True)
 
 
