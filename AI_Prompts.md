@@ -309,3 +309,20 @@ The theme for the professional background on the website with the App style shou
 ```
 
 **Result:** Switched the website to a black and gold theme (dark Streamlit theme, gold accents, restyled hero, cards, logo and charts with readable treemap labels) and added an original green Labubu-style mascot fixed to the bottom right of every page; all 470 tests passed.
+
+### #17 — 2026-10-17 23:21 — Phase 15 — Review
+
+```text
+Phase 15 Review 
+
+I'm the project owner and I've lost track of what's finished. Do NOT change any files and do NOT read .env. Inspect the whole repo (code, tests, docs, README, report.html, slides.html, AI_Prompts.md) and write STATUS.md in plain English for a non-programmer:
+
+1. "What works" — each feature I can click in the app today (X-Ray, Concentration, Fee Clock, Retirement Plan, Crash Replay, Pause Button, risk profile, account types, demo mode), one line each.
+2. "Incomplete" — every TODO, placeholder, stub, failing or skipped test, and missing file. For each: where it is, what's missing in one sentence, and whether it needs (a) only me to do something, (b) a quick Claude Code fix, or (c) a live API run that costs money.
+3. "Deliverables" — status of README, report.html (each of the 8 sections), slides.html (each slide), AI_Prompts.md, screenshots, cost results, red-team results, user test results.
+4. Run pytest and report the pass/fail count.
+
+Keep it short: no code, no jargon. Then show me STATUS.md.
+```
+
+**Result:** Wrote STATUS.md, a plain-English status report covering what works in the app, every incomplete item with who needs to act (owner, quick Claude Code fix or paid live run), and the status of each deliverable; no other project files were changed, and all 470 tests passed.
