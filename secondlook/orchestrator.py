@@ -23,6 +23,7 @@ from secondlook.agents.analyst import RankedFinding
 from secondlook.agents.base import AgentContext, Fluency
 from secondlook.agents.explainer import Card, ExplainerInput, ExplainerOutput
 from secondlook.agents.template import render_pause_template, render_template
+from secondlook import budget
 from secondlook.budget import BudgetExceeded
 from secondlook.config import get_logger
 from secondlook.llm import LLMError
@@ -106,6 +107,7 @@ def run_analysis(facts: dict, fluency: Fluency = "comfortable", ctx: AgentContex
         if result.passed:
             return finish(draft, "ai")
         reasons.extend(result.reasons)
+        budget.record_rewrite(ctx.session_id, "rewrite", result.reasons, fluency, db_path=ctx.db_path)
 
         steps.take("explainer_rewrite")
         rewrite = explainer.run(
@@ -114,6 +116,7 @@ def run_analysis(facts: dict, fluency: Fluency = "comfortable", ctx: AgentContex
         if result.passed:
             return finish(rewrite, "ai_rewrite")
         reasons.extend(result.reasons)
+        budget.record_rewrite(ctx.session_id, "template", result.reasons, fluency, db_path=ctx.db_path)
         log.info("Draft failed review twice; using template. Reasons: %s", reasons)
         return finish(render_template(facts, fluency), "template", "The AI draft did not pass review, so this is the standard summary.")
     except (BudgetExceeded, LLMError, StepLimitReached, ValidationError, ValueError) as exc:

@@ -250,6 +250,16 @@ def admin_page() -> None:
     st.dataframe(pd.DataFrame(s["by_agent"]), hide_index=True)
     st.subheader("Cost by session")
     st.dataframe(pd.DataFrame(s["by_session"]).head(50), hide_index=True)
+    st.subheader("Verifier rewrites")
+    st.caption("Every time the checker sent an AI draft back. 'rewrite' means a second draft was requested; "
+               "'template' means the second draft failed too, so the standard summary was shown.")
+    rows = budget.rewrites(limit=100)
+    if rows:
+        st.dataframe(pd.DataFrame([{"Time (UTC)": r["timestamp"][:19].replace("T", " "), "Session": r["session_id"],
+                                    "Stage": r["stage"], "Fluency": r["fluency"], "Reasons": " | ".join(r["reasons"])}
+                                   for r in rows]), hide_index=True)
+    else:
+        st.info("No drafts have been sent back yet.")
 
 
 def hero() -> None:

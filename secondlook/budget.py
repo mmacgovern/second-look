@@ -7,13 +7,14 @@ which are recorded at zero cost).
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from secondlook.config import PROJECT_ROOT, Settings, get_settings, get_logger
+from secondlook.config import PROJECT_ROOT, Settings, get_logger, get_settings, redact
 
 LEDGER_PATH = PROJECT_ROOT / ".runtime" / "ledger.db"
 
@@ -104,6 +105,16 @@ def _ledger(db_path: Path | None):
             latency_s REAL NOT NULL,
             cache_hit INTEGER NOT NULL,
             cached_input_tokens INTEGER NOT NULL DEFAULT 0
+        )"""
+    )
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS rewrites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            session_id TEXT NOT NULL,
+            stage TEXT NOT NULL,
+            fluency TEXT NOT NULL,
+            reasons TEXT NOT NULL
         )"""
     )
     _migrate(conn)
@@ -243,3 +254,27 @@ def summary(db_path: Path | None = None, session_id: str | None = None, session_
         "by_agent": by_agent,
         "by_session": by_session,
     }
+
+
+MAX_REASON_CHARS = 300
+
+
+def record_rewrite(session_id: str, stage: str, reasons: list[str], fluency: str = "",
+                   *, db_path: Path | None = None) -> None:
+    """Record why the verifier rejected a draft. stage: "rewrite" (a second draft was requested) or
+    "template" (the rewrite failed too, so the safe summary was shown). Reasons are redacted and trimmed."""
+    clean = [redact(r)[:MAX_REASON_CHARS] for r in reasons] or ["(no reason given)"]
+    with _ledger(db_path) as conn:
+        conn.execute(
+            "INSERT INTO rewrites (timestamp, session_id, stage, fluency, reasons) VALUES (?, ?, ?, ?, ?)",
+            (datetime.now(timezone.utc).isoformat(), session_id, stage, fluency, json.dumps(clean)),
+        )
+
+
+def rewrites(db_path: Path | None = None, limit: int = 100) -> list[dict]:
+    """Most recent verifier rejections first, with reasons as a list."""
+    with _ledger(db_path) as conn:
+        rows = [dict(r) for r in conn.execute("SELECT * FROM rewrites ORDER BY id DESC LIMIT ?", (limit,))]
+    for row in rows:
+        row["reasons"] = json.loads(row["reasons"])
+    return rows

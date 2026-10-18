@@ -169,3 +169,16 @@ def test_old_ledger_is_migrated_without_losing_rows(ledger):
     record_after_call("new", "analyst", "gpt-6-luna", 100, 10, 0.1, cached_input_tokens=50, db_path=ledger)
     assert [r["cached_input_tokens"] for r in budget.calls(ledger)] == [0, 50]
     assert budget.summary(ledger)["total_usd"] == pytest.approx(0.25 + budget.cost_usd("gpt-6-luna", 100, 10, 50), abs=1e-6)
+
+
+def test_rewrite_reasons_are_redacted_trimmed_and_newest_first(ledger):
+    from conftest import ODD_KEY
+    from secondlook.config import Settings
+
+    Settings(portkey_api_key=ODD_KEY)  # registers the key so redact() knows it
+    budget.record_rewrite("s1", "rewrite", [f"leaked {ODD_KEY}", "x" * 500], "pro", db_path=ledger)
+    budget.record_rewrite("s1", "template", [], "pro", db_path=ledger)
+    rows = budget.rewrites(ledger)
+    assert [r["stage"] for r in rows] == ["template", "rewrite"]
+    assert rows[0]["reasons"] == ["(no reason given)"]
+    assert ODD_KEY not in rows[1]["reasons"][0] and len(rows[1]["reasons"][1]) == budget.MAX_REASON_CHARS

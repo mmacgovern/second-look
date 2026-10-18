@@ -58,6 +58,25 @@ def test_second_failure_renders_template(run):
     assert any("should sell" in r for r in result.verifier_reasons) and any("15%" in r for r in result.verifier_reasons)
 
 
+def test_every_rewrite_reason_is_recorded_in_the_ledger(run, ledger):
+    run(reply(ANALYST_REPLY), reply(BAD_NUMBER_DRAFT), reply(GOOD_DRAFT), reply(PASS))
+    rows = budget.rewrites(ledger)
+    assert [r["stage"] for r in rows] == ["rewrite"] and rows[0]["session_id"] == "s"
+    assert rows[0]["fluency"] == "comfortable" and any("15%" in r for r in rows[0]["reasons"])
+
+
+def test_template_fallback_records_both_rejections(run, ledger):
+    run(reply(ANALYST_REPLY), reply(ADVICE_DRAFT), reply(BAD_NUMBER_DRAFT))
+    rows = budget.rewrites(ledger)  # newest first
+    assert [r["stage"] for r in rows] == ["template", "rewrite"]
+    assert any("should sell" in r for r in rows[1]["reasons"]) and any("15%" in r for r in rows[0]["reasons"])
+
+
+def test_passing_draft_records_no_rewrite(run, ledger):
+    run(reply(ANALYST_REPLY), reply(GOOD_DRAFT), reply(PASS))
+    assert budget.rewrites(ledger) == []
+
+
 def test_never_more_than_four_llm_calls(run):
     result, ctx = run(reply(ANALYST_REPLY), reply(GOOD_DRAFT), reply(FAIL), reply(ADVICE_DRAFT), reply(PASS))
     assert len(ctx.client.calls) <= orchestrator.MAX_LLM_STEPS == 4
