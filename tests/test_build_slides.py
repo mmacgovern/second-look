@@ -52,7 +52,7 @@ def test_numbers_come_from_result_files(page):
     assert f"${cost['monthly']['without_cache']['users'][-1]['total_usd']:,.2f}" in page
     o = red["summary"]["overall"]
     assert f"{o['passed']}/{o['total']}" in page
-    for v in red["summary"]["by_suite"].values():
+    for v in bs.suite_totals(red["summary"]["by_suite"]).values():
         assert f"<b>{v['passed']}/{v['total']}</b>" in page
 
 

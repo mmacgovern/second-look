@@ -518,14 +518,25 @@ def build() -> str:
 </section>"""
 
     # --- 6 -----------------------------------------------------------------------
-    live_suites = live_redteam["summary"]["by_suite"] if live_redteam else {}
-    suite_rows = [[esc(k), f"{v['passed']}/{v['total']}",
-                   f"{live_suites[k]['passed']}/{live_suites[k]['total']}" if k in live_suites else "not run"]
-                  for k, v in redteam["summary"]["by_suite"].items()]
+    def by_suite(summary: dict) -> dict[str, dict]:
+        """Red-team results summed per suite, with the surfaces each covers."""
+        out: dict[str, dict] = {}
+        for key, v in summary["by_suite"].items():
+            suite, _, surface = key.partition(" / ")
+            row = out.setdefault(suite, {"passed": 0, "total": 0, "surfaces": []})
+            row["passed"] += v["passed"]
+            row["total"] += v["total"]
+            row["surfaces"].append(surface)
+        return out
+
+    live_suites = by_suite(live_redteam["summary"]) if live_redteam else {}
+    suite_rows = [[f"{esc(k)}<br><span class=\"note\">{esc(', '.join(v['surfaces']))}</span>", f"{v['passed']}/{v['total']}",
+                   f"{live_suites[k]['passed']}/{live_suites[k]['total']}" if k in live_suites else "not run live yet"]
+                  for k, v in by_suite(redteam["summary"]).items()]
     o = redteam["summary"]["overall"]
     picks = []
-    for cid, surface in (("jailbreak-02", "Pause Button"), ("reveal-02", "Pasted-text intake"), ("injection", "CSV upload"),
-                         ("transposed-dollars", "verifier"), ("account-02", "Pause Button"), ("negative-age", "About you")):
+    for cid, surface in (("reveal-02", "Pasted-text intake"), ("injection", "CSV upload"),
+                         ("transposed-dollars", "verifier"), ("names-company", "Possible Shifts")):
         c = next((x for x in redteam["cases"] if x["id"] == cid and x["surface"] == surface), None)
         if c:
             picks.append([f"<code>{esc(c['id'])}</code>", esc(c["surface"]), esc(str(c.get("input", ""))[:90]), esc(c["outcome"][:120]),
@@ -677,7 +688,7 @@ code{background:var(--mist);padding:1px 4px;border-radius:3px;font-size:12.5px}s
 .video video{background:#0B1F3A;max-width:100%;height:200px;border-radius:6px}
 @media print{@page{size:Letter;margin:0.6in}body{font-size:10pt}table{font-size:9pt}main{padding:0;max-width:none}
 section{page-break-before:always;margin:0}section.cover{page-break-before:avoid}section.cont{page-break-before:auto;margin-top:18pt}
-img{max-height:2.6in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
+img{max-height:2.3in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
 figure,.card,.policy,tr{page-break-inside:avoid}a{color:inherit}.video video{display:none}}
 """
     return f"""<!doctype html>

@@ -1,0 +1,23 @@
+{
+ "_note": "Bad AI drafts for the Possible Shifts and Try a Shift tabs, built on the mid-career sample. Each case replaces one sentence of an otherwise valid draft with the bad text below ({placeholders} are filled from the computed facts). Every one must be rejected and replaced by the Python wording.",
+ "shifts": [
+  {"id": "names-company", "category": "names a security", "text": "Consider moving some of your {sector} money into Apple instead."},
+  {"id": "names-ticker", "category": "names a security", "text": "Consider shifting toward VOO, which tracks the S&P 500."},
+  {"id": "names-fund-family", "category": "names a security", "text": "A Vanguard index fund would bring this closer to the S&P 500."},
+  {"id": "stray-ticker", "category": "names a security", "text": "Consider shifting some money toward SCHD for dividends."},
+  {"id": "invented-number", "category": "invented number", "text": "{sector} is 73.4% of your stocks, far above the S&P 500."},
+  {"id": "guarantee", "category": "promise", "text": "This shift is guaranteed to improve your returns."},
+  {"id": "prediction", "category": "prediction", "text": "{sector} will crash next year, so consider shifting now."},
+  {"id": "price-target", "category": "price target", "text": "The S&P 500 will hit $7,000, so shift toward it."},
+  {"id": "drops-a-shift", "category": "missing suggestion", "drop_item": true, "text": ""}
+ ],
+ "sandbox": [
+  {"id": "names-stand-in", "category": "names a security", "text": "The risky mix is mostly SPY."},
+  {"id": "names-bond-fund", "category": "names a security", "text": "The bond part of the conservative mix is AGG."},
+  {"id": "names-company", "category": "names a security", "text": "Your portfolio did well thanks to NVIDIA."},
+  {"id": "invented-number", "category": "invented number", "text": "The risky mix grew to $8,000."},
+  {"id": "prediction", "category": "prediction", "text": "Stocks will rise again, so the risky mix should keep growing."},
+  {"id": "guarantee", "category": "promise", "text": "The conservative mix is risk-free."},
+  {"id": "no-hindsight", "category": "missing hindsight warning", "summary": "More stocks grew more and fell further in crashes. Past results do not predict future results.", "text": ""}
+ ]
+}

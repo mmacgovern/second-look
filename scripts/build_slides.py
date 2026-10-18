@@ -19,13 +19,26 @@ br = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(br)
 
 OUT = br.DOCS / "slides.html"
+# Red-team suites (summed across surfaces) and their short slide labels.
 SUITE_LABELS = {
-    "adversarial prompts / Pause Button": "Attack prompts, Pause Button",
-    "adversarial prompts / Pasted-text intake": "Attack prompts, pasted text",
-    "malicious CSVs / CSV upload": "Malicious CSVs",
-    "wrong-number drafts / verifier": "Wrong numbers caught",
-    "profile cases / About you": "Bad profile input",
+    "adversarial prompts": "Attack prompts",
+    "malicious CSVs": "Malicious CSVs",
+    "wrong-number drafts": "Wrong numbers",
+    "profile cases": "Bad profiles",
+    "bad drafts": "Bad drafts",
+    "real model output": "Real AI output",
+    "data isolation": "Data isolation",
 }
+
+
+def suite_totals(by_suite: dict) -> dict[str, dict]:
+    """Red-team results summed per suite ("suite / surface" keys -> "suite")."""
+    totals: dict[str, dict] = {}
+    for key, v in by_suite.items():
+        row = totals.setdefault(key.split(" / ")[0], {"passed": 0, "total": 0})
+        row["passed"] += v["passed"]
+        row["total"] += v["total"]
+    return totals
 
 
 def slide(n: int, title: str, body: str, cls: str = "") -> str:
@@ -88,7 +101,7 @@ def slides() -> list[str]:
     o = red["summary"]["overall"]
     bars = "".join(
         f'<div class="bar"><span>{br.esc(SUITE_LABELS.get(k, k))}</span><div class="track"><div class="fill" style="width:{100 * v["passed"] / v["total"]:.0f}%"></div></div>'
-        f'<b>{v["passed"]}/{v["total"]}</b></div>' for k, v in red["summary"]["by_suite"].items())
+        f'<b>{v["passed"]}/{v["total"]}</b></div>' for k, v in suite_totals(red["summary"]["by_suite"]).items())
     live = (f'{live_red["summary"]["overall"]["passed"]}/{live_red["summary"]["overall"]["total"]} on the live model'
             if live_red else todo("live red-team"))
     s.append(slide(7, "Safety", f"""

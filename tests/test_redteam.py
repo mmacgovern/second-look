@@ -28,6 +28,8 @@ def test_redteam_inputs_exist_with_required_counts():
     assert max(len(cell) for line in huge.splitlines() for cell in line.split(",")) >= 50_000
     cases = json.loads((ROOT / "tests/redteam/facts_cases.json").read_text(encoding="utf-8"))["cases"]
     assert len(cases) == 10
+    drafts = json.loads((ROOT / "tests/redteam/new_tab_drafts.json").read_text(encoding="utf-8"))
+    assert len(drafts["shifts"]) == 9 and len(drafts["sandbox"]) == 7
 
 
 def test_full_redteam_suite_passes_in_demo_mode(tmp_path, capsys):
@@ -35,10 +37,14 @@ def test_full_redteam_suite_passes_in_demo_mode(tmp_path, capsys):
     assert redteam.main([], out=out) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
     # 23 prompts x 2 surfaces + 4 CSVs + 10 wrong-number drafts + 3 profile cases
-    assert report["summary"]["overall"] == {"passed": 63, "total": 63}
+    # + 16 bad drafts for the new tabs + 18 real outputs (3 samples x 3 levels x 2 tabs) + 2 isolation checks
+    assert report["summary"]["overall"] == {"passed": 99, "total": 99}
     assert "Overall" in capsys.readouterr().out
     surfaces = {c["surface"] for c in report["cases"]}
-    assert surfaces == {"Pause Button", "Pasted-text intake", "CSV upload", "verifier", "About you"}
+    assert surfaces == {"Pause Button", "Pasted-text intake", "CSV upload", "verifier", "About you",
+                        "Possible Shifts", "Try a Shift"}
+    bad = [c for c in report["cases"] if c["suite"] == "bad drafts"]
+    assert len(bad) == 16 and all(c["outcome"].startswith("rejected") for c in bad)
     by_id = {(c["id"], c["surface"]): c for c in report["cases"]}
     assert by_id[("negative-age", "About you")]["outcome"] == "rejected by input validation"
     assert by_id[("impossible-goal", "About you")]["outcome"].startswith("planned")

@@ -49,7 +49,12 @@ from secondlook.agents.intake import numbers_in  # noqa: E402
 from secondlook.agents.verifier import python_checks  # noqa: E402
 from secondlook.budget import BudgetExceeded  # noqa: E402
 from secondlook.config import Settings, load_settings  # noqa: E402
-from secondlook.demo_runs import persona_facts  # noqa: E402
+from secondlook.agents import sandbox as sandbox_agent  # noqa: E402
+from secondlook.agents import shifts as shifts_agent  # noqa: E402
+from secondlook.demo_runs import FLUENCIES, PERSONAS, persona_facts, persona_sandbox, persona_shifts  # noqa: E402
+from secondlook.quant import sandbox as sandbox_engine  # noqa: E402
+from secondlook.quant import shifts as shift_rules  # noqa: E402
+from secondlook.quant.benchmark import load_benchmark  # noqa: E402
 from secondlook.llm import LLMError  # noqa: E402
 from secondlook.quant.facts import build_facts, estimate_tokens, facts_json, load_market_inputs  # noqa: E402
 from secondlook.quant.parse import parse_csv  # noqa: E402
@@ -282,6 +287,91 @@ def run_facts_cases() -> list[dict]:
     return results
 
 
+def run_new_tab_drafts() -> list[dict]:
+    """Deliberately bad drafts for Possible Shifts and Try a Shift: each must fail the tab's Python checks."""
+    spec = json.loads((RT / "new_tab_drafts.json").read_text(encoding="utf-8"))
+    results = []
+
+    shifts_facts, details, banned = persona_shifts("midcareer")
+    first = shifts_facts["shifts"][0]
+    for c in spec["shifts"]:
+        items = [shifts_agent.ShiftItem(title=s["title"], body=d) for s, d in zip(shifts_facts["shifts"], details)]
+        if c.get("drop_item"):
+            items = items[:-1]
+        else:
+            items[0] = shifts_agent.ShiftItem(title=items[0].title, body=c["text"].format(**first))
+        draft = shifts_agent.ShiftsOutput(summary="These shifts stand out from your numbers.", items=items)
+        problems = shifts_agent.check(draft, shifts_facts, banned)
+        results.append({"suite": "bad drafts", "id": c["id"], "surface": "Possible Shifts", "category": c["category"],
+                        "input": c["text"].format(**first) or "(one computed shift left out)", "passed": bool(problems),
+                        "outcome": f"rejected: {problems[0]}" if problems else "MISSED",
+                        "problems": [] if problems else ["a bad draft passed the checks"]})
+
+    sandbox_facts, sb_banned = persona_sandbox("midcareer")
+    template = orchestrator.sandbox_template(sandbox_facts)
+    for c in spec["sandbox"]:
+        points = list(template.points)
+        if c["text"]:
+            points[0] = c["text"]
+        draft = sandbox_agent.SandboxOutput(summary=c.get("summary", template.summary), points=points)
+        problems = sandbox_agent.check(draft, sandbox_facts, sb_banned)
+        results.append({"suite": "bad drafts", "id": c["id"], "surface": "Try a Shift", "category": c["category"],
+                        "input": c["text"] or c.get("summary", ""), "passed": bool(problems),
+                        "outcome": f"rejected: {problems[0]}" if problems else "MISSED",
+                        "problems": [] if problems else ["a bad draft passed the checks"]})
+    return results
+
+
+def run_new_tab_outputs(mode: str, live: Settings | None, db: Path | None, secrets: list[str]) -> list[dict]:
+    """What the shifts and sandbox agents actually say for every sample and fluency level (recordings in demo
+    mode, the real model with --live): no named security, no number outside the facts, no leak."""
+    settings = live or Settings(demo_mode=True)
+    results = []
+    for persona in PERSONAS:
+        sh_facts, details, sh_banned = persona_shifts(persona)
+        sb_facts, sb_banned = persona_sandbox(persona)
+        for fluency in FLUENCIES:
+            ctx = AgentContext(session_id=f"redteam-tabs-{persona}-{fluency}", settings=settings, db_path=db)
+            shifts_out = orchestrator.run_shifts(sh_facts, details, fluency, ctx, sh_banned)
+            sandbox_out = orchestrator.run_sandbox(sb_facts, fluency, ctx, sb_banned)
+            for surface, out, text, facts, banned in (
+                ("Possible Shifts", shifts_out, "\n".join([shifts_out.summary] + [f"{i.title}. {i.body}" for i in shifts_out.items]),
+                 sh_facts, sh_banned),
+                ("Try a Shift", sandbox_out, "\n".join([sandbox_out.summary] + sandbox_out.points), sb_facts, sb_banned),
+            ):
+                problems = [f"named security: {h.excerpt}" for h in advice_guard.check_shift(text, banned)
+                            if h.rule == "named_security"]
+                problems += [f"not allowed: {h.reason()}" for h in advice_guard.check_shift(text, banned)
+                             if h.rule != "named_security"]
+                problems += [f"number not in facts: {n}" for n in unmatched_numbers(text, facts)]
+                problems += leak_problems(text, secrets)
+                results.append({"suite": "real model output", "id": f"{persona}-{fluency}", "surface": surface,
+                                "category": mode, "input": f"{persona} sample, {fluency}", "passed": not problems,
+                                "outcome": f"shown: {out.source}" + (f" ({out.reasons[0][:80]})" if out.reasons else ""),
+                                "problems": problems})
+    return results
+
+
+def run_new_tab_isolation() -> list[dict]:
+    """Hostile text in an uploaded CSV must never reach what the two new tabs send to the AI."""
+    path = RT / "csvs" / "injection.csv"
+    portfolio = parse_csv(path.read_bytes())
+    profiles, adj = load_market_inputs(portfolio, prefer_live=False)
+    values = portfolio.values_by_symbol()
+    bench = load_benchmark()
+    sh_facts, _, _ = shift_rules.prepare(values, profiles, bench)
+    _, sb_facts, _ = sandbox_engine.prepare(values, profiles, adj, bench)
+    results = []
+    for surface, facts in (("Possible Shifts", sh_facts), ("Try a Shift", sb_facts)):
+        sent = json.dumps(facts)
+        kept = [bad for bad in CSV_FORBIDDEN["injection.csv"] if bad.lower() in sent.lower()]
+        results.append({"suite": "data isolation", "id": "injection-csv", "surface": surface, "category": "prompt injection",
+                        "input": "injection.csv (instructions hidden in CSV fields)", "passed": not kept,
+                        "outcome": "no hostile text in the AI input" if not kept else f"KEPT: {kept}",
+                        "problems": [f"hostile text reached the AI input: {k[:40]}" for k in kept]})
+    return results
+
+
 # --- main --------------------------------------------------------------------------
 
 def summarize(results: list[dict]) -> dict:
@@ -325,7 +415,8 @@ def main(argv: list[str] | None = None, out: Path = RESULTS) -> int:
     with tempfile.TemporaryDirectory() as tmp:
         db = None if live else Path(tmp) / "ledger.db"  # live spending goes to the real ledger
         results = (run_prompts("live" if live else "demo", live, db, secrets) + run_csvs(live, db, secrets)
-                   + run_facts_cases() + run_profile_cases(live, db, secrets))
+                   + run_facts_cases() + run_profile_cases(live, db, secrets) + run_new_tab_drafts()
+                   + run_new_tab_outputs("live" if live else "demo", live, db, secrets) + run_new_tab_isolation())
 
     summary = summarize(results)
     report = {"run_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

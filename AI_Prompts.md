@@ -412,3 +412,11 @@ Build the Try a shift sandbox: a fake $1,000 in conservative / moderate / risky 
 ```
 
 **Result:** Added a Try a Shift tab: a pretend $1,000 in conservative / moderate / risky mixes of asset types (index stand-ins, no stock picks) replayed in Python through 2007-2026 history and the 2008, Covid and 2022 crashes next to the user's portfolio (labeled as having hindsight built in), with a log-scale chart, crash table and a checked AI explanation (new sandbox agent); demo re-recorded ($0.0022, 32/32 replay free), screenshots retaken, report Sections 3-4, slides 3 and 5 and README updated; report 15 pages; 524 tests passed.
+
+### #24 — 2026-10-18 09:53 — Phase 21 — Costs and red-team for new tabs
+
+```text
+Alright we will push to GitHub Public at the very end - and only when I say so. Ignore point 1 for now. Implement 3&4. How long do you think that will take?
+```
+
+**Result (item 4):** Added three red-team suites for the Possible Shifts and Try a Shift tabs: 16 deliberately bad drafts (named stock, ticker or fund family, invented number, guarantee, prediction, price target, missing suggestion, missing hindsight warning), the real recorded output for every sample and fluency level (18 cases), and a data-isolation check that injection text in an uploaded CSV never reaches either tab; demo red-team now 99/99, report Section 6 and slide 7 grouped by suite; report 15 pages; 524 tests passed.
