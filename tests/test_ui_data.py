@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from quant_toys import TOY_PROFILES, TOY_VALUES
-from secondlook import budget
+from secondlook import budget, ui_data
 from secondlook.quant.fees import fee_report
 from secondlook.quant.models import Action
 from secondlook.quant.replay import Scenario
@@ -175,3 +175,18 @@ def test_reference_ranges_cover_every_risk_profile_and_are_labeled():
     for lo, hi in ranges["stock_pct"].values():
         assert 0 <= lo < hi <= 100
     assert PLAN_LABEL == "Planning estimate, not a guarantee."
+
+
+def test_params_to_reset_keeps_widget_bound_params():
+    keys = ["sample", "fluency", "pause", "tab", "page", "about"]
+    assert ui_data.params_to_reset(keys) == ["sample", "pause", "page", "about"]
+
+
+def test_widget_params_match_app_bindings():
+    """Every widget bound to the URL in app.py is protected from the upload reset."""
+    import re
+    from pathlib import Path
+
+    app = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
+    bound = set(re.findall(r'key="(\w+)"[^)]*bind="query-params"', app))
+    assert bound == set(ui_data.WIDGET_PARAMS)

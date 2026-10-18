@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import hashlib
 import html
+import json
 import uuid
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -31,23 +33,44 @@ from secondlook.quant.replay import SCENARIOS, replay
 from secondlook.quant.xray import SECTOR_LABELS, xray
 from secondlook.ui_data import (
     FLUENCY, PLAN_LABEL, SAMPLES, Inputs, asset_mix, balances_frame, company_table, crash_frame, fee_curves,
-    friendly_note, gap_headline, holdings_for_buy, load_risk_ranges, mix_vs_range, overlap_table, parse_action,
-    plan_band_frame, session_cost, treemap_frame,
+    friendly_note, gap_headline, holdings_for_buy, load_risk_ranges, mix_vs_range, overlap_table, params_to_reset,
+    parse_action, plan_band_frame, session_cost, treemap_frame,
 )
 
+ROOT = Path(__file__).resolve().parent
+ASSETS, DOCS = ROOT / "assets", ROOT / "docs"
 NAVY, ACCENT, SLATE, MIST = "#0B1F3A", "#0E7C86", "#64748B", "#E8EEF5"
 TABS = ["X-Ray", "Fee Clock", "Crash Replay", "Retirement Plan", "Top 3 Things Worth Knowing"]
 DISCLAIMER = ("Second Look provides educational information only. It is not investment, tax or legal advice, "
               "and it does not recommend buying, selling or holding any security. Past results do not predict future results.")
 
-st.set_page_config(page_title="Second Look", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Second Look", page_icon=":material/travel_explore:", layout="wide",
+                   initial_sidebar_state="auto")
 
 st.markdown(f"""
 <style>
-  .block-container {{ max-width: 1180px; padding-top: 2.4rem; padding-bottom: 6rem; }}
+  #MainMenu, footer, [data-testid="stDecoration"] {{ display: none; }}
+  header[data-testid="stHeader"] {{ background: #FFFFFF; border-bottom: 1px solid #E2E8F0; }}
+  .block-container {{ max-width: 1120px; padding-top: 4.6rem; padding-bottom: 2rem; }}
   h1, h2, h3, h4 {{ color: {NAVY}; letter-spacing: -0.01em; }}
   h1 {{ font-weight: 700; }}
-  .sl-promise {{ font-size: 1.3rem; color: #334155; margin: 0.2rem 0 1.6rem 0; line-height: 1.5; }}
+  .sl-hero {{ background: linear-gradient(135deg, {NAVY} 0%, #13294B 70%, #0E5F68 100%); color: #F3F6FA;
+              border-radius: 18px; padding: 2.6rem 2.8rem 2.3rem; margin: 0.4rem 0 1.8rem; }}
+  .sl-hero h1 {{ color: #FFFFFF; font-size: 2.7rem; margin: 0.2rem 0 0.6rem; line-height: 1.15; padding: 0; }}
+  .sl-kicker {{ color: #5EC4CC; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; margin: 0; }}
+  .sl-promise {{ font-size: 1.2rem; color: #CBD5E1; margin: 0 0 1.4rem 0; line-height: 1.55; max-width: 720px; }}
+  .sl-trust {{ display: flex; flex-wrap: wrap; gap: 0.6rem; }}
+  .sl-trust span {{ background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px;
+                    padding: 0.35rem 0.9rem; font-size: 0.86rem; color: #E2E8F0; }}
+  .sl-section {{ font-size: 1.25rem; font-weight: 700; color: {NAVY}; margin: 1.6rem 0 0.2rem; }}
+  .sl-section-sub {{ color: {SLATE}; font-size: 0.95rem; margin: 0 0 0.8rem; }}
+  .sl-step {{ display: flex; gap: 0.8rem; align-items: flex-start; }}
+  .sl-step .n {{ flex: 0 0 2rem; height: 2rem; border-radius: 50%; background: #E6F3F4; color: {ACCENT}; font-weight: 700;
+                 display: flex; align-items: center; justify-content: center; }}
+  .sl-step b {{ color: {NAVY}; display: block; margin-bottom: 0.15rem; }}
+  .sl-step span {{ color: #475569; font-size: 0.92rem; line-height: 1.5; }}
+  .sl-sample-title {{ font-size: 1.1rem; font-weight: 700; color: {NAVY}; margin: 0; }}
+  .sl-sample-blurb {{ color: #475569; font-size: 0.92rem; min-height: 2.8rem; margin: 0.3rem 0 0.4rem; }}
   .sl-muted {{ color: {SLATE}; font-size: 0.92rem; }}
   .sl-privacy {{ color: #475569; font-size: 0.9rem; border-left: 3px solid {ACCENT}; padding: 0.3rem 0 0.3rem 0.8rem; margin-top: 0.6rem; }}
   .sl-badge {{ display: inline-block; border: 1px solid #D5DCE6; border-radius: 999px; padding: 0.3rem 0.9rem;
@@ -58,20 +81,31 @@ st.markdown(f"""
   .sl-callout {{ background: #F3F6FA; border-radius: 12px; padding: 1.1rem 1.3rem; }}
   .sl-callout .big {{ font-size: 1.9rem; font-weight: 700; color: {NAVY}; }}
   .sl-source {{ font-size: 0.8rem; color: {SLATE}; margin-bottom: 0.8rem; }}
-  .sl-footer {{ position: fixed; left: 0; right: 0; bottom: 0; background: {NAVY}; color: #E2E8F0; font-size: 0.78rem;
-                padding: 0.55rem 1.5rem; text-align: center; z-index: 1000100; }}
+  .sl-footer {{ margin-top: 3rem; border-top: 1px solid #E2E8F0; padding: 1.2rem 0 0.4rem; color: {SLATE};
+                font-size: 0.8rem; line-height: 1.6; text-align: center; }}
+  .sl-footer b {{ color: {NAVY}; }}
   div[data-testid="stMetricValue"] {{ color: {NAVY}; }}
   .sl-risk {{ border: 1px solid rgba(243,246,250,0.35); border-radius: 10px; padding: 0.6rem 0.8rem; margin-top: 0.3rem; }}
   .sl-risk .label {{ font-size: 1.05rem; font-weight: 700; }}
   .sl-risk .sub {{ font-size: 0.8rem; opacity: 0.8; }}
   .sl-estimate {{ font-size: 0.8rem; color: {SLATE}; font-style: italic; }}
   .sl-headline {{ font-size: 1.6rem; font-weight: 700; color: {NAVY}; margin: 0.2rem 0 0.1rem 0; }}
+  .sl-portfolio {{ background: #F3F6FA; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1rem 1.3rem; margin: 0.4rem 0 1rem; }}
+  .sl-portfolio h3 {{ margin: 0; padding: 0; font-size: 1.3rem; }}
+  .sl-portfolio p {{ margin: 0.2rem 0 0; }}
+  @media (max-width: 640px) {{
+    .sl-hero {{ padding: 1.6rem 1.3rem; border-radius: 14px; }}
+    .sl-hero h1 {{ font-size: 1.85rem; }}
+    .sl-promise {{ font-size: 1.02rem; }}
+  }}
 </style>
 """, unsafe_allow_html=True)
+st.logo(str(ASSETS / "logo.svg"), size="large")
 
 
 def footer() -> None:
-    st.markdown(f'<div class="sl-footer">{html.escape(DISCLAIMER)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sl-footer"><b>Second Look</b> &middot; AI Foundations final project<br>'
+                f'{html.escape(DISCLAIMER)}</div>', unsafe_allow_html=True)
 
 
 def safe(text: str) -> str:
@@ -202,24 +236,52 @@ def admin_page() -> None:
     st.dataframe(pd.DataFrame(s["by_session"]).head(50), hide_index=True)
 
 
+def hero() -> None:
+    st.markdown("""
+<div class="sl-hero">
+  <p class="sl-kicker">An AI second opinion on your portfolio</p>
+  <h1>Take a second look at what you own.</h1>
+  <p class="sl-promise">See what you really own, what it costs you, and how it would have held up in past crashes,
+  explained in plain English.</p>
+  <div class="sl-trust"><span>&#10003; Every number computed in Python</span>
+  <span>&#10003; AI explanations checked before you see them</span>
+  <span>&#10003; Never tells you what to buy or sell</span></div>
+</div>""", unsafe_allow_html=True)
+    steps = [("Choose a portfolio", "Try one of three samples or upload your brokerage CSV."),
+             ("Python does the math", "Fund look-through, fees, crash replays and a retirement plan."),
+             ("AI explains it", "Plain English at your level, checked number by number.")]
+    for col, (n, (title, text)) in zip(st.columns(3), enumerate(steps, 1)):
+        col.markdown(f'<div class="sl-step"><div class="n">{n}</div><div><b>{title}</b><span>{text}</span></div></div>',
+                     unsafe_allow_html=True)
+
+
 def landing(compact: bool) -> None:
-    st.title("Second Look")
     if not compact:
-        st.markdown('<div class="sl-promise">See what you really own, what it costs you, and how it would have held up '
-                    'in past crashes, explained in plain English.</div>', unsafe_allow_html=True)
-        st.markdown("#### Try a sample portfolio")
+        hero()
+        st.markdown('<p class="sl-section">Try a sample portfolio</p>'
+                    '<p class="sl-section-sub">Made-up people with real funds and real market history. Free to explore.</p>',
+                    unsafe_allow_html=True)
+    else:
+        st.markdown('<p class="sl-section" style="margin-top:0.4rem">Portfolio</p>', unsafe_allow_html=True)
     cols = st.columns(3)
     for col, (name, (title, blurb)) in zip(cols, SAMPLES.items()):
-        with col:
-            if st.button(title, key=f"sample-{name}", width="stretch",
-                         type="primary" if params.get("sample") == name else "secondary"):
+        with col, st.container(border=True):
+            chosen = params.get("sample") == name
+            if not compact:
+                st.markdown(f'<p class="sl-sample-title">{safe(title)}</p><p class="sl-sample-blurb">{safe(blurb)}</p>',
+                            unsafe_allow_html=True)
+            label = (f"{title} (showing)" if chosen else title) if compact else ("Showing" if chosen else "Open this sample")
+            if st.button(label, key=f"sample-{name}", width="stretch", type="primary" if chosen else "secondary"):
                 params["sample"] = name
                 params.pop("pause", None)
                 st.rerun()
-            if not compact:
-                st.markdown(f'<p class="sl-muted">{safe(blurb)}</p>', unsafe_allow_html=True)
 
-    with st.expander("Or upload your own brokerage CSV", expanded=not compact and params.get("sample") is None):
+    if not compact:
+        st.markdown('<p class="sl-section">Or analyze your own portfolio</p>'
+                    '<p class="sl-section-sub">Export your positions from your brokerage as a CSV file, one file per account.</p>',
+                    unsafe_allow_html=True)
+    box = st.expander("Upload your own brokerage CSV") if compact else st.container(border=True)
+    with box:
         files = st.file_uploader("Brokerage export (.csv)", type=["csv"], accept_multiple_files=True)
         tagged = []
         for i, f in enumerate(files or []):
@@ -231,7 +293,8 @@ def landing(compact: bool) -> None:
         if tagged and st.button("Analyze my files", type="primary"):
             try:
                 state["upload_key"] = save_upload(tagged)
-                params.clear()
+                for k in params_to_reset(list(params)):
+                    del params[k]
                 params["sample"] = "upload"
                 st.rerun()
             except ValueError as exc:
@@ -239,6 +302,15 @@ def landing(compact: bool) -> None:
         st.markdown('<div class="sl-privacy">Your file is processed in memory and never saved. Account numbers and '
                     'descriptions are removed before anything reaches the AI, and the AI only sees computed numbers.</div>',
                     unsafe_allow_html=True)
+
+
+def project_card() -> None:
+    st.markdown('<p class="sl-section">About this project</p>', unsafe_allow_html=True)
+    with st.container(border=True):
+        text, link = st.columns([3, 1], vertical_alignment="center")
+        text.markdown("**Second Look** is an AI Foundations final project. The report covers the motivation, the agents, "
+                      "measured costs and the safety tests; the slide deck is the 9-slide presentation.")
+        link.page_link(PAGES[1], label="Report & slide deck", icon=":material/arrow_forward:", width="stretch")
 
 
 def current_inputs() -> Inputs | None:
@@ -653,72 +725,105 @@ def pause_panel(inputs: Inputs) -> None:
             st.caption("Someone who sold at the bottom missed the gains in the following columns.")
 
 
-# --- main ---------------------------------------------------------------------------
+def docs_page() -> None:
+    st.markdown('<p class="sl-kicker" style="color:#0E7C86">Project documents</p>', unsafe_allow_html=True)
+    st.title("Report and slide deck")
+    st.markdown('<p class="sl-muted">The final project report and presentation. Every number in them is generated from '
+                'the project\'s measured results (costs, red-team tests and the prompt log).</p>', unsafe_allow_html=True)
+    cost = json.loads((DOCS / "cost_results.json").read_text(encoding="utf-8")) if (DOCS / "cost_results.json").exists() else None
+    red = json.loads((DOCS / "redteam_results.json").read_text(encoding="utf-8")) if (DOCS / "redteam_results.json").exists() else None
+    if cost and red:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Cost per analysis", f"${cost['per_analysis']['mean_usd']:.4f}", border=True)
+        c2.metric("10,000 users per month", f"${cost['monthly']['without_cache']['users'][-1]['total_usd']:,.2f}", border=True)
+        o = red["summary"]["overall"]
+        c3.metric("Red-team cases passed", f"{o['passed']}/{o['total']}", border=True)
+    report_t, slides_t = st.tabs(["Final report", "Slide deck"])
+    for tab, name, height, hint in ((report_t, "report.html", 1000, "Scroll inside the report, or download it to read or print."),
+                                    (slides_t, "slides.html", 640, "Click a slide or use the arrow keys to move through the deck.")):
+        with tab:
+            path = DOCS / name
+            if not path.exists():
+                st.info(f"docs/{name} has not been generated yet.")
+                continue
+            content = path.read_text(encoding="utf-8")
+            left, right = st.columns([3, 1])
+            left.caption(hint)
+            right.download_button(f"Download {name}", content, file_name=name, mime="text/html", width="stretch",
+                                  key=f"dl-{name}")
+            st.iframe(content, height=height)
 
-page = st.sidebar.radio("Page", ["Analysis", "Admin"], key="page", label_visibility="collapsed", bind="query-params")
-if page == "Admin":
+
+def analysis_page() -> None:
+    inputs = current_inputs()
+
+    landing(compact=inputs is not None)
+    if inputs is None:
+        project_card()
+        return
+
+    # Two separate sidebar controls: how things are explained, and what the portfolio is compared to.
+    st.sidebar.markdown("#### Fluency")
+    st.sidebar.caption("How the findings are explained.")
+    fluency_label = st.sidebar.radio("Fluency", list(FLUENCY), index=1, key="fluency", bind="query-params",
+                                     label_visibility="collapsed")
+    fluency = FLUENCY[fluency_label or "Comfortable"]
+    st.sidebar.markdown("#### Risk profile")
+    st.sidebar.caption("What your mix is compared to. Set by the risk quiz and your years to retirement.")
+    if inputs is not None and inputs.extra["user"] is not None and inputs.extra["answers"]:
+        risk = risk_profile(inputs.extra["user"], inputs.extra["answers"])
+        st.sidebar.markdown(f'<div class="sl-risk"><div class="label">{safe(risk.label)}</div>'
+                            f'<div class="sub">Capacity {risk.capacity} of 5 (time) and tolerance {risk.tolerance} of 5 (quiz); '
+                            f'the lower one sets the profile.</div></div>', unsafe_allow_html=True)
+    else:
+        st.sidebar.markdown('<div class="sl-risk"><div class="sub">Not set yet. Complete About you.</div></div>',
+                            unsafe_allow_html=True)
+    st.sidebar.markdown(f"**AI mode:** {'Demo, no charges' if settings.demo_mode else 'Live'}")
+
+    p = inputs.facts["portfolio"]
+    note = " (demo replay, no charge)" if settings.demo_mode else ""
+    head, badge = st.columns([3, 1], vertical_alignment="center")
+    head.markdown(f'<div class="sl-portfolio"><h3>{safe(inputs.label)}</h3><p class="sl-muted">{money(p["total_usd"])} in '
+                  f'{p["holdings_count"]} holdings across {p["accounts_count"]} account(s).</p></div>', unsafe_allow_html=True)
+    badge_slot = badge.empty()
+    about_you(inputs)
+
+    xray_t, fee_t, crash_t, plan_t, top3_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
+    with xray_t:
+        if xray_t.open:
+            xray_tab(inputs)
+    with fee_t:
+        if fee_t.open:
+            fee_tab(inputs)
+    with crash_t:
+        if crash_t.open:
+            crash_tab(inputs)
+    with plan_t:
+        if plan_t.open:
+            plan_tab(inputs)
+    with top3_t:
+        if top3_t.open:
+            top3_tab(inputs, fluency)
+
+    st.write("")
+    pause_panel(inputs)
+
+    cost = session_cost(state.sid)
+    badge_slot.markdown(f'<div style="text-align:right"><span class="sl-badge">Cost of this analysis: '
+                        f'{cost.tokens:,} tokens, ${cost.usd:.4f}{note}</span></div>', unsafe_allow_html=True)
+
+
+def admin_with_mode() -> None:
     st.sidebar.markdown(f"**AI mode:** {'Demo, no charges' if settings.demo_mode else 'Live'}")
     admin_page()
-    footer()
-    st.stop()
 
-inputs = current_inputs()
 
-# Two separate sidebar controls: how things are explained, and what the portfolio is compared to.
-st.sidebar.markdown("#### Fluency")
-st.sidebar.caption("How the findings are explained.")
-fluency_label = st.sidebar.radio("Fluency", list(FLUENCY), index=1, key="fluency", bind="query-params",
-                                 label_visibility="collapsed")
-fluency = FLUENCY[fluency_label or "Comfortable"]
-st.sidebar.markdown("#### Risk profile")
-st.sidebar.caption("What your mix is compared to. Set by the risk quiz and your years to retirement.")
-if inputs is not None and inputs.extra["user"] is not None and inputs.extra["answers"]:
-    risk = risk_profile(inputs.extra["user"], inputs.extra["answers"])
-    st.sidebar.markdown(f'<div class="sl-risk"><div class="label">{safe(risk.label)}</div>'
-                        f'<div class="sub">Capacity {risk.capacity} of 5 (time) and tolerance {risk.tolerance} of 5 (quiz); '
-                        f'the lower one sets the profile.</div></div>', unsafe_allow_html=True)
-else:
-    st.sidebar.markdown('<div class="sl-risk"><div class="sub">Not set yet. Complete About you.</div></div>',
-                        unsafe_allow_html=True)
-st.sidebar.markdown(f"**AI mode:** {'Demo, no charges' if settings.demo_mode else 'Live'}")
+# --- main ---------------------------------------------------------------------------
 
-landing(compact=inputs is not None)
-if inputs is None:
-    footer()
-    st.stop()
-
-st.divider()
-head, badge = st.columns([3, 1])
-with head:
-    st.markdown(f"### {safe(inputs.label)}")
-    p = inputs.facts["portfolio"]
-    st.markdown(f'<p class="sl-muted">{money(p["total_usd"])} in {p["holdings_count"]} holdings across '
-                f'{p["accounts_count"]} account(s).</p>', unsafe_allow_html=True)
-about_you(inputs)
-
-xray_t, fee_t, crash_t, plan_t, top3_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
-with xray_t:
-    if xray_t.open:
-        xray_tab(inputs)
-with fee_t:
-    if fee_t.open:
-        fee_tab(inputs)
-with crash_t:
-    if crash_t.open:
-        crash_tab(inputs)
-with plan_t:
-    if plan_t.open:
-        plan_tab(inputs)
-with top3_t:
-    if top3_t.open:
-        top3_tab(inputs, fluency)
-
-st.write("")
-pause_panel(inputs)
-
-cost = session_cost(state.sid)
-with badge:
-    note = " (demo replay, no charge)" if settings.demo_mode else ""
-    st.markdown(f'<div style="text-align:right"><span class="sl-badge">Cost of this analysis: '
-                f'{cost.tokens:,} tokens, ${cost.usd:.4f}{note}</span></div>', unsafe_allow_html=True)
+PAGES = [
+    st.Page(analysis_page, title="Analyze", icon=":material/insights:", default=True),
+    st.Page(docs_page, title="Report & slides", icon=":material/description:", url_path="report"),
+    st.Page(admin_with_mode, title="Admin", icon=":material/admin_panel_settings:", url_path="admin"),
+]
+st.navigation(PAGES, position="top").run()
 footer()

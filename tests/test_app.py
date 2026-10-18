@@ -96,3 +96,18 @@ def test_employer_stock_field_flows_to_concentration(monkeypatch):
     at.button[[b.label for b in at.button].index("Update")].click().run()
     assert not at.exception
     assert any("Your employer&#x27;s stock (AAPL)" in m.value or "Your employer's stock (AAPL)" in m.value for m in at.markdown)
+
+
+def test_landing_has_hero_steps_and_report_link(monkeypatch):
+    monkeypatch.setattr(orchestrator, "run_analysis", no_ai)
+    at = AppTest.from_file(APP, default_timeout=120).run()
+    assert not at.exception
+    text = " ".join(m.value for m in at.markdown)
+    assert "sl-hero" in text and "Python does the math" in text and "About this project" in text
+    assert not at.sidebar.radio  # no sidebar controls until a portfolio is chosen
+    assert (Path(APP).parent / "assets" / "logo.svg").exists()
+
+
+def test_sidebar_controls_appear_with_a_portfolio(monkeypatch):
+    at = open_app(monkeypatch, tab="X-Ray")
+    assert [r.key for r in at.sidebar.radio] == ["fluency"]

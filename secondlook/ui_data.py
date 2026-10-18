@@ -203,6 +203,15 @@ def friendly_note(note: str | None, demo_mode: bool) -> str | None:
     return "The AI explanation was not available just now, so this is the standard summary built directly from the numbers."
 
 
+# Query parameters tied to widgets with bind="query-params"; Streamlit refuses to clear these directly.
+WIDGET_PARAMS = frozenset({"fluency", "tab"})
+
+
+def params_to_reset(keys) -> list[str]:
+    """Query parameters to drop when a new portfolio starts, keeping widget-bound ones (fluency, tab)."""
+    return [k for k in keys if k not in WIDGET_PARAMS]
+
+
 def holdings_for_buy(values: dict[str, float]) -> list[str]:
     return list(dict.fromkeys([t for t in sorted(values, key=values.get, reverse=True) if t != CASH] + list(EXTRA_BUY_TICKERS)))
 
