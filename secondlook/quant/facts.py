@@ -113,6 +113,20 @@ def _pause(result: PauseResult, n: int) -> dict:
     }
 
 
+def _pause_context(user: UserProfile, risk: RiskProfile | None, result: PauseResult) -> dict:
+    """Time horizon and risk profile next to how long past recoveries took, for the Pause Button."""
+    months = [e.months_bottom_to_recovery for e in result.history if e.months_bottom_to_recovery is not None]
+    out = {
+        "years_to_retirement": user.years_to_retirement,
+        "status": "retired" if user.is_retired else "saving",
+        "slowest_recovery_shown_months": max(months) if months else None,
+        "fastest_recovery_shown_months": min(months) if months else None,
+    }
+    if risk is not None:
+        out["risk_profile"] = risk.label
+    return out
+
+
 def _concentration(c: Concentration, n_flags: int) -> dict:
     out = {
         "largest_company": {"ticker": c.largest_company.symbol, "pct": pct(c.largest_company.weight)}
@@ -266,6 +280,8 @@ def assemble(portfolio: Portfolio, xr: XRay, fees, replays, pause, level: dict, 
         facts["portfolio"]["rows_skipped"] = len(portfolio.rejected)
     if pause is not None:
         facts["pause_check"] = _pause(pause, 3 if level["companies"] > 5 else 2)
+        if extras.get("user") is not None:
+            facts["pause_check"]["investor_context"] = _pause_context(extras["user"], extras.get("risk"), pause)
     return facts
 
 

@@ -208,3 +208,21 @@ def test_employer_stock_in_facts(toy_adj):
     assert facts["concentration"]["employer_stock"] == {"ticker": "BBB", "pct": 12.0, "direct_pct": 0.0, "over_threshold": True}
     assert "employer_stock" not in build_facts(parse_csv(TOY_CSV), TOY_PROFILES, toy_adj, user=TOY_USER,
                                                market_sectors=TOY_MARKET)["concentration"]
+
+
+def test_pause_facts_carry_time_horizon_and_risk_profile(toy_adj):
+    facts = build_facts(parse_csv(TOY_CSV), TOY_PROFILES, toy_adj, Action(kind="sell_all"), user=TOY_USER,
+                        risk_answers=[3, 3, 3, 3, 3], market_sectors=TOY_MARKET)
+    ctx = facts["pause_check"]["investor_context"]
+    assert ctx == {"years_to_retirement": 10, "status": "saving", "risk_profile": "Moderate",
+                   "slowest_recovery_shown_months": 1.0, "fastest_recovery_shown_months": 1.0}  # flat monthly toy prices
+    no_user = build_facts(parse_csv(TOY_CSV), TOY_PROFILES, toy_adj, Action(kind="sell_all"), market_sectors=TOY_MARKET)
+    assert "investor_context" not in no_user["pause_check"]
+
+
+def test_real_pause_context_uses_recovery_months():
+    from secondlook.demo_runs import persona_facts
+
+    ctx = persona_facts("retiree", Action(kind="sell_all"))["pause_check"]["investor_context"]
+    assert ctx["status"] == "retired" and ctx["risk_profile"] == "Conservative"
+    assert ctx["fastest_recovery_shown_months"] < ctx["slowest_recovery_shown_months"]

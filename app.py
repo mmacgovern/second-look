@@ -280,6 +280,9 @@ def about_you(inputs: Inputs) -> None:
             ss = e.number_input("Social Security or pension estimate per year ($, optional)", 0, 500_000,
                                 int(base.social_security_or_pension_usd or 0), step=500)
             e.markdown("[Get your Social Security estimate at ssa.gov/myaccount](https://www.ssa.gov/myaccount/)")
+            employer = st.text_input("Your employer's stock ticker, if you hold any (optional)",
+                                     value=base.employer_ticker or "", max_chars=6,
+                                     help="Used only to show how much of your portfolio depends on your employer.")
             st.markdown("**Risk quiz** (one answer per question)")
             picks = []
             for i, q in enumerate(QUIZ):
@@ -287,8 +290,13 @@ def about_you(inputs: Inputs) -> None:
                 choice = st.radio(q["question"], q["options"], index=default_index, horizontal=True, key=f"q-{base_key}-{i}")
                 picks.append(q["options"].index(choice) + 1)
             if st.form_submit_button("Update" if filled else "Save and show my plan", type="primary"):
-                new_user = UserProfile(age=age, retirement_age=retire, desired_income_today_usd=income,
-                                       social_security_or_pension_usd=ss or None, annual_contribution_usd=contribution)
+                try:
+                    new_user = UserProfile(age=age, retirement_age=retire, desired_income_today_usd=income,
+                                           social_security_or_pension_usd=ss or None, annual_contribution_usd=contribution,
+                                           employer_ticker=employer or None)
+                except ValueError:
+                    st.error("Please check your answers: the employer ticker should be 1 to 6 letters, like MSFT.")
+                    return
                 state.about[base_key] = (new_user, picks)
                 st.rerun()
 
@@ -345,7 +353,8 @@ def xray_tab(inputs: Inputs) -> None:
             st.dataframe(table, hide_index=True)
 
     st.markdown("#### Concentration")
-    conc = concentration(inputs.values, inputs.profiles, threshold=CONCENTRATION_THRESHOLD)
+    employer = inputs.extra["user"].employer_ticker if inputs.extra.get("user") is not None else None
+    conc = concentration(inputs.values, inputs.profiles, threshold=CONCENTRATION_THRESHOLD, employer_ticker=employer)
     a, b, c = st.columns(3)
     lc = conc.largest_company
     a.metric("Largest single company", f"{lc.symbol}: {100 * lc.weight:.1f}%" if lc else "None",
@@ -363,6 +372,13 @@ def xray_tab(inputs: Inputs) -> None:
     else:
         st.markdown(f'<p class="sl-muted">No single company is above {100 * conc.threshold:.0f}% of the portfolio.</p>',
                     unsafe_allow_html=True)
+    if conc.employer_stock is not None:
+        e = conc.employer_stock
+        text = (f"Your employer's stock ({e.ticker}) is {100 * e.weight:.1f}% of the portfolio, counting funds "
+                f"({100 * e.direct_weight:.1f}% held directly).")
+        if e.over_threshold:
+            text += f" That is above the {100 * conc.threshold:.0f}% concentration threshold."
+        st.markdown(f'<p class="sl-muted">{safe(text)}</p>', unsafe_allow_html=True)
     if conc.sectors_vs_market:
         st.markdown("**Stock sectors compared with the total US market**")
         frame = pd.DataFrame([{"Sector": SECTOR_LABELS.get(x.sector, x.sector), "You": 100 * x.portfolio,
@@ -592,6 +608,16 @@ def pause_panel(inputs: Inputs) -> None:
             return
 
         st.markdown(f"#### {safe(facts['proposed_action'])}")
+        ctx = facts.get("investor_context")
+        if ctx:
+            horizon = ("You are retired, so some of this money may be needed during a downturn."
+                       if ctx["status"] == "retired" else f"You are {ctx['years_to_retirement']} years from retirement.")
+            if ctx.get("slowest_recovery_shown_months") is not None:
+                horizon += (f" In the crises below, the market took between {ctx['fastest_recovery_shown_months']} and "
+                            f"{ctx['slowest_recovery_shown_months']} months to climb back from its bottom.")
+            if ctx.get("risk_profile"):
+                horizon += f" Your risk profile is {ctx['risk_profile'].lower()}."
+            st.markdown(f'<div class="sl-callout">{safe(horizon)}</div>', unsafe_allow_html=True)
         message = friendly_note(result.note, settings.demo_mode)
         if message:
             st.info(message)

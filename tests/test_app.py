@@ -88,3 +88,11 @@ def test_retiree_plan_shows_income_gap(monkeypatch):
     at = open_app(monkeypatch, sample="retiree")
     assert "of income per year" in headline(at)
     assert next(m for m in at.metric if m.label == "Years to retirement").value == "Retired"
+
+
+def test_employer_stock_field_flows_to_concentration(monkeypatch):
+    at = open_app(monkeypatch, tab="X-Ray")
+    at.text_input[[t.label for t in at.text_input].index("Your employer's stock ticker, if you hold any (optional)")].set_value("aapl")
+    at.button[[b.label for b in at.button].index("Update")].click().run()
+    assert not at.exception
+    assert any("Your employer&#x27;s stock (AAPL)" in m.value or "Your employer's stock (AAPL)" in m.value for m in at.markdown)
