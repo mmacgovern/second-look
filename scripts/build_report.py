@@ -1,0 +1,549 @@
+"""Build docs/report.html: the course report as one self-contained, print-friendly HTML file.
+
+Every number is read at build time from the project's own outputs:
+  docs/cost_results.json, docs/quality_vs_cost.json, docs/redteam_results.json,
+  docs/cost_results_default_effort.json, earlier results in git history,
+  the demo recordings (one real run, replayed for $0), the sample personas' Facts JSON,
+  and AI_Prompts.md. Anything that does not exist yet (for example docs/user_test_results.md)
+  is shown as a visible TODO instead of a number.
+
+Usage:
+    python scripts/build_report.py
+"""
+
+from __future__ import annotations
+
+import base64
+import html
+import io
+import json
+import re
+import subprocess
+import sys
+import tempfile
+from collections import OrderedDict
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from secondlook import budget, orchestrator  # noqa: E402
+from secondlook.agents import analyst, explainer, intake, pause, verifier  # noqa: E402
+from secondlook.agents.base import AgentContext  # noqa: E402
+from secondlook.config import load_settings  # noqa: E402
+from secondlook.demo_runs import persona_facts  # noqa: E402
+from secondlook.quant.facts import estimate_tokens, facts_json  # noqa: E402
+
+DOCS = ROOT / "docs"
+OUT = DOCS / "report.html"
+SHOTS = DOCS / "screenshots"
+AUTHOR = "Michael MacGovern"
+REPO_URL = None   # TODO: set once the repository is pushed to GitHub
+APP_URL = None    # TODO: set if the app is deployed online
+VIDEO_URL = None  # TODO: set to the demo video link
+LOW_EFFORT_COMMIT = "095e211"
+LIVE_REDTEAM_COMMIT = "559d9e6"
+
+
+def esc(text) -> str:
+    return html.escape(str(text))
+
+
+def todo(text: str) -> str:
+    return f'<span class="todo">TODO: {esc(text)}</span>'
+
+
+def usd(x: float, digits: int = 2) -> str:
+    return f"${x:,.{digits}f}"
+
+
+def load_json(path: Path):
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def git_json(commit: str, path: str):
+    try:
+        out = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+        return json.loads(out)
+    except Exception:
+        return None
+
+
+def image(name: str, alt: str, width: int = 900) -> str:
+    """A screenshot embedded as base64 (scaled down so the file stays small)."""
+    path = SHOTS / name
+    if not path.exists():
+        return todo(f"screenshot {name} is missing")
+    try:
+        from PIL import Image
+
+        img = Image.open(path).convert("RGB")
+        if img.width > width:
+            img = img.resize((width, round(img.height * width / img.width)))
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=82, optimize=True)
+        data, mime = buf.getvalue(), "image/jpeg"
+    except Exception:
+        data, mime = path.read_bytes(), "image/png"
+    return f'<img src="data:{mime};base64,{base64.b64encode(data).decode()}" alt="{esc(alt)}">'
+
+
+def crop_image(name: str, alt: str, top_frac: float, bottom_frac: float, width: int = 900) -> str:
+    """Embed only a vertical slice of a tall screenshot (fractions of its height)."""
+    path = SHOTS / name
+    if not path.exists():
+        return todo(f"screenshot {name} is missing")
+    from PIL import Image
+
+    img = Image.open(path).convert("RGB")
+    img = img.crop((0, int(img.height * top_frac), img.width, int(img.height * bottom_frac)))
+    if img.width > width:
+        img = img.resize((width, round(img.height * width / img.width)))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=82, optimize=True)
+    return f'<img src="data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode()}" alt="{esc(alt)}">'
+
+
+def table(headers: list[str], rows: list[list], cls: str = "") -> str:
+    head = "".join(f"<th>{h}</th>" for h in headers)
+    body = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in row) + "</tr>" for row in rows)
+    return f'<table class="{cls}"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+
+
+# --- data ----------------------------------------------------------------------
+
+def real_run() -> dict:
+    """The recorded mid-career / Comfortable analysis, replayed from demo/recorded for $0."""
+    settings = load_settings(env_file=None, environ={"DEMO_MODE": "true"})
+    facts = persona_facts("midcareer")
+    with tempfile.TemporaryDirectory() as tmp:
+        db = Path(tmp) / "ledger.db"
+        result = orchestrator.run_analysis(facts, "comfortable", AgentContext(session_id="report", settings=settings, db_path=db))
+        calls = budget.calls(db)
+    return {"facts": facts, "result": result, "calls": calls, "facts_tokens": estimate_tokens(facts_json(facts))}
+
+
+def prompt_log() -> list[dict]:
+    """Entries of AI_Prompts.md with their phase and any Result lines, in order."""
+    text = (ROOT / "AI_Prompts.md").read_text(encoding="utf-8")
+    entries, current = [], None
+    for line in text.splitlines():
+        m = re.match(r"^### #(\d+) — [^—]+ — (.+)$", line)
+        if m:
+            current = {"n": int(m.group(1)), "phase": m.group(2).strip(), "results": []}
+            entries.append(current)
+        elif line.startswith("**Result") and current is not None:
+            current["results"].append(re.sub(r"^\*\*Result[^*]*:\*\*\s*", "", line).strip())
+    return entries
+
+
+def persona_numbers() -> dict:
+    mid, ret = persona_facts("midcareer"), persona_facts("retiree")
+    apple = next(c for c in mid["look_through"]["top_companies"] if c["ticker"] == "AAPL")
+    overlap = mid["look_through"]["fund_overlap_pct"][0]
+    gfac = next(f for f in ret["fees"]["costliest_funds"] if f["ticker"] == "GFACX")
+    p30 = ret["fees"]["projection"][-1]
+    return {"apple": apple, "overlap": overlap, "mid_tech": mid["look_through"]["sectors_pct"].get("Technology"),
+            "gfacx": gfac, "ret_fees30": p30, "ret_er": ret["fees"]["weighted_expense_ratio_pct"],
+            "mid_gfc": mid["crash_replays"][0]}
+
+
+# --- sections --------------------------------------------------------------------
+
+ARCH_SVG = """
+<svg viewBox="0 0 900 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Second Look agent architecture">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#0B1F3A"/></marker></defs>
+  <style>.b{fill:#F3F6FA;stroke:#0B1F3A;stroke-width:1.4}.ai{fill:#E6F3F4;stroke:#0E7C86;stroke-width:1.6}
+  .py{fill:#FFFFFF;stroke:#64748B;stroke-width:1.2;stroke-dasharray:4 3}.t{font:13px sans-serif;fill:#0B1F3A}
+  .s{font:11px sans-serif;fill:#475569}.l{stroke:#0B1F3A;stroke-width:1.3;fill:none;marker-end:url(#a)}</style>
+  <rect class="b" x="10" y="20" width="150" height="58" rx="8"/><text class="t" x="85" y="44" text-anchor="middle">User</text>
+  <text class="s" x="85" y="62" text-anchor="middle">CSV upload / About you</text>
+  <rect class="py" x="200" y="10" width="200" height="78" rx="8"/><text class="t" x="300" y="34" text-anchor="middle">parse.py (Python)</text>
+  <text class="s" x="300" y="52" text-anchor="middle">account numbers removed,</text><text class="s" x="300" y="66" text-anchor="middle">free text dropped</text>
+  <rect class="ai" x="200" y="104" width="200" height="50" rx="8"/><text class="t" x="300" y="126" text-anchor="middle">intake agent (fast)</text>
+  <text class="s" x="300" y="143" text-anchor="middle">pasted text only, grounded</text>
+  <rect class="py" x="440" y="10" width="210" height="144" rx="8"/><text class="t" x="545" y="34" text-anchor="middle">quant engine (Python)</text>
+  <text class="s" x="545" y="54" text-anchor="middle">look-through, fees, crash replay,</text>
+  <text class="s" x="545" y="69" text-anchor="middle">plan, concentration, pause check</text>
+  <text class="s" x="545" y="96" text-anchor="middle">market data: live yfinance,</text><text class="s" x="545" y="111" text-anchor="middle">offline snapshot fallback</text>
+  <text class="t" x="545" y="140" text-anchor="middle">Facts JSON (&lt;2,000 tokens)</text>
+  <rect class="ai" x="40" y="215" width="170" height="60" rx="8"/><text class="t" x="125" y="240" text-anchor="middle">1 analyst (smart)</text>
+  <text class="s" x="125" y="258" text-anchor="middle">top 3 findings + fact keys</text>
+  <rect class="ai" x="255" y="215" width="170" height="60" rx="8"/><text class="t" x="340" y="240" text-anchor="middle">2 explainer (smart)</text>
+  <text class="s" x="340" y="258" text-anchor="middle">cards for one fluency level</text>
+  <rect class="ai" x="470" y="215" width="190" height="60" rx="8"/><text class="t" x="565" y="240" text-anchor="middle">3 verifier (Python + fast)</text>
+  <text class="s" x="565" y="258" text-anchor="middle">numbers, advice, plan ranges</text>
+  <rect class="b" x="705" y="200" width="180" height="40" rx="8"/><text class="t" x="795" y="225" text-anchor="middle">shown to the user</text>
+  <rect class="b" x="705" y="252" width="180" height="40" rx="8"/><text class="t" x="795" y="270" text-anchor="middle">safe template</text>
+  <text class="s" x="795" y="285" text-anchor="middle">after a second failure</text>
+  <rect class="ai" x="470" y="320" width="190" height="50" rx="8"/><text class="t" x="565" y="342" text-anchor="middle">pause agent (smart)</text>
+  <text class="s" x="565" y="358" text-anchor="middle">neutral before/after + history</text>
+  <rect class="b" x="40" y="395" width="560" height="62" rx="8"/><text class="t" x="320" y="418" text-anchor="middle">llm.py: the only Portkey caller (budget check, cache, 1 retry, demo replay)</text>
+  <text class="s" x="320" y="440" text-anchor="middle">budget.py: per-call, per-session and daily limits; SQLite ledger of every call</text>
+  <rect class="b" x="660" y="405" width="225" height="44" rx="8"/><text class="t" x="772" y="432" text-anchor="middle">Portkey → gpt-6-luna</text>
+  <path class="l" d="M160,49 L200,49"/><path class="l" d="M400,49 L440,49"/><path class="l" d="M160,62 C180,62 180,129 200,129"/>
+  <path class="l" d="M400,129 L440,129"/><path class="l" d="M545,154 C545,185 125,180 125,215"/>
+  <path class="l" d="M210,245 L255,245"/><path class="l" d="M425,245 L470,245"/><path class="l" d="M660,232 L705,220"/>
+  <path class="l" d="M660,258 L705,270"/><path class="l" d="M565,275 C540,300 360,300 345,277"/>
+  <text class="s" x="452" y="304" text-anchor="middle">fail: 1 rewrite with reasons</text>
+  <path class="l" d="M650,140 C700,150 690,330 660,345"/><path class="l" d="M600,426 L660,426"/>
+  <text class="s" x="320" y="386" text-anchor="middle">every agent call (max 4 per analysis) goes through llm.py</text>
+</svg>"""
+
+
+def build() -> str:
+    cost = load_json(DOCS / "cost_results.json")
+    quality = load_json(DOCS / "quality_vs_cost.json")
+    redteam = load_json(DOCS / "redteam_results.json")
+    default_effort = load_json(DOCS / "cost_results_default_effort.json")
+    low_effort = git_json(LOW_EFFORT_COMMIT, "docs/cost_results.json")
+    live_redteam = git_json(LIVE_REDTEAM_COMMIT, "docs/redteam_results.json")
+    user_test = (DOCS / "user_test_results.md").read_text(encoding="utf-8") if (DOCS / "user_test_results.md").exists() else None
+    run = real_run()
+    pn = persona_numbers()
+    log = prompt_log()
+
+    links = [f'<a href="{esc(REPO_URL)}">GitHub repository</a>' if REPO_URL else todo("GitHub repository link (not pushed yet)"),
+             f'<a href="{esc(APP_URL)}">Live app</a>' if APP_URL else todo("app link (not deployed online; runs locally with streamlit run app.py)")]
+
+    # --- 1 -----------------------------------------------------------------------
+    s1 = f"""
+<section class="cover">
+  <p class="kicker">AI Foundations final project report</p>
+  <h1>Second Look</h1>
+  <p class="lede">An AI second opinion on an investment portfolio that shows what you really own, what it costs, how it
+  would have held up in past crashes and whether you are on track for retirement, with every number computed in Python
+  and only explained by AI.</p>
+  <p><strong>Author:</strong> {esc(AUTHOR)}</p>
+  <p>{' &nbsp;·&nbsp; '.join(links)}</p>
+  <div class="video">
+    <video controls width="640" {'src="' + esc(VIDEO_URL) + '"' if VIDEO_URL else ''}>Demo video</video>
+    <p>{f'<a href="{esc(VIDEO_URL)}">Watch the demo video</a>' if VIDEO_URL else todo("demo video link")}</p>
+  </div>
+  {image("00-landing.png", "Second Look landing page", 820)}
+  <p class="note">Educational information only; not investment advice. Sample portfolios and personas are made up.</p>
+</section>"""
+
+    # --- 2 -----------------------------------------------------------------------
+    s2 = f"""
+<section>
+  <h2>2. Motivation</h2>
+  <p><strong>Who has the problem.</strong> Ordinary investors with a 401(k), an IRA and maybe a brokerage account, who own
+  several funds and a few popular stocks but have never looked inside them. They are not professionals, and many do not
+  pay for an advisor.</p>
+  <p><strong>How they handle it today.</strong> Mostly they don't. Brokerage statements list holdings one account at a
+  time and do not show that three funds own the same companies. Free tools exist but each answers one question (fund
+  overlap, fees or retirement), usually after manual data entry, and general chatbots will happily do arithmetic they
+  can get wrong.</p>
+  <p><strong>What it costs them.</strong> Our sample personas (made up, but built from real tickers and real closing
+  prices) show the kind of thing people miss:</p>
+  <ul>
+    <li>Hidden concentration: in the mid-career sample, Apple is <strong>{pn['apple']['pct']}%</strong> of the portfolio
+    (${pn['apple']['usd']:,}) once fund holdings are counted, while only {pn['apple']['via_pct'].get('direct')}% is held
+    directly. Technology is {pn['mid_tech']}% of the whole portfolio. ({esc('Source: Facts JSON for the mid-career sample')})</li>
+    <li>Fees: the retiree sample pays a weighted {pn['ret_er']}% a year; over {pn['ret_fees30']['years']} years at the
+    assumed 6% return, fees cost about <strong>${pn['ret_fees30']['fees_cost_usd']:,}</strong>, of which
+    ${pn['ret_fees30']['extra_vs_baseline_usd']:,} is more than index funds would charge. One active fund (GFACX,
+    {pn['gfacx']['expense_ratio_pct']}%) costs ${pn['gfacx']['annual_usd']:,} a year. (Source: Facts JSON for the retiree sample)</li>
+    <li>Fear: a repeat of the {esc(pn['mid_gfc']['scenario'])} would have cut the mid-career portfolio by
+    {pn['mid_gfc']['max_drawdown_pct']}% (${pn['mid_gfc']['max_drawdown_usd']:,}) at the worst point. People who sold near
+    the bottom locked that in.</li>
+    <li>Time and frustration: {todo("time spent by real users today (from the user test)")}.</li>
+    <li>How many people this affects: {todo("public data on how many households hold several funds without an advisor, with source")}.</li>
+  </ul>
+  <p><strong>Why anyone should care.</strong> These are expensive, slow-to-notice mistakes made by people who are trying
+  to do the right thing. A tool that explains them plainly, never sells anything and never tells anyone what to trade
+  could help without adding a new risk.</p>
+</section>"""
+
+    # --- 3 -----------------------------------------------------------------------
+    comp_rows = [
+        ["Morningstar Portfolio X-Ray", "Looks inside funds: asset mix, sectors, regions, stock overlap",
+         "Manual ticker entry; some views tied to the paid Premium plan; no plain-English explanation layer"],
+        ["Empower Personal Dashboard (formerly Personal Capital)", "Free fee analyzer and retirement planner from linked accounts",
+         "Needs account linking; reviewers note wealth-management sales follow-up"],
+        ["Free ETF overlap tools (e.g. ETF Research Center, others)", "Overlap between two funds",
+         "Two funds at a time; no fees, crash or retirement view"],
+        ["Robo-advisors", "Manage the money for you", "They take over the portfolio; not a second opinion on one you already have"],
+        ["ChatGPT and similar chatbots", "Answers any question in plain English",
+         "Does the math itself and can get numbers wrong; no look-through data; may answer 'should I sell?'"],
+        ["<strong>Second Look</strong>", "Look-through, fees, crash replay, retirement plan and a pause check in one place, explained at three levels",
+         "Every number from Python; AI output checked against the numbers; never gives trade or account advice; demo mode free"],
+    ]
+    s3 = f"""
+<section class="cont">
+  <h2>3. What is new here</h2>
+  <p>None of the individual analyses is new. Look-through tools, fee calculators, crash backtests and retirement planners
+  all exist. What is different is the combination and the guardrails:</p>
+  {table(["Option", "What it does well", "Gap that Second Look addresses (or does not)"], comp_rows, "compare")}
+  <p class="note">Competitor descriptions are summarized from public pages and reviews, which may change:
+  <a href="https://www.morningstar.com/help-center/portfolio/xray">Morningstar Portfolio X-Ray help</a>,
+  <a href="https://www.roboadvisorpros.com/a-review-of-empowers-free-tools/">review of Empower's free tools</a>,
+  <a href="https://theglobetrottinginvestor.substack.com/p/2-free-tools-i-use-before-investing">free ETF overlap tools</a>.</p>
+  <p><strong>Said honestly:</strong> professionals and paid tools go deeper than this (full holdings instead of top 10,
+  tax-lot detail, live account links). Second Look's contribution is a free, explainable, guard-railed second opinion:
+  the AI is used only to explain, a verifier checks every number it writes, and a safe template replaces anything that
+  fails. Whether that is enough for real users is untested ({todo("user test results")}).</p>
+</section>"""
+
+    # --- 4 -----------------------------------------------------------------------
+    res = run["result"]
+    agents = [
+        ["intake", "Turns messy pasted text into holdings (uploads skip AI entirely)", "None; text arrives inside &lt;user_data&gt; tags. Python keeps only rows whose ticker and numbers appear in the text", f"MODEL_FAST, {intake.SPEC.max_tokens} tokens"],
+        ["analyst", "Reads the Facts JSON and picks the 3 findings most worth knowing, each tied to fact keys; Python ranks them by the dollar amount at the cited key", "None (data only)", f"MODEL_SMART, {analyst.SPEC.max_tokens} tokens"],
+        ["explainer", "Writes the cards for the chosen fluency level using only numbers in the facts, plus 2-3 questions for a fiduciary advisor", "None (data only)", f"MODEL_SMART, {explainer.SPEC.max_tokens} tokens"],
+        ["verifier", "Python checks every number, advice wording and plan ranges first; then a model review", "None; its Python half uses the advice guard and number matcher", f"MODEL_FAST, {verifier.SPEC.max_tokens} tokens"],
+        ["pause", "Explains a proposed trade neutrally: before/after and market history next to the user's time horizon", "None (data only)", f"MODEL_SMART, {pause.SPEC.max_tokens} tokens"],
+    ]
+    ledger_rows = [[esc(c["agent"]), f"{c['input_tokens']:,}", f"{c['output_tokens']:,}"] for c in run["calls"]]
+    findings_rows = [[esc(f.title), f"<code>{esc(f.dollar_fact_key)}</code>", usd(f.dollar_impact_usd or 0, 0)] for f in res.findings]
+    cards_html = "".join(f'<div class="card"><h4>{esc(c.title)}</h4><p>{esc(c.body)}</p></div>' for c in res.cards)
+    s4 = f"""
+<section>
+  <h2>4. The agents</h2>
+  <p>Python does all the finance. The agents never calculate and have no tools to call: they receive the computed
+  Facts JSON and return structured JSON that Python validates. The orchestrator runs <em>analyst → explainer →
+  verifier</em>; on a failure it allows one rewrite with the verifier's reasons, and after a second failure it shows a
+  safe template built straight from the facts. An analysis makes at most 4 AI calls, all through <code>llm.py</code>,
+  which checks the budget before each one.</p>
+  <figure>{ARCH_SVG}<figcaption>Agent architecture and hand-offs. Teal boxes are AI agents; dashed boxes are plain Python.</figcaption></figure>
+  {table(["Agent", "Job", "Tools", "Model and cap"], agents)}
+  <p><strong>Which models and why.</strong> Both MODEL_FAST and MODEL_SMART are <code>gpt-6-luna</code> through Portkey,
+  the course default at $0.10 / $0.50 per million input / output tokens, with <code>reasoning_effort=low</code>. The
+  larger models are priced in the code (gpt-6-sol $2 / $10, gpt-6-astra $10 / $50) but were not needed: on luna,
+  {quality['routings']['Normal routing']['first_draft_pass_rate'] * 100:.0f}% of first drafts passed the verifier in the
+  quality run (Section 5), and astra's worst case per call exceeds the $0.05 per-call limit.</p>
+</section>
+<section class="cont">
+  <h3>One real run, step by step</h3>
+  <p>This is the recorded mid-career / Comfortable analysis, replayed from <code>demo/recorded/</code> (identical to the
+  live answers, at $0). Steps: <strong>{' → '.join(esc(s) for s in res.steps)}</strong>; result:
+  <strong>{esc(res.source)}</strong>.</p>
+  <ol>
+    <li><strong>Python builds the facts.</strong> The CSV's three accounts are merged, account numbers removed, and the
+    quant engine produces a Facts JSON of about {run['facts_tokens']:,} tokens.</li>
+    <li><strong>Analyst</strong> picks three findings and cites fact keys; Python ranks them by the dollars at each key:
+    {table(["Finding", "Dollar fact key", "Dollar impact"], findings_rows)}</li>
+    <li><strong>Explainer</strong> writes cards using only those facts (plan figures as a range with assumptions):</li>
+  </ol>
+  <div class="cards">{cards_html}</div>
+  <ol start="4">
+    <li><strong>Verifier</strong> runs the Python checks (every number matched, no advice wording, plan rule met) and then
+    the model review; the draft passed, so it is shown. Tokens recorded for this run:
+    {table(["Agent", "Input tokens", "Output tokens"], ledger_rows)}</li>
+  </ol>
+  <figure>{crop_image("10-midcareer-top3.png", "Top 3 tab for the mid-career sample", 0.25, 0.80)}<figcaption>The same run in the app (Top 3 Things Worth Knowing tab).</figcaption></figure>
+</section>"""
+
+    # --- 5 -----------------------------------------------------------------------
+    pa, rc = cost["per_analysis"], cost["response_cache"]
+    agent_rows = [[esc(a), s["n"], f"{s['mean_input_tokens']:,.0f}", f"{s['mean_cached_input_tokens']:,.0f}",
+                   f"{s['mean_output_tokens']:,.0f}", usd(s["mean_usd"], 6), f"{s['p95_latency_s']:.1f}"]
+                  for a, s in cost["per_agent"].items()]
+    agent_rows.append(["<strong>Full analysis</strong>", pa["n"], f"{pa['mean_input_tokens']:,.0f}",
+                       f"{pa['mean_cached_input_tokens']:,.0f}", f"{pa['mean_output_tokens']:,.0f}", usd(pa["mean_usd"], 6),
+                       f"{pa['p95_latency_s']:.1f}"])
+    m_without, m_with = cost["monthly"]["without_cache"], cost["monthly"]["with_cache"]
+    monthly_rows = [[label, usd(m["per_user_usd"], 4)] + [usd(u["total_usd"]) for u in m["users"]]
+                    for label, m in (("Without response cache", m_without), ("With response cache", m_with))]
+    q_rows = [[esc(name), esc(r["models"]), f"{100 * r['first_draft_pass_rate']:.0f}%", r["rewrites"],
+               r["template_fallbacks"], usd(r["mean_usd_per_analysis"], 6)] for name, r in quality["routings"].items()]
+    effort_rows = []
+    for label, r, src in (("Default effort", default_effort, "docs/cost_results_default_effort.json"),
+                          ("reasoning_effort=low", low_effort, f"docs/cost_results.json at commit {LOW_EFFORT_COMMIT}")):
+        if r:
+            a = r["per_analysis"]
+            effort_rows.append([label, usd(a["mean_usd"], 6), f"{a['p95_latency_s']:.1f}",
+                                f"{r['sources'].get('template', 0)} of {r['analyses'] + r['pauses']}", f"<code>{esc(src)}</code>"])
+        else:
+            effort_rows.append([label, todo("result not found"), "", "", ""])
+    cache_bar_max = max(pa["mean_usd"], 1e-9)
+    bars = f"""
+<svg viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cost per analysis with and without the response cache">
+  <style>.t{{font:12px sans-serif;fill:#0B1F3A}}</style>
+  <text class="t" x="0" y="30">Without cache</text><rect x="120" y="16" width="{460 * pa['mean_usd'] / cache_bar_max:.1f}" height="22" fill="#0B1F3A"/>
+  <text class="t" x="{125 + 460 * pa['mean_usd'] / cache_bar_max:.1f}" y="32">{usd(pa['mean_usd'], 6)}</text>
+  <text class="t" x="0" y="80">With cache</text><rect x="120" y="66" width="{460 * rc['mean_usd_per_analysis'] / cache_bar_max:.1f}" height="22" fill="#0E7C86"/>
+  <text class="t" x="{125 + 460 * rc['mean_usd_per_analysis'] / cache_bar_max:.1f}" y="82">{usd(rc['mean_usd_per_analysis'], 6)}</text>
+</svg>"""
+    smart_note = "" if len(quality["routings"]) > 1 else (
+        f'<p>{todo("MODEL_SMART-for-every-agent comparison (skipped to save cost; run scripts/measure_costs.py --smart-model gpt-6-sol, about $0.22)")}</p>')
+    s5 = f"""
+<section>
+  <h2>5. Tokenomics</h2>
+  <p>Measured live on {esc(cost['run_at'][:10])} (run <code>{esc(cost['run_id'])}</code>): {cost['analyses']} full analyses
+  (3 personas × 3 fluency levels × 3 repeats) and {cost['pauses']} pause checks, with the app's response cache off and the
+  Portkey gateway cache bypassed, so every call was a real model call. Main pass: {usd(cost['total_usd'], 4)} for
+  {cost['calls']} calls. Source: <code>docs/cost_results.json</code>.</p>
+  {table(["Unit", "n", "Mean input tokens", "Mean cached input", "Mean output tokens", "Mean $", "p95 latency (s)"], agent_rows)}
+  <p>A typical analysis uses about {pa['mean_input_tokens']:,.0f} input tokens (of which {pa['mean_cached_input_tokens']:,.0f}
+  were served from the provider's prompt cache) and {pa['mean_output_tokens']:,.0f} output tokens, and costs
+  <strong>{usd(pa['mean_usd'], 4)}</strong>. A pause check costs {usd(cost['per_pause']['mean_usd'], 4)}.</p>
+  <h3>Per user and at scale (2 analyses per user per month)</h3>
+  {table(["", "Per user per month", "100 users", "10,000 users"], monthly_rows)}
+  {bars}
+  <p class="note">"With response cache" is measured: the same 27 analyses re-run with the app's cache on cost
+  {usd(rc['total_usd'], 4)}, because repeats and steps shared across fluency levels come from the cache. It applies when
+  people re-run a portfolio or switch fluency; a brand-new portfolio always pays the full price.</p>
+  <h3>What was done to cut cost</h3>
+  <ul>
+    <li>All arithmetic in Python; the AI sees a compact Facts JSON (kept under 2,000 tokens) instead of raw data.</li>
+    <li>The cheapest course model (gpt-6-luna) for every agent; larger models priced but unused.</li>
+    <li><code>reasoning_effort=low</code>: at the default effort, hidden reasoning sometimes used the whole token allowance
+    and returned nothing, forcing retries and fallbacks.</li>
+    <li>A response cache, a hard cap of 4 AI calls per analysis, and budget limits per call ($0.05), per session ($0.10)
+    and per day ($2.00), all enforced in <code>budget.py</code> before each call.</li>
+    <li>Demo mode replays recorded answers for $0.</li>
+  </ul>
+  <h3>Did cost cutting hurt quality?</h3>
+  {table(["Setting", "Mean $ per analysis", "p95 latency (s)", "Template fallbacks", "Source"], effort_rows)}
+  <p>Lowering the reasoning effort made analyses cheaper and faster <em>and</em> more reliable (fewer safe-template
+  fallbacks), so in this case cost cutting did not hurt quality. From <code>docs/quality_vs_cost.json</code>:</p>
+  {table(["Routing", "Models", "First-draft verifier pass rate", "Rewrites", "Template fallbacks", "Mean $ per analysis"], q_rows)}
+  {smart_note}
+  <p class="note">The latest run cost more per analysis than the {LOW_EFFORT_COMMIT} run because a stricter verifier rule
+  (plan figures must be a labeled range) now triggers more rewrites: {cost['sources']}.</p>
+</section>"""
+
+    # --- 6 -----------------------------------------------------------------------
+    suite_rows = [[esc(k), f"{v['passed']}/{v['total']}", f"{100 * v['passed'] / v['total']:.0f}%"] for k, v in redteam["summary"]["by_suite"].items()]
+    o = redteam["summary"]["overall"]
+    picks = []
+    for cid, surface in (("jailbreak-02", "Pause Button"), ("reveal-02", "Pasted-text intake"), ("injection", "CSV upload"),
+                         ("transposed-dollars", "verifier"), ("account-02", "Pause Button"), ("negative-age", "About you")):
+        c = next((x for x in redteam["cases"] if x["id"] == cid and x["surface"] == surface), None)
+        if c:
+            picks.append([f"<code>{esc(c['id'])}</code>", esc(c["surface"]), esc(str(c.get("input", ""))[:90]), esc(c["outcome"][:120]),
+                          "pass" if c["passed"] else "FAIL"])
+    live_line = (f"An earlier live run against the real model (commit {LIVE_REDTEAM_COMMIT}) passed "
+                 f"{live_redteam['summary']['overall']['passed']}/{live_redteam['summary']['overall']['total']}."
+                 if live_redteam else todo("live red-team result"))
+    s6 = f"""
+<section>
+  <h2>6. Safety</h2>
+  <div class="policy"><strong>Safety policy.</strong> Second Look explains numbers; it never gives advice. It never tells
+  anyone to buy, sell or hold a specific security, never says which account to move money into or out of, never sets
+  price targets and never promises returns. Every number shown is computed in Python; the AI may only explain numbers it
+  is given, and a verifier rejects any draft with a number that is not in the facts, advice-like wording, or a
+  retirement figure that is not a labeled range. Uploaded files are processed in memory, account numbers and free text
+  are removed before anything reaches the AI, and the API key lives only in <code>.env</code>, which git never tracks.
+  When anything fails, users see a safe summary built straight from the numbers.</div>
+  <h3>Threats and defenses</h3>
+  {table(["Threat", "Defense"], [
+      ["Prompt injection in pasted text or CSV fields", "Pause Button text is parsed by Python and never sent to the AI; pasted text goes inside &lt;user_data&gt; tags with closing tags neutralised; CSV descriptions and notes are dropped; intake rows are kept only if their ticker and numbers appear in the text"],
+      ["Data leaks (key, account numbers, system prompts)", "Only config.py reads settings; logs and errors are redacted; account numbers become 'Account 1'; a secret scanner checks every tracked file and the rendered app (tests/test_secrets.py); gitleaks runs on every commit"],
+      ["Invented facts", "The verifier matches every number to the Facts JSON within the writer's rounding; the analyst's ranking uses Python-looked-up dollars, not numbers the model wrote"],
+      ["Wrong actions", "Agents have no tools and cannot trade or send anything; advice_guard flags buy/sell/hold, account moves, price targets and promises"],
+      ["Loops", "At most 4 AI calls per analysis and one retry per call; then a safe template"],
+      ["Overspending", "budget.py checks per-call ($0.05), per-session ($0.10) and daily ($2.00) limits before every call; scripts add --max-usd; every call is recorded in the ledger and shown on the Admin page"],
+  ])}
+  <h3>Defenses working: red-team results</h3>
+  <p>Mode: {esc(redteam['mode'])}; run {esc(redteam['run_at'][:10])}. Overall <strong>{o['passed']}/{o['total']}</strong>.
+  {live_line} Source: <code>docs/redteam_results.json</code>.</p>
+  {table(["Suite / surface", "Passed", "Rate"], suite_rows)}
+  {table(["Case", "Surface", "Input", "What happened", "Result"], picks, "small")}
+  <figure>{crop_image("18-midcareer-pause-sell-all.png", "Pause Button result for sell everything", 0.42, 0.90)}<figcaption>A defense working: asked to "sell everything", the Pause Button shows consequences and history with no verdict on the trade.</figcaption></figure>
+</section>"""
+
+    # --- 7 -----------------------------------------------------------------------
+    ut = (f"<pre>{esc(user_test[:1500])}</pre>" if user_test else
+          f"<p>{todo('docs/user_test_results.md does not exist yet: run the user test (time to find hidden concentration with and without the app, comprehension at each fluency level, trust ratings) and record the results there')}</p>")
+    s7 = f"""
+<section>
+  <h2>7. Impact</h2>
+  <h3>User test</h3>
+  {ut}
+  <h3>Careful estimates from the sample personas</h3>
+  {table(["What the app surfaces", "Number", "Source"], [
+      ["Apple share of the mid-career portfolio, counting funds vs held directly", f"{pn['apple']['pct']}% vs {pn['apple']['via_pct'].get('direct')}%", "Facts JSON, mid-career sample"],
+      ["Largest fund overlap in the mid-career sample", f"{esc(pn['overlap']['funds'])}: {pn['overlap']['overlap_pct']}% shared", "Facts JSON, mid-career sample"],
+      ["Retiree fees over 30 years at 6% (and the part above index funds)", f"${pn['ret_fees30']['fees_cost_usd']:,} (${pn['ret_fees30']['extra_vs_baseline_usd']:,})", "Facts JSON, retiree sample"],
+      ["Cost to run one analysis", usd(pa["mean_usd"], 4), "docs/cost_results.json"],
+  ])}
+  <p>These are illustrations from made-up personas, not measured outcomes. Real impact needs the user test and a pilot:
+  {todo("pilot results")}; {todo("public data on fee and concentration mistakes among self-directed investors, with source")}.</p>
+</section>"""
+
+    # --- 8 -----------------------------------------------------------------------
+    s8 = f"""
+<section class="cont">
+  <h2>8. Limits and next steps</h2>
+  <h3>What does not work yet</h3>
+  <ul>
+    <li>Fund look-through uses only each fund's top ~10 holdings, so company exposures are minimums.</li>
+    <li>Prices come from Yahoo Finance (unofficial) with an offline snapshot through 2026-10-16; sample portfolios always use the snapshot.</li>
+    <li>The retirement plan is simple: constant real returns, a flat 15% tax on pre-tax accounts and no other taxes.</li>
+    <li>The glide-path reference and the risk-profile ranges are placeholders until a cited source is added.</li>
+    <li>The stricter plan-range rule makes the model verifier send more first drafts back for a rewrite; its reasons are not logged yet.</li>
+    <li>Demo mode has saved answers only for the three samples with their default answers; uploads get the standard summary.</li>
+    <li>Not yet tested with real users, not deployed online, macOS setup unverified.</li>
+  </ul>
+  <h3>With another month</h3>
+  <ul>
+    <li>Full fund holdings from fund filings instead of top 10.</li>
+    <li>Log and tune the verifier's reasons to cut rewrites; run the MODEL_SMART quality comparison.</li>
+    <li>A proper user test and a small pilot; deploy with real secret handling.</li>
+    <li>Monte Carlo ranges instead of three fixed scenarios; basic tax awareness.</li>
+    <li>Parking-lot ideas: {todo("add the parking-lot list (none is recorded in the repository yet)")}</li>
+  </ul>
+</section>"""
+
+    # --- appendix --------------------------------------------------------------------
+    phases: "OrderedDict[str, dict]" = OrderedDict()
+    for e in log:
+        p = phases.setdefault(e["phase"], {"count": 0, "results": []})
+        p["count"] += 1
+        p["results"] += e["results"]
+    rows = [["Prompts 0-1 (setup)", "2", "Workspace, .gitignore and guardrails (before the log existed; see the hand-entry section)"]]
+    for phase, p in phases.items():
+        produced = " ".join(r.split(";")[0].rstrip(".") + "." for r in p["results"][:3]) or "No Result line under this entry; see AI_Prompts.md."
+        rows.append([esc(phase), p["count"], esc(produced[:400])])
+    log_link = f'<a href="{esc(REPO_URL)}/blob/main/AI_Prompts.md">AI_Prompts.md</a>' if REPO_URL else '<code>AI_Prompts.md</code> in the repository root'
+    appendix = f"""
+<section class="cont">
+  <h2>Appendix: AI Prompt Log</h2>
+  <p>Every prompt used to build Second Look is logged word for word in {log_link}, with a Result line after each task.
+  {len(log)} entries are logged there (prompts 0-1 predate the log). Summary by phase:</p>
+  {table(["Phase", "Prompts", "What it produced"], rows, "small")}
+</section>"""
+
+    css = """
+:root{--navy:#0B1F3A;--teal:#0E7C86;--slate:#475569;--mist:#F3F6FA}
+*{box-sizing:border-box}body{font:15px/1.55 "Segoe UI",Helvetica,Arial,sans-serif;color:#1E293B;margin:0;background:#fff}
+main{max-width:900px;margin:0 auto;padding:32px 24px}
+h1{font-size:44px;color:var(--navy);margin:8px 0}h2{color:var(--navy);font-size:26px;border-bottom:3px solid var(--teal);padding-bottom:6px;margin-top:0}
+h3{color:var(--navy);font-size:18px;margin:22px 0 8px}h4{margin:0 0 6px;color:var(--navy)}
+.kicker{color:var(--teal);font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:13px;margin:0}
+.lede{font-size:19px;color:#334155}.note{font-size:13px;color:var(--slate)}
+.todo{background:#FFF4D6;border:1px solid #E5B94B;border-radius:4px;padding:1px 6px;font-size:13px;color:#7A5300}
+table{width:100%;border-collapse:collapse;margin:10px 0 14px;font-size:13.5px}th,td{border:1px solid #DCE3EC;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--mist);color:var(--navy)}table.small{font-size:12px}table.compare td:first-child{font-weight:600;width:22%}
+img{max-width:100%;border:1px solid #DCE3EC;border-radius:6px}figure{margin:14px 0}figcaption{font-size:12.5px;color:var(--slate);margin-top:4px}
+svg{max-width:100%;height:auto}.cards{display:grid;gap:10px;margin:10px 0}.card{border:1px solid #DCE3EC;border-radius:8px;padding:10px 14px}
+.card p{margin:0;font-size:14px}.policy{background:var(--mist);border-left:4px solid var(--teal);padding:12px 16px;border-radius:6px}
+code{background:var(--mist);padding:1px 4px;border-radius:3px;font-size:12.5px}section{margin-bottom:40px}
+.video video{background:#0B1F3A;max-width:100%;height:200px;border-radius:6px}
+@media print{@page{size:Letter;margin:0.6in}body{font-size:10pt}table{font-size:9pt}main{padding:0;max-width:none}
+section{page-break-before:always;margin:0}section.cover{page-break-before:avoid}section.cont{page-break-before:auto;margin-top:18pt}
+img{max-height:3.1in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
+table,figure,.card,.policy{page-break-inside:avoid}a{color:inherit}.video video{display:none}}
+"""
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Second Look: Final Project Report</title><style>{css}</style></head>
+<body><main>
+{s1}{s2}{s3}{s4}{s5}{s6}{s7}{s8}{appendix}
+</main></body></html>
+"""
+
+
+def main() -> int:
+    OUT.write_text(build(), encoding="utf-8")
+    print(f"Wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size / 1e6:.2f} MB)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
