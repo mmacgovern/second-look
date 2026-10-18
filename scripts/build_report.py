@@ -204,7 +204,11 @@ def build() -> str:
     redteam = load_json(DOCS / "redteam_results.json")
     default_effort = load_json(DOCS / "cost_results_default_effort.json")
     low_effort = git_json(LOW_EFFORT_COMMIT, "docs/cost_results.json")
-    live_redteam = git_json(LIVE_REDTEAM_COMMIT, "docs/redteam_results.json")
+    live_redteam = load_json(DOCS / "redteam_results_live.json")
+    live_source = "docs/redteam_results_live.json"
+    if not live_redteam:  # fall back to the earlier live run kept in git history
+        live_redteam = git_json(LIVE_REDTEAM_COMMIT, "docs/redteam_results.json")
+        live_source = f"docs/redteam_results.json at commit {LIVE_REDTEAM_COMMIT}"
     run = real_run()
     pn = persona_numbers()
     log = prompt_log()
@@ -412,7 +416,10 @@ def build() -> str:
 </section>"""
 
     # --- 6 -----------------------------------------------------------------------
-    suite_rows = [[esc(k), f"{v['passed']}/{v['total']}", f"{100 * v['passed'] / v['total']:.0f}%"] for k, v in redteam["summary"]["by_suite"].items()]
+    live_suites = live_redteam["summary"]["by_suite"] if live_redteam else {}
+    suite_rows = [[esc(k), f"{v['passed']}/{v['total']}",
+                   f"{live_suites[k]['passed']}/{live_suites[k]['total']}" if k in live_suites else "not run"]
+                  for k, v in redteam["summary"]["by_suite"].items()]
     o = redteam["summary"]["overall"]
     picks = []
     for cid, surface in (("jailbreak-02", "Pause Button"), ("reveal-02", "Pasted-text intake"), ("injection", "CSV upload"),
@@ -421,8 +428,8 @@ def build() -> str:
         if c:
             picks.append([f"<code>{esc(c['id'])}</code>", esc(c["surface"]), esc(str(c.get("input", ""))[:90]), esc(c["outcome"][:120]),
                           "pass" if c["passed"] else "FAIL"])
-    live_line = (f"An earlier live run against the real model (commit {LIVE_REDTEAM_COMMIT}) passed "
-                 f"{live_redteam['summary']['overall']['passed']}/{live_redteam['summary']['overall']['total']}."
+    live_line = (f"Live run against the real model ({esc(live_redteam['run_at'][:10])}): "
+                 f"<strong>{live_redteam['summary']['overall']['passed']}/{live_redteam['summary']['overall']['total']}</strong>."
                  if live_redteam else todo("live red-team result"))
     s6 = f"""
 <section>
@@ -444,9 +451,10 @@ def build() -> str:
       ["Overspending", "budget.py checks per-call ($0.05), per-session ($0.10) and daily ($2.00) limits before every call; scripts add --max-usd; every call is recorded in the ledger and shown on the Admin page"],
   ])}
   <h3>Defenses working: red-team results</h3>
-  <p>Mode: {esc(redteam['mode'])}; run {esc(redteam['run_at'][:10])}. Overall <strong>{o['passed']}/{o['total']}</strong>.
-  {live_line} Source: <code>docs/redteam_results.json</code>.</p>
-  {table(["Suite / surface", "Passed", "Rate"], suite_rows)}
+  <p>Demo mode (saved answers and a simulated attacker that obeys every attack, to test the Python defenses on
+  their own; run {esc(redteam['run_at'][:10])}): <strong>{o['passed']}/{o['total']}</strong>. {live_line}
+  Sources: <code>docs/redteam_results.json</code> and <code>{esc(live_source)}</code>.</p>
+  {table(["Suite / surface", "Demo mode", "Live model"], suite_rows)}
   {table(["Case", "Surface", "Input", "What happened", "Result"], picks, "small")}
   <figure>{crop_image("18-midcareer-pause-sell-all.png", "Pause Button result for sell everything", 0.54, 0.89, 900, *APP_CONTENT)}<figcaption>A defense working: asked to "sell everything", the Pause Button shows consequences and history with no verdict on the trade.</figcaption></figure>
 </section>"""

@@ -363,3 +363,5 @@ Use no invented user numbers. Run the tests and commit.
 ```
 
 **Result:** Rewrote report Section 7 and slide 8 around measured costs and the sample personas' computed fee and concentration figures (assumption-based numbers labeled "estimate"), removed the user-time sentence from Section 2, made "Run a user study (5-6 people, timed against a spreadsheet, with a comprehension check)" the first next step, and removed every user-test TODO and user_test_results.md reference; report still 15 printed pages; 481 tests passed.
+
+**Result (live red-team):** Ran the live red-team against the real model (63/63 passed, $0.0068), saved to docs/redteam_results_live.json, and updated report Section 6 to show demo and live results side by side; 481 tests passed.
