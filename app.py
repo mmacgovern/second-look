@@ -195,6 +195,8 @@ def admin_page() -> None:
     st.caption(f"Per-call limits: {settings.max_tokens_per_call:,} tokens and ${settings.max_cost_per_call_usd:.2f}. "
                f"Models: fast = {settings.model_fast or 'not set'}, smart = {settings.model_smart or 'not set'}.")
     st.subheader("Cost by agent")
+    st.caption("cached_input_tokens: prompt tokens the provider served from its prompt cache, billed at the "
+               "lower cached-input rate.")
     st.dataframe(pd.DataFrame(s["by_agent"]), hide_index=True)
     st.subheader("Cost by session")
     st.dataframe(pd.DataFrame(s["by_session"]).head(50), hide_index=True)

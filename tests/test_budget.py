@@ -97,9 +97,9 @@ def test_budget_exceeded_message_is_readable():
 # --- real model prices -------------------------------------------------------
 
 def test_real_model_prices_are_listed():
-    assert budget.PRICES["gpt-6-luna"] == budget.ModelPrice(0.10, 0.50)
-    assert budget.PRICES["gpt-6-sol"] == budget.ModelPrice(2.00, 10.00)
-    assert budget.PRICES["gpt-6-astra"] == budget.ModelPrice(10.00, 50.00)
+    assert budget.PRICES["gpt-6-luna"] == budget.ModelPrice(0.10, 0.50, 0.01)
+    assert budget.PRICES["gpt-6-sol"] == budget.ModelPrice(2.00, 10.00, 0.20)
+    assert budget.PRICES["gpt-6-astra"] == budget.ModelPrice(10.00, 50.00, 1.00)
     # the fallback stays above every real model
     assert all(p.output_per_1m < budget.FALLBACK_PRICE.output_per_1m for p in budget.PRICES.values())
 
@@ -132,3 +132,40 @@ def test_summary_by_session_prefix(ledger):
     out = budget.summary(ledger, session_prefix="rec-1-")
     assert out["total_usd"] == pytest.approx(0.003)
     assert {r["name"] for r in out["by_session"]} == {"rec-1-00", "rec-1-01"}
+
+
+# --- cached input tokens (catch-up phase 2) ----------------------------------
+
+def test_cached_input_tokens_billed_at_cached_rate():
+    # gpt-6-luna: 1,000 input of which 600 cached, 100 output
+    # 400 x $0.10/1M + 600 x $0.01/1M + 100 x $0.50/1M = $0.00004 + $0.000006 + $0.00005
+    assert budget.cost_usd("gpt-6-luna", 1000, 100, cached_input_tokens=600) == pytest.approx(0.000096)
+    assert budget.cost_usd("gpt-6-luna", 1000, 100) == pytest.approx(0.00015)
+    # cached tokens can never exceed input tokens; models without a cached rate bill cached input at the full rate
+    assert budget.cost_usd("gpt-6-luna", 100, 0, cached_input_tokens=500) == pytest.approx(100 * 0.01 / 1e6)
+    assert budget.cost_usd("test-fast-model", 1000, 0, cached_input_tokens=1000) == pytest.approx(0.001)
+
+
+def test_record_and_summarize_cached_input_tokens(ledger):
+    record_after_call("s1", "explainer", "gpt-6-luna", 2000, 500, 0.5, cached_input_tokens=1200, db_path=ledger)
+    record_after_call("s1", "explainer", "gpt-6-luna", 2000, 500, 0.5, db_path=ledger)
+    row = budget.summary(ledger)["by_agent"][0]
+    assert (row["input_tokens"], row["cached_input_tokens"]) == (4000, 1200)
+    assert budget.calls(ledger)[0]["cached_input_tokens"] == 1200
+
+
+def test_old_ledger_is_migrated_without_losing_rows(ledger):
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(ledger) as conn:  # the table as it was before the new column
+        conn.execute("""CREATE TABLE calls (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL,
+                        session_id TEXT NOT NULL, agent TEXT NOT NULL, model TEXT NOT NULL, input_tokens INTEGER NOT NULL,
+                        output_tokens INTEGER NOT NULL, cost_usd REAL NOT NULL, latency_s REAL NOT NULL,
+                        cache_hit INTEGER NOT NULL)""")
+        conn.execute("INSERT INTO calls (timestamp, session_id, agent, model, input_tokens, output_tokens, cost_usd, "
+                     "latency_s, cache_hit) VALUES ('2026-10-17T00:00:00+00:00', 'old', 'analyst', 'gpt-6-luna', 10, 5, 0.25, 1.0, 0)")
+    conn.close()
+    rows = budget.calls(ledger)
+    assert len(rows) == 1 and rows[0]["session_id"] == "old" and rows[0]["cached_input_tokens"] == 0
+    record_after_call("new", "analyst", "gpt-6-luna", 100, 10, 0.1, cached_input_tokens=50, db_path=ledger)
+    assert [r["cached_input_tokens"] for r in budget.calls(ledger)] == [0, 50]
+    assert budget.summary(ledger)["total_usd"] == pytest.approx(0.25 + budget.cost_usd("gpt-6-luna", 100, 10, 50), abs=1e-6)

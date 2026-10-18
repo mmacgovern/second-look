@@ -52,6 +52,7 @@ class LLMResponse:
     latency_s: float
     cache_hit: bool = False
     demo: bool = False
+    cached_input_tokens: int = 0
 
 
 def cache_key(model: str, system: str, messages: list[dict], response_schema: type[BaseModel] | None = None) -> str:
@@ -150,6 +151,22 @@ def _usage(raw: Any) -> tuple[int, int]:
     return int(getattr(usage, "prompt_tokens", 0) or 0), int(getattr(usage, "completion_tokens", 0) or 0)
 
 
+def cached_input_tokens(raw: Any) -> int:
+    """Cached prompt tokens the provider reports (usage.prompt_tokens_details.cached_tokens); 0 if not reported."""
+    usage = getattr(raw, "usage", None)
+    details = getattr(usage, "prompt_tokens_details", None)
+    if isinstance(details, dict):
+        value = details.get("cached_tokens")
+    else:
+        value = getattr(details, "cached_tokens", None)
+    if value is None:
+        value = getattr(usage, "cache_read_input_tokens", None)
+    try:
+        return max(0, int(value or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def _demo_response(agent_name, model, system, messages, max_tokens, response_schema, key, session_id, s, db_path):
     # Demo replays are free: budget them as the $0 demo model (the per-call token limit still applies).
     budget.check_before_call(session_id, estimate_tokens(system, messages), max_tokens, budget.DEMO_MODEL,
@@ -232,17 +249,19 @@ def call_agent(
             continue
         latency = time.perf_counter() - start
         in_tok, out_tok = _usage(raw)
+        cached_tok = cached_input_tokens(raw)
         # A Portkey gateway cache hit never reaches the model, so it is recorded as a free cache hit.
         gateway_hit = gateway_cache_status(raw) == "HIT"
         cost = budget.record_after_call(session_id, agent_name, model, in_tok, out_tok, latency,
-                                        cache_hit=gateway_hit, db_path=db_path)
+                                        cache_hit=gateway_hit, cached_input_tokens=cached_tok, db_path=db_path)
         try:
             text = raw.choices[0].message.content or ""
             parsed = _parse(text, response_schema)
         except Exception as exc:
             log.warning("agent=%s model=%s attempt %d/%d returned an unusable response: %r", agent_name, model, attempt, MAX_ATTEMPTS, exc, exc_info=True)
             continue
-        response = LLMResponse(agent_name, model, text, parsed, in_tok, out_tok, cost, latency, cache_hit=gateway_hit)
+        response = LLMResponse(agent_name, model, text, parsed, in_tok, out_tok, cost, latency, cache_hit=gateway_hit,
+                               cached_input_tokens=cached_tok)
         CACHE[key] = response
         if RECORD_DIR is not None:
             _save_recording(agent_name, demo_key(system, messages, response_schema), response)

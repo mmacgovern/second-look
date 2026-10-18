@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 import logging
 import traceback
 
@@ -218,3 +219,16 @@ def test_reasoning_effort_sent_by_default_and_can_be_omitted(live_settings, fake
     client = fake_client_cls()
     call(plain, client, ledger)
     assert "reasoning_effort" not in client.calls[0]
+
+
+def test_cached_input_tokens_read_from_provider_usage(live_settings, fake_client_cls, ledger):
+    raw = fake_completion("ok", 1000, 100)
+    raw.usage.prompt_tokens_details = SimpleNamespace(cached_tokens=640)
+    resp = call(live_settings, fake_client_cls(raw), ledger)
+    assert resp.cached_input_tokens == 640
+    assert budget.calls(ledger)[0]["cached_input_tokens"] == 640
+    # not reported -> 0; dict form is read too
+    assert llm.cached_input_tokens(fake_completion()) == 0
+    dict_form = fake_completion()
+    dict_form.usage.prompt_tokens_details = {"cached_tokens": 12}
+    assert llm.cached_input_tokens(dict_form) == 12

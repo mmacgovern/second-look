@@ -24,6 +24,7 @@ log = get_logger(__name__)
 class ModelPrice:
     input_per_1m: float   # USD per 1M input tokens
     output_per_1m: float  # USD per 1M output tokens
+    cached_input_per_1m: float | None = None  # USD per 1M cached input tokens (None = same as input)
 
 
 # OpenAI standard (list) prices per 1M tokens for prompts under 272K tokens.
@@ -31,9 +32,9 @@ class ModelPrice:
 # gpt-6-luna; genai-prices 0.1.9, citing https://developers.openai.com/api/docs/models,
 # for all three. Cached-input discounts are ignored, so recorded costs are an upper bound.
 PRICES: dict[str, ModelPrice] = {
-    "gpt-6-luna": ModelPrice(input_per_1m=0.10, output_per_1m=0.50),    # course default; fast tasks
-    "gpt-6-sol": ModelPrice(input_per_1m=2.00, output_per_1m=10.00),    # complex work
-    "gpt-6-astra": ModelPrice(input_per_1m=10.00, output_per_1m=50.00),  # most capable; exceeds the
+    "gpt-6-luna": ModelPrice(input_per_1m=0.10, output_per_1m=0.50, cached_input_per_1m=0.01),  # course default
+    "gpt-6-sol": ModelPrice(input_per_1m=2.00, output_per_1m=10.00, cached_input_per_1m=0.20),   # complex work
+    "gpt-6-astra": ModelPrice(input_per_1m=10.00, output_per_1m=50.00, cached_input_per_1m=1.00),  # most capable; exceeds the
     # default per-call and session limits for the explainer, so raise them before using it
 }
 
@@ -67,9 +68,20 @@ def price_for(model: str) -> ModelPrice:
     return price
 
 
-def cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
+def cost_usd(model: str, input_tokens: int, output_tokens: int, cached_input_tokens: int = 0) -> float:
+    """Cost of one call. Cached input tokens (part of input_tokens) are billed at the cached rate."""
     price = price_for(model)
-    return (input_tokens * price.input_per_1m + output_tokens * price.output_per_1m) / 1_000_000
+    cached = max(0, min(int(cached_input_tokens), int(input_tokens)))
+    cached_rate = price.input_per_1m if price.cached_input_per_1m is None else price.cached_input_per_1m
+    return ((input_tokens - cached) * price.input_per_1m + cached * cached_rate
+            + output_tokens * price.output_per_1m) / 1_000_000
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add columns introduced after a ledger was created, keeping every existing row."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(calls)")}
+    if "cached_input_tokens" not in columns:
+        conn.execute("ALTER TABLE calls ADD COLUMN cached_input_tokens INTEGER NOT NULL DEFAULT 0")
 
 
 @contextmanager
@@ -90,9 +102,11 @@ def _ledger(db_path: Path | None):
             output_tokens INTEGER NOT NULL,
             cost_usd REAL NOT NULL,
             latency_s REAL NOT NULL,
-            cache_hit INTEGER NOT NULL
+            cache_hit INTEGER NOT NULL,
+            cached_input_tokens INTEGER NOT NULL DEFAULT 0
         )"""
     )
+    _migrate(conn)
     try:
         yield conn
         conn.commit()
@@ -162,15 +176,16 @@ def record_after_call(
     cache_hit: bool = False,
     *,
     billable: bool = True,
+    cached_input_tokens: int = 0,
     db_path: Path | None = None,
 ) -> float:
     """Write one ledger row from the response's actual usage; return the cost charged."""
-    cost = cost_usd(model, input_tokens, output_tokens) if billable and not cache_hit else 0.0
+    cost = cost_usd(model, input_tokens, output_tokens, cached_input_tokens) if billable and not cache_hit else 0.0
     with _ledger(db_path) as conn:
         conn.execute(
             """INSERT INTO calls (timestamp, session_id, agent, model, input_tokens,
-                   output_tokens, cost_usd, latency_s, cache_hit)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   output_tokens, cost_usd, latency_s, cache_hit, cached_input_tokens)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 datetime.now(timezone.utc).isoformat(),
                 session_id,
@@ -181,6 +196,7 @@ def record_after_call(
                 cost,
                 float(latency_s),
                 int(bool(cache_hit)),
+                int(cached_input_tokens or 0),
             ),
         )
     return cost
@@ -206,6 +222,7 @@ def summary(db_path: Path | None = None, session_id: str | None = None, session_
     group_sql = """SELECT {key} AS name, COUNT(*) AS calls,
                           SUM(cache_hit) AS cache_hits,
                           SUM(input_tokens) AS input_tokens,
+                          SUM(cached_input_tokens) AS cached_input_tokens,
                           SUM(output_tokens) AS output_tokens,
                           ROUND(SUM(cost_usd), 6) AS cost_usd,
                           ROUND(AVG(latency_s), 3) AS avg_latency_s
