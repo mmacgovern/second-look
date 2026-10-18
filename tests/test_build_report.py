@@ -80,3 +80,14 @@ def test_big_model_comparison_reported_from_quality_file(page):
         smart = q["MODEL_SMART for every agent"]
         assert f"{100 * smart['first_draft_pass_rate']:.0f}% of its first drafts passed" in page
         assert "TODO: MODEL_SMART" not in page
+
+
+def test_report_traces_each_agent_and_a_verifier_rejection(page):
+    assert "What each agent returned in this run" in page
+    run = br.real_run()
+    assert [t["agent"] for t in run["trace"]] == run["result"].steps  # one captured output per step
+    for t in run["trace"]:
+        assert f"<strong>{t['agent']}</strong>" in page
+    rw = br.rewrite_example()
+    if rw:
+        assert "When the verifier says no" in page and rw["result"].source == "ai_rewrite"

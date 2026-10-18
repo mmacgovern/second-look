@@ -119,15 +119,58 @@ def table(headers: list[str], rows: list[list], cls: str = "") -> str:
 
 # --- data ----------------------------------------------------------------------
 
+def traced_analysis(persona: str, fluency: str) -> dict:
+    """Replay one recorded analysis for $0 and capture what each agent returned, step by step."""
+    from secondlook import llm
+
+    settings = load_settings(env_file=None, environ={"DEMO_MODE": "true"})
+    facts = persona_facts(persona)
+    trace: list[dict] = []
+    original = llm.call_agent
+
+    def recording_call(agent_name, *args, **kwargs):
+        response = original(agent_name, *args, **kwargs)
+        trace.append({"agent": agent_name, "parsed": response.parsed.model_dump() if response.parsed else None,
+                      "input_tokens": response.input_tokens, "output_tokens": response.output_tokens})
+        return response
+
+    llm.call_agent = recording_call
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / "ledger.db"
+            result = orchestrator.run_analysis(facts, fluency, AgentContext(session_id="report", settings=settings, db_path=db))
+            calls = budget.calls(db)
+    finally:
+        llm.call_agent = original
+    return {"facts": facts, "result": result, "calls": calls, "trace": trace,
+            "facts_tokens": estimate_tokens(facts_json(facts))}
+
+
 def real_run() -> dict:
     """The recorded mid-career / Comfortable analysis, replayed from demo/recorded for $0."""
-    settings = load_settings(env_file=None, environ={"DEMO_MODE": "true"})
-    facts = persona_facts("midcareer")
-    with tempfile.TemporaryDirectory() as tmp:
-        db = Path(tmp) / "ledger.db"
-        result = orchestrator.run_analysis(facts, "comfortable", AgentContext(session_id="report", settings=settings, db_path=db))
-        calls = budget.calls(db)
-    return {"facts": facts, "result": result, "calls": calls, "facts_tokens": estimate_tokens(facts_json(facts))}
+    return traced_analysis("midcareer", "comfortable")
+
+
+def rewrite_example() -> dict | None:
+    """A recorded analysis where the verifier sent the first draft back, if the recordings have one."""
+    for persona in ("midcareer", "beginner", "retiree"):
+        for fluency in ("new", "pro", "comfortable"):
+            run = traced_analysis(persona, fluency)
+            if run["result"].source == "ai_rewrite":
+                return {**run, "label": f"{persona} / {fluency}"}
+    return None
+
+
+def step_output(step: dict) -> str:
+    """A short, readable excerpt of one agent's JSON output."""
+    p = step["parsed"] or {}
+    if step["agent"] == "analyst":
+        shown = [{"title": f["title"], "dollar_fact_key": f.get("dollar_fact_key")} for f in p.get("findings", [])]
+        return json.dumps({"findings": shown}, indent=1)
+    if step["agent"] in ("explainer", "explainer_rewrite"):
+        return json.dumps({"card_titles": [c["title"] for c in p.get("cards", [])],
+                           "advisor_questions": len(p.get("advisor_questions", []))}, indent=1)
+    return json.dumps(p, indent=1)[:600]
 
 
 def prompt_log() -> list[dict]:
@@ -211,6 +254,7 @@ def build() -> str:
         live_redteam = git_json(LIVE_REDTEAM_COMMIT, "docs/redteam_results.json")
         live_source = f"docs/redteam_results.json at commit {LIVE_REDTEAM_COMMIT}"
     run = real_run()
+    rw = rewrite_example()
     pn = persona_numbers()
     log = prompt_log()
 
@@ -309,7 +353,20 @@ def build() -> str:
         ["verifier", "Python checks every number, advice wording and plan ranges first; then a model review", "None; its Python half uses the advice guard and number matcher", f"MODEL_FAST, {verifier.SPEC.max_tokens} tokens"],
         ["pause", "Explains a proposed trade neutrally: before/after and market history next to the user's time horizon", "None (data only)", f"MODEL_SMART, {pause.SPEC.max_tokens} tokens"],
     ]
-    ledger_rows = [[esc(c["agent"]), f"{c['input_tokens']:,}", f"{c['output_tokens']:,}"] for c in run["calls"]]
+    roles = {"analyst": "Picks 3 findings and the fact keys behind them", "explainer": "Writes the cards for the fluency level",
+             "verifier": "Model review after the Python checks pass", "explainer_rewrite": "Rewrites using the verifier's reasons"}
+    trace_rows = [[f"{i}. <strong>{esc(t['agent'])}</strong><br><span class=\"note\">{esc(roles.get(t['agent'], ''))}</span>",
+                   f"<pre class=\"trace\">{esc(step_output(t))}</pre>", f"{t['input_tokens']:,} / {t['output_tokens']:,}"]
+                  for i, t in enumerate(run["trace"], 1)]
+    if rw:
+        rw_reasons = "".join(f"<li>{esc(x)}</li>" for x in rw["result"].verifier_reasons[:3])
+        rewrite_html = (f"<h3>When the verifier says no</h3><p>In the recorded <strong>{esc(rw['label'])}</strong> run the "
+                        f"steps were <strong>{' → '.join(esc(x) for x in rw['result'].steps)}</strong>. The first draft was "
+                        f"sent back with these reasons; the explainer rewrote it once, and the rewrite passed the Python checks (the 4-call limit leaves no second model review):</p><ul>{rw_reasons}</ul>"
+                        f"<p class=\"note\">Every rejection and its reasons are also recorded in the ledger and listed on the "
+                        f"Admin page.</p>")
+    else:
+        rewrite_html = ""
     findings_rows = [[esc(f.title), f"<code>{esc(f.dollar_fact_key)}</code>", usd(f.dollar_impact_usd or 0, 0)] for f in res.findings]
     cards_html = "".join(f'<div class="card"><h4>{esc(c.title)}</h4><p>{esc(c.body)}</p></div>' for c in res.cards)
     s4 = f"""
@@ -343,9 +400,13 @@ def build() -> str:
   <div class="cards">{cards_html}</div>
   <ol start="4">
     <li><strong>Verifier</strong> runs the Python checks (every number matched, no advice wording, plan rule met) and then
-    the model review; the draft passed, so it is shown. Tokens recorded for this run:
-    {table(["Agent", "Input tokens", "Output tokens"], ledger_rows)}</li>
+    the model review; the draft passed, so it is shown.</li>
   </ol>
+  <h3>What each agent returned in this run</h3>
+  <p>Captured while replaying the recorded run; each agent answers with JSON that Python validates before the next step
+  (excerpts; the full cards are shown above).</p>
+  {table(["Step", "Output (JSON)", "Tokens in / out"], trace_rows, "small")}
+  {rewrite_html}
   <figure>{crop_image("10-midcareer-top3.png", "Top 3 tab for the mid-career sample", 0.33, 0.66, 900, *APP_CONTENT)}<figcaption>The same run in the app (Top 3 Things Worth Knowing tab).</figcaption></figure>
   <figure>{crop_image("06-midcareer-xray.png", "What you own: top 10 companies and industry mix vs. the S&P 500", 0.14, 0.46, 900, *APP_CONTENT)}<figcaption>The X-Ray tab's "What you own" view for the same sample: top 10 companies and industry mix next to the S&P 500. Pure Python, no AI calls; the comparison numbers also go into the Facts JSON so the explainer can mention them and the verifier checks them.</figcaption></figure>
   <figure>{crop_image("21-midcareer-shifts.png", "Possible Shifts tab for the mid-career sample", 0.35, 0.81, 900, *APP_CONTENT)}<figcaption>The Possible Shifts tab: Python rules pick the shifts (sector, asset type, account type) from the numbers; the AI words them and is rejected if it names any stock, fund or ticker. The generative-AI disclaimer sits on top.</figcaption></figure>
@@ -398,7 +459,7 @@ def build() -> str:
     else:
         smart_note = f'<p>{todo("MODEL_SMART-for-every-agent comparison (run scripts/measure_costs.py --smart-model gpt-6-sol)")}</p>'
     s5 = f"""
-<section>
+<section class="cont">
   <h2>5. Tokenomics</h2>
   <p>Measured live on {esc(cost['run_at'][:10])} (run <code>{esc(cost['run_id'])}</code>): {cost['analyses']} full analyses
   (3 personas × 3 fluency levels × 3 repeats) and {cost['pauses']} pause checks, with the app's response cache off and the
@@ -451,7 +512,7 @@ def build() -> str:
                  f"<strong>{live_redteam['summary']['overall']['passed']}/{live_redteam['summary']['overall']['total']}</strong>."
                  if live_redteam else todo("live red-team result"))
     s6 = f"""
-<section>
+<section class="cont">
   <h2>6. Safety</h2>
   <div class="policy"><strong>Safety policy.</strong> Second Look explains numbers and, in its Possible Shifts tab, suggests
   general shifts between industries, asset types (stocks, bonds, cash, low-cost index funds) and account types. Those
@@ -582,6 +643,7 @@ h1{font-size:44px;color:var(--navy);margin:8px 0}h2{color:var(--navy);font-size:
 h3{color:var(--navy);font-size:18px;margin:22px 0 8px}h4{margin:0 0 6px;color:var(--navy)}
 .kicker{color:var(--teal);font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:13px;margin:0}
 .lede{font-size:19px;color:#334155}.note{font-size:13px;color:var(--slate)}
+pre.trace{white-space:pre-wrap;font-size:11px;margin:0;background:var(--mist);padding:6px;border-radius:4px;max-height:none}
 .est{background:#E6F3F4;border:1px solid #9CCFD3;border-radius:4px;padding:0 5px;font-size:12px;color:#0E5F68}
 .todo{background:#FFF4D6;border:1px solid #E5B94B;border-radius:4px;padding:1px 6px;font-size:13px;color:#7A5300}
 table{width:100%;border-collapse:collapse;margin:10px 0 14px;font-size:13.5px}th,td{border:1px solid #DCE3EC;padding:6px 8px;text-align:left;vertical-align:top}
@@ -594,7 +656,7 @@ code{background:var(--mist);padding:1px 4px;border-radius:3px;font-size:12.5px}s
 @media print{@page{size:Letter;margin:0.6in}body{font-size:10pt}table{font-size:9pt}main{padding:0;max-width:none}
 section{page-break-before:always;margin:0}section.cover{page-break-before:avoid}section.cont{page-break-before:auto;margin-top:18pt}
 img{max-height:2.6in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
-table,figure,.card,.policy{page-break-inside:avoid}a{color:inherit}.video video{display:none}}
+figure,.card,.policy,tr{page-break-inside:avoid}a{color:inherit}.video video{display:none}}
 """
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
