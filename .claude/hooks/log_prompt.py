@@ -44,10 +44,22 @@ LONG_RANDOM = re.compile(r"[A-Za-z0-9_\-+=]{32,}")
 SLASH_COMMAND = re.compile(r"/[\w:.\-]+(\s+.*)?", re.S)
 
 
+def _looks_like_setting(name: str) -> bool:
+    """PORTKEY_API_KEY, my_secret, api-token: identifiers, not ordinary words like "Tokenomics"."""
+    return "_" in name or "-" in name or (name.isupper() and len(name) > 3)
+
+
+def _looks_like_key(value: str) -> bool:
+    """Letters mixed with digits or symbols, the shape of a real key or password."""
+    return len(value) >= 6 and bool(re.search(r"[A-Za-z]", value)) and bool(re.search(r"[\d_\-+/=]", value))
+
+
 def _redact_assignment(match: re.Match) -> str:
     name, sep, quote, value = match.groups()
     if NOT_SECRET_VALUE.fullmatch(value):
         return match.group(0)
+    if not (_looks_like_setting(name) or _looks_like_key(value)):
+        return match.group(0)  # prose such as "Tokenomics: measured tokens"
     return f"{name}{sep}{quote}{REDACTED}"
 
 

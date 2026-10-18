@@ -99,3 +99,20 @@ def test_never_writes_to_stdout(project):
     result = send(project, "normal prompt")
     assert result.returncode == 0
     assert result.stdout == b""
+
+
+def test_ordinary_words_about_tokens_survive(project):
+    send(project, "5. Tokenomics: measured tokens per typical run (input, cached input, output)\n"
+                  "Token budget: about 2,000 tokens. Keys: never in chat.")
+    text = log(project)
+    assert "Tokenomics: measured tokens per typical run" in text
+    assert "Token budget: about 2,000 tokens" in text and "Keys: never in chat" in text
+    assert "[REDACTED]" not in text
+
+
+def test_fake_key_still_redacted_next_to_prose(project):
+    send(project, f"Tokenomics: measured tokens. api key: {FAKE_KEY} and token: Zx9Qw7Er")
+    text = log(project)
+    assert "Tokenomics: measured tokens" in text
+    assert FAKE_KEY not in text and "Zx9Qw7Er" not in text
+    assert text.count("[REDACTED]") == 2

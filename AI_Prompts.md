@@ -326,3 +326,18 @@ Keep it short: no code, no jargon. Then show me STATUS.md.
 ```
 
 **Result:** Wrote STATUS.md, a plain-English status report covering what works in the app, every incomplete item with who needs to act (owner, quick Claude Code fix or paid live run), and the status of each deliverable; no other project files were changed, and all 470 tests passed.
+
+### #18 — 2026-10-17 23:29 — Phase 16 — Fixes
+
+```text
+Fix these items from STATUS.md. Don't read .env. Run pytest after each item and commit each one separately.
+
+1. Fix the AI_Prompts.md logger so ordinary words like "tokens" are not redacted. Redact only strings that look like actual keys (long random strings, sk- prefixes and similar). Add a test that "measured tokens" survives and a fake key is still redacted. Leave old log entries unchanged.
+2. Make the verifier record the reason for every rewrite in the ledger and the Admin page.
+3. In data/reference/risk_profile_ranges.json and wherever the app shows these ranges, label them clearly as "planning rule of thumb, not a recommendation." Leave glide_path.json for me to fill in.
+4. Update README: mark the Windows steps "tested" and the macOS steps "not yet tested on a Mac."
+5. After 1-5, retake all screenshots in the new design and replace the old ones in docs/screenshots/, report.html and slides.html.
+6. Then STOP and ask me before the two live runs: (a) the big-model quality comparison (~$0.22) and (b) the live red-team (~$0.05). With my go, run both and update report section 5 and section 6.
+```
+
+**Result (item 1):** The prompt logger now redacts a named value only when the name looks like a setting (e.g. PORTKEY_API_KEY) or the value looks like a key, so prose such as "Tokenomics: measured tokens" survives while fake keys are still redacted; old entries unchanged; 472 tests passed.
