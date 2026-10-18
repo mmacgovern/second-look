@@ -83,11 +83,11 @@ def test_big_model_comparison_reported_from_quality_file(page):
 
 
 def test_report_traces_each_agent_and_a_verifier_rejection(page):
-    assert "What each agent returned in this run" in page
-    run = br.real_run()
-    assert [t["agent"] for t in run["trace"]] == run["result"].steps  # one captured output per step
-    for t in run["trace"]:
-        assert f"<strong>{t['agent']}</strong>" in page
-    rw = br.rewrite_example()
-    if rw:
-        assert "When the verifier says no" in page and rw["result"].source == "ai_rewrite"
+    # the page is built from the real recordings (the per-test isolation points demo mode at an empty folder)
+    import html
+
+    trace = html.unescape(page[page.index("What each agent returned in this run"):page.index("<h2>5. Tokenomics</h2>")])
+    for agent in ("analyst", "explainer", "verifier"):
+        assert f"<strong>{agent}</strong>" in trace
+    assert '"findings"' in trace and '"passed"' in trace
+    assert "When the verifier says no" in trace and "explainer_rewrite" in trace

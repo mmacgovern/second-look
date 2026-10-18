@@ -400,3 +400,5 @@ Do items 1, 3 and 5: fix the .env location and live default, add a per-agent run
 **Result (item 1):** Settings now read `.env` one folder up as well as in the project folder (project wins, environment wins over both), a key with DEMO_MODE left empty runs live, DEMO_MODE=true forces demo, run_app.py gained --demo, .env.example and the README were updated; 511 tests passed.
 
 **Result (item 3):** Report Section 4 now shows what each agent returned in the traced run (analyst findings, explainer card titles, verifier verdict, with tokens), captured by replaying the recording for $0, plus a recorded run where the verifier sent the first draft back and why; tables may now split across pages so the report stays at 15 pages; 512 tests passed.
+
+**Result (item 3 fix):** Fixed the new trace test, which replayed recordings inside the per-test isolation (no recordings there) and now checks the built report instead; 512 tests passed. (Correction: when item 3 was committed, 1 of 512 tests was failing, not all passing.)
