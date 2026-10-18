@@ -29,6 +29,9 @@ GENERIC_ERROR = "The AI service could not complete this request. Please try agai
 
 CACHE: dict[str, "LLMResponse"] = {}
 RECORD_DIR: Path | None = None  # set by record_responses_to() while recording demo responses
+CACHE_ENABLED = True            # scripts/measure_costs.py turns this off to measure every call
+TRACE_PREFIX: str | None = None # when set, live requests carry a Portkey trace id "<prefix>-<agent>"
+FORCE_REFRESH = False          # skip the Portkey gateway cache (scripts/measure_costs.py)
 
 log = get_logger(__name__)
 
@@ -95,13 +98,15 @@ def estimate_tokens(system: str, messages: list[dict]) -> int:
     return math.ceil(chars / 4) + 4 * (len(messages) + 1)
 
 
-def get_client(settings: Settings) -> Any:
+def get_client(settings: Settings, trace_id: str | None = None, force_refresh: bool = False) -> Any:
     from portkey_ai import Portkey
 
     client = Portkey(
         api_key=settings.portkey_api_key.get_secret_value(),
         provider=settings.portkey_provider,
         request_timeout=TIMEOUT_S * 1000,  # Portkey's gateway timeout is in milliseconds
+        trace_id=trace_id,                 # lets a request be found in Portkey's logs
+        cache_force_refresh=force_refresh or None,  # True: bypass the gateway cache for a real model call
     )
     # The SDK retries internally; turn that off so call_agent's single retry is the only one.
     inner = getattr(client, "openai_client", None)
@@ -129,6 +134,15 @@ def _load_recording(agent_name: str, key: str) -> dict | None:
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
     return None
+
+
+def gateway_cache_status(raw: Any) -> str | None:
+    """Portkey's "cache-status" response header: MISS, HIT, REFRESH, or None if not reported."""
+    try:
+        headers = raw.get_headers() if hasattr(raw, "get_headers") else None
+        return (dict(headers or {}).get("cache-status") or None)
+    except Exception:
+        return None
 
 
 def _usage(raw: Any) -> tuple[int, int]:
@@ -175,7 +189,7 @@ def call_agent(
     s = settings or get_settings()
     key = cache_key(model, system, messages, response_schema)
 
-    cached = CACHE.get(key)
+    cached = CACHE.get(key) if CACHE_ENABLED else None
     if cached is not None:
         budget.record_after_call(
             session_id, agent_name, model or "demo", cached.input_tokens, cached.output_tokens, 0.0,
@@ -193,7 +207,8 @@ def call_agent(
         log.error("No model configured for agent=%s (set MODEL_FAST / MODEL_SMART)", agent_name)
         raise LLMError(GENERIC_ERROR)
 
-    client = client or get_client(s)
+    client = client or get_client(s, trace_id=f"{TRACE_PREFIX}-{agent_name}" if TRACE_PREFIX else None,
+                                  force_refresh=FORCE_REFRESH)
     request = {
         "model": model,
         "messages": [{"role": "system", "content": system}, *messages],
@@ -203,6 +218,8 @@ def call_agent(
     }
     if response_schema is not None:
         request["response_format"] = _response_format(response_schema)
+    if s.reasoning_effort:
+        request["reasoning_effort"] = s.reasoning_effort
     est_input = estimate_tokens(system, messages)
 
     for attempt in range(1, MAX_ATTEMPTS + 1):
@@ -215,14 +232,17 @@ def call_agent(
             continue
         latency = time.perf_counter() - start
         in_tok, out_tok = _usage(raw)
-        cost = budget.record_after_call(session_id, agent_name, model, in_tok, out_tok, latency, db_path=db_path)
+        # A Portkey gateway cache hit never reaches the model, so it is recorded as a free cache hit.
+        gateway_hit = gateway_cache_status(raw) == "HIT"
+        cost = budget.record_after_call(session_id, agent_name, model, in_tok, out_tok, latency,
+                                        cache_hit=gateway_hit, db_path=db_path)
         try:
             text = raw.choices[0].message.content or ""
             parsed = _parse(text, response_schema)
         except Exception as exc:
             log.warning("agent=%s model=%s attempt %d/%d returned an unusable response: %r", agent_name, model, attempt, MAX_ATTEMPTS, exc, exc_info=True)
             continue
-        response = LLMResponse(agent_name, model, text, parsed, in_tok, out_tok, cost, latency)
+        response = LLMResponse(agent_name, model, text, parsed, in_tok, out_tok, cost, latency, cache_hit=gateway_hit)
         CACHE[key] = response
         if RECORD_DIR is not None:
             _save_recording(agent_name, demo_key(system, messages, response_schema), response)

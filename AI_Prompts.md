@@ -156,3 +156,13 @@ Write scripts/run_redteam.py that runs them all (live or demo), saves results to
 ```
 
 **Result:** Added tests/redteam/ (20 adversarial prompts run on the Pause Button and intake, 3 malicious CSVs, 10 wrong-number drafts), scripts/run_redteam.py (demo 53/53 passed, saved to docs/redteam_results.json), a grounding defense so intake rejects tickers or numbers not in the pasted text, secondlook/safety/secret_scan.py and tests/test_secrets.py (repo files plus 16 rendered app views); all 384 pytest tests passed.
+
+### #10 — 2026-10-17 19:54 — Phase 10 — Measure real costs
+
+```text
+Prompt 9 — Measure real costs
+Write scripts/measure_costs.py: with DEMO_MODE=false and caching off, run 3 sample portfolios x 3 fluency levels x 3 repeats plus 5 Pause scenarios. From the ledger, output docs/cost_results.json and a markdown table: per agent and per full analysis — mean input tokens, mean output tokens, mean $ and p95 latency. Also project monthly cost for 1,000 / 10,000 / 50,000 users at 2 analyses each per month, with and without caching. Stop if the run would exceed $1.00 total.
+Check: compare one run's cost with Portkey's log for the same request.
+```
+
+**Result:** Built scripts/measure_costs.py (27 analyses + 5 pause checks, live, caches off, $1 cap) writing docs/cost_results.json/.md; found and fixed the Portkey gateway cache skewing results (hits now recorded at $0) and empty answers from hidden reasoning (REASONING_EFFORT=low): $0.001217 per analysis, p95 17.1 s, 0 fallbacks, about $122/month for 50,000 users; Portkey dashboard check left for the user (export API not permitted); all 396 pytest tests passed.

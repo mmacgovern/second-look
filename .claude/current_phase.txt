@@ -1,1 +1,1 @@
-Phase 9 — Red-team and safety tests
+Phase 10 — Measure real costs

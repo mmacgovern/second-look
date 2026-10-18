@@ -1,0 +1,475 @@
+{
+ "run_id": "costs-20261017-204105",
+ "run_at": "2026-10-18T00:47:59+00:00",
+ "models": {
+  "fast": "gpt-6-luna",
+  "smart": "gpt-6-luna"
+ },
+ "cap_usd": 1.0,
+ "stopped": null,
+ "total_usd": 0.034318,
+ "calls": 87,
+ "gateway_cache_hits": 0,
+ "analyses": 27,
+ "pauses": 5,
+ "sources": {
+  "ai": 31,
+  "ai_rewrite": 1
+ },
+ "per_agent": {
+  "analyst": {
+   "n": 27,
+   "mean_input_tokens": 2085.0,
+   "mean_output_tokens": 368.6,
+   "mean_usd": 0.0003928,
+   "mean_usd_with_caching": 0.0003627,
+   "p95_latency_s": 5.04
+  },
+  "explainer": {
+   "n": 28,
+   "mean_input_tokens": 2600.6,
+   "mean_output_tokens": 518.1,
+   "mean_usd": 0.0005191,
+   "mean_usd_with_caching": 0.0004724,
+   "p95_latency_s": 6.38
+  },
+  "pause": {
+   "n": 5,
+   "mean_input_tokens": 753.0,
+   "mean_output_tokens": 435.0,
+   "mean_usd": 0.0002928,
+   "mean_usd_with_caching": 0.0002627,
+   "p95_latency_s": 4.92
+  },
+  "verifier": {
+   "n": 27,
+   "mean_input_tokens": 2333.9,
+   "mean_output_tokens": 104.6,
+   "mean_usd": 0.0002857,
+   "mean_usd_with_caching": 0.0002579,
+   "p95_latency_s": 3.23
+  }
+ },
+ "per_analysis": {
+  "n": 27,
+  "mean_input_tokens": 7115.8,
+  "mean_output_tokens": 1010.4,
+  "mean_usd": 0.0012168,
+  "mean_usd_with_caching": 0.0011106,
+  "p95_latency_s": 17.12
+ },
+ "per_pause": {
+  "n": 5,
+  "mean_input_tokens": 753.0,
+  "mean_output_tokens": 435.0,
+  "mean_usd": 0.0002928,
+  "mean_usd_with_caching": 0.0002627,
+  "p95_latency_s": 6.01
+ },
+ "projection": [
+  {
+   "users": 1000,
+   "analyses": 2000,
+   "without_caching_usd": 2.43,
+   "with_caching_usd": 2.22
+  },
+  {
+   "users": 10000,
+   "analyses": 20000,
+   "without_caching_usd": 24.34,
+   "with_caching_usd": 22.21
+  },
+  {
+   "users": 50000,
+   "analyses": 100000,
+   "without_caching_usd": 121.68,
+   "with_caching_usd": 111.06
+  }
+ ],
+ "caching_note": "With caching: each agent's system prompt (about analyst 334, explainer 519, pause 334, verifier 308 tokens) billed at 10% of the input price; Facts JSON and output billed in full. OpenAI only caches prompt prefixes of 1,024 tokens or more, so this saving needs the system prompts to grow past that size or be combined with a longer shared prefix.",
+ "portkey_check": {
+  "trace_id": "costs-20261017-204105-00-analyst",
+  "timestamp_utc": "2026-10-18T00:41:11.639459+00:00",
+  "model": "gpt-6-luna",
+  "input_tokens": 1802,
+  "output_tokens": 338,
+  "our_cost_usd": 0.0003492
+ },
+ "runs": [
+  {
+   "kind": "analysis",
+   "label": "beginner / new / run 1",
+   "session": "costs-20261017-204105-00",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 16.1
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / new / run 2",
+   "session": "costs-20261017-204105-01",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 15.5
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / new / run 3",
+   "session": "costs-20261017-204105-02",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.39
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / comfortable / run 1",
+   "session": "costs-20261017-204105-03",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.24
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / comfortable / run 2",
+   "session": "costs-20261017-204105-04",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.83
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / comfortable / run 3",
+   "session": "costs-20261017-204105-05",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.2
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / pro / run 1",
+   "session": "costs-20261017-204105-06",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 15.25
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / pro / run 2",
+   "session": "costs-20261017-204105-07",
+   "source": "ai_rewrite",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier",
+    "explainer_rewrite"
+   ],
+   "wall_s": 21.61
+  },
+  {
+   "kind": "analysis",
+   "label": "beginner / pro / run 3",
+   "session": "costs-20261017-204105-08",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.21
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / new / run 1",
+   "session": "costs-20261017-204105-09",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.54
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / new / run 2",
+   "session": "costs-20261017-204105-10",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.86
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / new / run 3",
+   "session": "costs-20261017-204105-11",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.45
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / comfortable / run 1",
+   "session": "costs-20261017-204105-12",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 16.55
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / comfortable / run 2",
+   "session": "costs-20261017-204105-13",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.41
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / comfortable / run 3",
+   "session": "costs-20261017-204105-14",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.23
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / pro / run 1",
+   "session": "costs-20261017-204105-15",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.27
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / pro / run 2",
+   "session": "costs-20261017-204105-16",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 15.27
+  },
+  {
+   "kind": "analysis",
+   "label": "midcareer / pro / run 3",
+   "session": "costs-20261017-204105-17",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.79
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / new / run 1",
+   "session": "costs-20261017-204105-18",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 15.58
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / new / run 2",
+   "session": "costs-20261017-204105-19",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.63
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / new / run 3",
+   "session": "costs-20261017-204105-20",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.31
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / comfortable / run 1",
+   "session": "costs-20261017-204105-21",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.14
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / comfortable / run 2",
+   "session": "costs-20261017-204105-22",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.48
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / comfortable / run 3",
+   "session": "costs-20261017-204105-23",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.5
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / pro / run 1",
+   "session": "costs-20261017-204105-24",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.19
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / pro / run 2",
+   "session": "costs-20261017-204105-25",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 15.03
+  },
+  {
+   "kind": "analysis",
+   "label": "retiree / pro / run 3",
+   "session": "costs-20261017-204105-26",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 17.12
+  },
+  {
+   "kind": "pause",
+   "label": "midcareer / Sell all of the whole portfolio to cash",
+   "session": "costs-20261017-204105-27",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 5.16
+  },
+  {
+   "kind": "pause",
+   "label": "retiree / Sell 50% of the whole portfolio to cash",
+   "session": "costs-20261017-204105-28",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 4.81
+  },
+  {
+   "kind": "pause",
+   "label": "beginner / Buy $5,000 of QQQ with new money",
+   "session": "costs-20261017-204105-29",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 5.06
+  },
+  {
+   "kind": "pause",
+   "label": "midcareer / Sell 30% of QQQ to cash",
+   "session": "costs-20261017-204105-30",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 4.72
+  },
+  {
+   "kind": "pause",
+   "label": "retiree / Sell all of the whole portfolio to cash",
+   "session": "costs-20261017-204105-31",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 6.01
+  }
+ ]
+}

@@ -36,6 +36,7 @@ ENV_FIELDS = {
     "DAILY_BUDGET_USD": "daily_budget_usd",
     "MAX_TOKENS_PER_CALL": "max_tokens_per_call",
     "MAX_COST_PER_CALL_USD": "max_cost_per_call_usd",
+    "REASONING_EFFORT": "reasoning_effort",
 }
 
 # Generic secret shapes, used in addition to the configured key's exact value.
@@ -58,6 +59,9 @@ class Settings(BaseModel):
     daily_budget_usd: float = Field(default=2.00, ge=0)
     max_tokens_per_call: int = Field(default=1500, gt=0)
     max_cost_per_call_usd: float = Field(default=0.05, ge=0)
+    # gpt-6 models reason before answering; "low" keeps hidden reasoning from using up max tokens.
+    # Empty means "do not send the parameter" (for models without reasoning).
+    reasoning_effort: str = "low"
 
     @field_validator("portkey_api_key", mode="before")
     @classmethod
@@ -68,7 +72,7 @@ class Settings(BaseModel):
             return None
         return str(value).strip()
 
-    @field_validator("model_fast", "model_smart", "portkey_provider", mode="before")
+    @field_validator("model_fast", "model_smart", "portkey_provider", "reasoning_effort", mode="before")
     @classmethod
     def _strip(cls, value):
         return "" if value is None else str(value).strip()

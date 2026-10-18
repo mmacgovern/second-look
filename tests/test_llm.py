@@ -185,3 +185,36 @@ def test_get_client_disables_sdk_retries_and_sets_timeout():
     client = llm.get_client(Settings(portkey_api_key=ODD_KEY, demo_mode=False))
     assert client.openai_client.max_retries == 0
     assert client.request_timeout == 30_000  # Portkey takes milliseconds: 30 s, not 30 ms
+
+
+def test_gateway_cache_hit_is_recorded_free(live_settings, fake_client_cls, ledger):
+    raw = fake_completion("cached", 1000, 500)
+    raw.get_headers = lambda: {"cache-status": "HIT", "trace-id": "t-1"}
+    resp = call(live_settings, fake_client_cls(raw), ledger)
+    assert resp.cache_hit and resp.cost_usd == 0
+    row = budget.summary(ledger)["by_agent"][0]
+    assert (row["cache_hits"], row["cost_usd"], row["input_tokens"]) == (1, 0, 1000)
+
+
+def test_gateway_miss_is_billed(live_settings, fake_client_cls, ledger):
+    raw = fake_completion("fresh", 1000, 500)
+    raw.get_headers = lambda: {"cache-status": "MISS"}
+    resp = call(live_settings, fake_client_cls(raw), ledger)
+    assert not resp.cache_hit and resp.cost_usd == pytest.approx(budget.cost_usd("test-fast-model", 1000, 500))
+    assert llm.gateway_cache_status(fake_completion()) is None
+
+
+def test_get_client_can_bypass_gateway_cache_and_set_trace():
+    client = llm.get_client(Settings(portkey_api_key=ODD_KEY, demo_mode=False), trace_id="run-7-analyst", force_refresh=True)
+    assert client.cache_force_refresh is True and client.trace_id == "run-7-analyst"
+
+
+def test_reasoning_effort_sent_by_default_and_can_be_omitted(live_settings, fake_client_cls, ledger):
+    client = fake_client_cls()
+    call(live_settings, client, ledger)
+    assert client.calls[0]["reasoning_effort"] == "low"
+    llm.CACHE.clear()
+    plain = live_settings.model_copy(update={"reasoning_effort": ""})
+    client = fake_client_cls()
+    call(plain, client, ledger)
+    assert "reasoning_effort" not in client.calls[0]

@@ -186,6 +186,13 @@ def record_after_call(
     return cost
 
 
+def calls(db_path: Path | None = None, session_prefix: str | None = None) -> list[dict]:
+    """Raw ledger rows (oldest first), optionally only sessions whose id starts with session_prefix."""
+    where, params = ("WHERE substr(session_id, 1, ?) = ?", (len(session_prefix), session_prefix)) if session_prefix else ("", ())
+    with _ledger(db_path) as conn:
+        return [dict(r) for r in conn.execute(f"SELECT * FROM calls {where} ORDER BY id", params)]
+
+
 def summary(db_path: Path | None = None, session_id: str | None = None, session_prefix: str | None = None) -> dict:
     """Cost per agent and per session, for the dashboard (optionally one session, or all
     sessions whose id starts with session_prefix)."""

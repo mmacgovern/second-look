@@ -73,3 +73,8 @@ def test_get_logger_adds_filter_once():
     b = config.get_logger("secondlook.once")
     assert a is b
     assert sum(isinstance(f, RedactingFilter) for f in a.filters) == 1
+
+
+def test_reasoning_effort_setting():
+    assert load_settings(env_file=None, environ={}).reasoning_effort == "low"
+    assert load_settings(env_file=None, environ={"REASONING_EFFORT": " high "}).reasoning_effort == "high"
