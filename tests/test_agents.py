@@ -299,3 +299,9 @@ def test_single_number_plan_card_is_rewritten_with_fake_llm(make_ctx):
     assert result.source == "ai_rewrite"
     assert any("range" in r for r in result.verifier_reasons)
     assert any("planning estimate" in r for r in result.verifier_reasons)
+
+
+def test_plan_rule_accepts_assumptions_named_without_the_word_assume():
+    body = ("Planning estimate, not a guarantee: between $1,251,118 and $1,974,359, using real returns after fees "
+            "of 1.95% to 5.95% and a 3.9% withdrawal rate.")
+    assert verifier.plan_problems(FACTS, _plan_card(body)) == []

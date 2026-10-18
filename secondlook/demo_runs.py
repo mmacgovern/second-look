@@ -1,5 +1,5 @@
 """The fixed set of runs that demo mode can replay: 3 sample personas x 3 fluency
-levels, plus 3 Pause Button scenarios.
+levels, plus 5 Pause Button scenarios.
 
 Facts are built from the offline snapshot (never live prices), so every prompt,
 and therefore every demo key, is the same when recording and when replaying.
@@ -24,6 +24,8 @@ PAUSE_SCENARIOS: list[tuple[str, Action]] = [
     ("midcareer", Action(kind="sell_all")),
     ("retiree", Action(kind="sell_pct", pct=50)),
     ("beginner", Action(kind="buy", ticker="QQQ", amount_usd=5000)),
+    ("midcareer", Action(kind="sell_pct", ticker="QQQ", pct=30)),
+    ("retiree", Action(kind="sell_all")),
 ]
 
 

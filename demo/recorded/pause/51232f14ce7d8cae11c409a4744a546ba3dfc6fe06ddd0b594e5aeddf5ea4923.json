@@ -1,0 +1,6 @@
+{
+ "agent": "pause",
+ "text": "{\"summary\":\"Buying $5,000 of QQQ with new money would increase the portfolio’s total value from $15,001 to $20,001 and lower its cash share from 2.5% to 1.9%. In the crash replays, the percentage drops change slightly, while the dollar drops become larger.\",\"points\":[\"The largest company shares would be lower: NVDA changes from 14.3% to 12.8%, AAPL from 13.7% to 12.1%, and AMZN from 8.3% to 7.3%. Technology rises from 42.5% to 46.9%; Consumer cyclical falls from 19.7% to 17.3%, and Financial services from 8.1% to 6.1%.\",\"The replayed maximum percentage drops change from 56.4% to 55.4% for the 2008 crisis, 30.7% to 30.0% for Covid, and 32.8% to 33.3% for 2022. The corresponding dollar drops rise from $8,460 to $11,087, from $4,604 to $5,998, and from $4,927 to $6,663.\",\"Past SPY history shows that after the 2009 bottom, the market gained 71.9% over 1 year and 114.3% over 3 years; recovery to its prior level took 41.3 months. After the 2020 bottom, it gained 77.5% over 1 year and 84.6% over 3 years; recovery took 4.6 months. These are past results, not forecasts.\",\"For context, the investor is saving with 39 years to retirement and a Moderate risk profile. The recoveries shown in these two episodes took 4.6 months and 41.3 months.\"]}",
+ "input_tokens": 900,
+ "output_tokens": 405
+}

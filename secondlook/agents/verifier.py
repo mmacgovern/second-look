@@ -42,6 +42,8 @@ class VerificationResult(BaseModel):
 
 
 PLAN_LABEL = "planning estimate"
+# Stating an assumption: the word itself, or naming the assumed rate.
+ASSUMPTION_WORDS = ("assum", "withdrawal rate", "real return", "after inflation", "after fees")
 
 
 def plan_numbers(facts: dict) -> list[float]:
@@ -65,7 +67,7 @@ def plan_problems(facts: dict, draft: ExplainerOutput) -> list[str]:
             problems.append(f'Card "{card.title}" uses plan figures without the label "planning estimate, not a guarantee".')
         if len(used) < 2:
             problems.append(f'Card "{card.title}" gives a single plan figure; show the range across scenarios.')
-        if "assum" not in lower:
+        if not any(word in lower for word in ASSUMPTION_WORDS):
             problems.append(f'Card "{card.title}" gives plan figures without stating the assumptions behind them.')
     return problems
 

@@ -47,17 +47,13 @@ from secondlook import budget, demo_runs, llm, orchestrator  # noqa: E402
 from secondlook.agents import analyst, explainer, pause, verifier  # noqa: E402
 from secondlook.agents.base import AgentContext, model_for, system_prompt  # noqa: E402
 from secondlook.config import Settings, load_settings  # noqa: E402
-from secondlook.quant.models import Action  # noqa: E402
 
 DOCS = ROOT / "docs"
 CAP_USD = 1.00
 USERS = (1_000, 10_000, 50_000)
 ANALYSES_PER_USER = 2
 CACHED_INPUT_RATIO = 0.10
-PAUSES = demo_runs.PAUSE_SCENARIOS + [
-    ("midcareer", Action(kind="sell_pct", ticker="QQQ", pct=30)),
-    ("retiree", Action(kind="sell_all")),
-]
+PAUSES = demo_runs.PAUSE_SCENARIOS  # the same 5 Pause Button scenarios the demo recordings cover
 SPECS = {s.name: s for s in (analyst.SPEC, explainer.SPEC, verifier.SPEC, pause.SPEC)}
 
 

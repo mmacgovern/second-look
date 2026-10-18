@@ -116,9 +116,9 @@ def test_record_then_check_demo_end_to_end(ledger, capsys):
     files = list(llm.DEMO_DIR.rglob("*.json"))
     by_agent = {a: len(list((llm.DEMO_DIR / a).glob("*.json"))) for a in ("analyst", "explainer", "verifier", "pause")}
     # analyst once per persona (same facts for every fluency), explainer per persona x fluency,
-    # verifier once per persona (same draft and facts), pause once per scenario
-    assert by_agent == {"analyst": 3, "explainer": 9, "verifier": 3, "pause": 3}
-    assert len(files) == 18
+    # verifier once per persona (same draft and facts), pause once per scenario (5)
+    assert by_agent == {"analyst": 3, "explainer": 9, "verifier": 3, "pause": 5}
+    assert len(files) == 20
     for f in files:
         text = f.read_text(encoding="utf-8")
         assert ODD_KEY not in text and FAKE_KEY not in text and "test-smart-model" not in text
