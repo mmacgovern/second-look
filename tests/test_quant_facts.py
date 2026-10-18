@@ -200,3 +200,11 @@ def test_personas_with_plan_stay_under_2000_tokens(name, action):
     assert estimate_tokens(facts_json(facts)) < 2000
     assert {"investor", "retirement_plan", "accounts", "concentration", "assumptions"} <= set(facts)
     assert "DEMO-0000" not in facts_json(facts)
+
+
+def test_employer_stock_in_facts(toy_adj):
+    employee = TOY_USER.model_copy(update={"employer_ticker": "BBB"})
+    facts = build_facts(parse_csv(TOY_CSV), TOY_PROFILES, toy_adj, user=employee, market_sectors=TOY_MARKET)
+    assert facts["concentration"]["employer_stock"] == {"ticker": "BBB", "pct": 12.0, "direct_pct": 0.0, "over_threshold": True}
+    assert "employer_stock" not in build_facts(parse_csv(TOY_CSV), TOY_PROFILES, toy_adj, user=TOY_USER,
+                                               market_sectors=TOY_MARKET)["concentration"]

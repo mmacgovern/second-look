@@ -252,3 +252,5 @@ Run the full test suite, take fresh screenshots of every tab for all 3 personas 
 **Result:** Catch-up phase 1: prompt log already existed (hook, settings registration, CLAUDE.md rule, sk-test redaction test); added the "Prompts 0-9 (added by hand)" and "Prompts outside Claude Code (added by hand)" sections and the Catch-up phase label; all 396 pytest tests passed.
 
 **Result:** Catch-up phase 2: added cached_input_tokens to the ledger (in-place migration kept all rows), read from usage.prompt_tokens_details.cached_tokens via Portkey, priced at each model's cached-input rate, and shown in summaries and the Admin page; all 400 pytest tests passed.
+
+**Result:** Catch-up phase 3: quant modules already existed; added the employer-stock flag (UserProfile.employer_ticker, concentration and Facts JSON), split the mid-career and retiree personas into 3 accounts each (VTI held in two accounts and added up in the household view), and a printed PMT example (=PMT(5%, 20, -100000, 1000000) = -22,218.33); all 407 pytest tests passed.

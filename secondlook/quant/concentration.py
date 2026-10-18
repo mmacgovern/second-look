@@ -9,6 +9,8 @@
   beyond the reported top 10 are treated as fully spread out, so this is an
   upper bound.
 - Flags every company whose look-through exposure is above CONCENTRATION_THRESHOLD.
+- Reports the user's employer stock (if they mark one): look-through share, direct
+  share, and whether it is above the threshold.
 """
 
 from __future__ import annotations
@@ -39,6 +41,13 @@ class ConcentrationFlag(BaseModel):
     direct_weight: float   # held directly as a stock
 
 
+class EmployerStock(BaseModel):
+    ticker: str
+    weight: float          # look-through, fraction of total portfolio (0 if not held)
+    direct_weight: float
+    over_threshold: bool
+
+
 class Concentration(BaseModel):
     largest_company: CompanyExposure | None
     sectors_vs_market: list[SectorComparison]
@@ -47,6 +56,7 @@ class Concentration(BaseModel):
     threshold: float
     flags: list[ConcentrationFlag]
     reference: str
+    employer_stock: EmployerStock | None = None
 
 
 def inverse_hhi(weights: list[float]) -> float | None:
@@ -77,6 +87,7 @@ def concentration(
     threshold: float = CONCENTRATION_THRESHOLD,
     top_sectors: int = 5,
     reference_name: str = f"{REFERENCE_TICKER} (total US market) sector weights",
+    employer_ticker: str | None = None,
 ) -> Concentration:
     xr = xray(values, profiles, top_n=1_000_000)
     ref = reference if reference is not None else reference_sectors()
@@ -99,7 +110,17 @@ def concentration(
         for c in xr.top_companies
         if c.weight > threshold
     ]
+    employer = None
+    if employer_ticker:
+        from secondlook.quant.xray import company_key
+
+        key = company_key(employer_ticker)
+        match = next((c for c in xr.top_companies if c.symbol == key), None)
+        weight = match.weight if match else 0.0
+        employer = EmployerStock(ticker=key, weight=weight, direct_weight=match.via.get("direct", 0.0) if match else 0.0,
+                                 over_threshold=weight > threshold)
     return Concentration(
+        employer_stock=employer,
         largest_company=xr.top_companies[0] if xr.top_companies else None,
         sectors_vs_market=comparisons,
         effective_holdings=inverse_hhi(invested),

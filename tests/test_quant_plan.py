@@ -113,3 +113,13 @@ def test_assumptions_reported_with_overrides():
     assert plan.assumptions["real_returns"] == {"x": 0.01}
     assert plan.assumptions["retirement_tax_rate"] == 0.2
     assert set(ASSUMPTIONS["real_returns"]) == {"cautious", "middle", "strong"}
+
+
+def test_print_pmt_example_for_excel(capsys):
+    # The spreadsheet check: in Excel or Google Sheets type  =PMT(5%, 20, -100000, 1000000)  -> -22,218.33
+    target, balance, rate, years = 1_000_000, 100_000, 0.05, 20
+    ours = required_contribution(target, balance, rate, years)
+    print(f"\nPMT check inputs: rate={rate:.0%}, nper={years}, pv=-{balance:,}, fv={target:,} -> "
+          f"=PMT({rate:.0%}, {years}, -{balance}, {target}) = {excel_pmt(rate, years, -balance, target):,.2f}; ours = {ours:,.2f}")
+    assert ours == pytest.approx(22218.33, abs=0.01)
+    assert "=PMT(5%, 20, -100000, 1000000)" in capsys.readouterr().out

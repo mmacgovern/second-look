@@ -61,3 +61,17 @@ def test_total_market_reference_from_snapshot():
     ref = reference_sectors()
     assert sum(ref.values()) == pytest.approx(1.0)
     assert max(ref, key=ref.get) == "technology"
+
+
+def test_employer_stock_flag_by_hand():
+    # AAA is 54% (30% direct) of the toy portfolio -> above the 10% threshold
+    c = concentration(TOY_VALUES, TOY_PROFILES, reference=REFERENCE, employer_ticker="aaa")
+    e = c.employer_stock
+    assert (e.ticker, round(e.weight, 4), round(e.direct_weight, 4), e.over_threshold) == ("AAA", 0.54, 0.30, True)
+    # CCC only through FUNDB: 8% -> below threshold
+    e = concentration(TOY_VALUES, TOY_PROFILES, reference=REFERENCE, employer_ticker="CCC").employer_stock
+    assert (round(e.weight, 4), e.direct_weight, e.over_threshold) == (0.08, 0.0, False)
+    # not held at all -> reported as 0%
+    e = concentration(TOY_VALUES, TOY_PROFILES, reference=REFERENCE, employer_ticker="ZZZ").employer_stock
+    assert (e.weight, e.over_threshold) == (0.0, False)
+    assert concentration(TOY_VALUES, TOY_PROFILES, reference=REFERENCE).employer_stock is None

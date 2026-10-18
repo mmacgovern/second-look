@@ -130,6 +130,10 @@ def _concentration(c: Concentration, n_flags: int) -> dict:
         ],
         "market_reference": c.reference,
     }
+    if c.employer_stock is not None:
+        e = c.employer_stock
+        out["employer_stock"] = {"ticker": e.ticker, "pct": pct(e.weight), "direct_pct": pct(e.direct_weight),
+                                 "over_threshold": e.over_threshold}
     return out
 
 
@@ -297,7 +301,8 @@ def build_facts(
     extras: dict = {
         "threshold": threshold,
         "tax_rate": tax_rate,
-        "concentration": concentration(values, profiles, reference=market_sectors, threshold=threshold),
+        "concentration": concentration(values, profiles, reference=market_sectors, threshold=threshold,
+                                       employer_ticker=user.employer_ticker if user is not None else None),
     }
     if household is not None:
         extras["accounts"] = summarize(household, tax_rate)

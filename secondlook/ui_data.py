@@ -21,8 +21,8 @@ from secondlook.quant.xray import XRay
 
 SAMPLES: dict[str, tuple[str, str]] = {
     "beginner": ("Starting out", "About $15,000 in a Roth IRA"),
-    "midcareer": ("Mid-career", "About $181,000 across a 401(k) and a Roth IRA"),
-    "retiree": ("Retired", "About $657,000 in an IRA and a taxable account"),
+    "midcareer": ("Mid-career", "About $181,000 across a 401(k), a Roth IRA and a taxable account"),
+    "retiree": ("Retired", "About $657,000 in traditional and Roth IRAs and a taxable account"),
 }
 FLUENCY: dict[str, str] = {"New to investing": "new", "Comfortable": "comfortable", "Pro": "pro"}
 EXTRA_BUY_TICKERS = ("VOO", "VTI", "QQQ")  # offered alongside current holdings in "Buy more of a stock"

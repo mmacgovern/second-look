@@ -124,7 +124,7 @@ def test_too_large_file_rejected():
 
 
 @pytest.mark.parametrize("name, total, accounts", [
-    ("beginner", 15000.82, 1), ("midcareer", 181152.35, 2), ("retiree", 657234.30, 2),
+    ("beginner", 15000.82, 1), ("midcareer", 181152.35, 3), ("retiree", 657234.30, 3),
 ])
 def test_sample_files_parse(name, total, accounts):
     p = parse_csv(SAMPLES / f"{name}.csv")

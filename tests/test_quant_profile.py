@@ -95,3 +95,10 @@ def test_personas_load(name, age, years):
     assert profile.age == age and profile.years_to_retirement == years
     assert profile.social_security_or_pension_usd > 0 and profile.desired_income_today_usd > 0
     assert len(answers) == 5 and household.total_value > 0
+
+
+def test_employer_ticker_validated():
+    assert user(employer_ticker=" msft ").employer_ticker == "MSFT"
+    assert user(employer_ticker="").employer_ticker is None and user().employer_ticker is None
+    with pytest.raises(ValidationError):
+        user(employer_ticker="NOT A TICKER")

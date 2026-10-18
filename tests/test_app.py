@@ -41,7 +41,7 @@ def test_landing_without_sample(monkeypatch):
 def test_assumption_sliders_recompute_plan_without_ai(monkeypatch):
     at = open_app(monkeypatch)
     before = headline(at)
-    assert "Estimated gap: &#36;5,640 to &#36;36,517 of extra saving per year" in before
+    assert "Estimated gap: &#36;5,437 to &#36;36,381 of extra saving per year" in before
     next(s for s in at.slider if s.key.startswith("wr-")).set_value(4.5).run()
     assert not at.exception
     assert headline(at) != before  # recomputed in Python; no_ai would have raised if the AI ran

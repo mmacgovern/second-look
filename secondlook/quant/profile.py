@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from secondlook.config import PROJECT_ROOT
 
@@ -73,6 +73,19 @@ class UserProfile(BaseModel):
     desired_income_today_usd: float = Field(ge=0)
     social_security_or_pension_usd: float | None = Field(default=None, ge=0)
     annual_contribution_usd: float = Field(default=0.0, ge=0)
+    employer_ticker: str | None = None  # the user's employer stock, if they mark one
+
+    @field_validator("employer_ticker", mode="before")
+    @classmethod
+    def _employer_ticker(cls, value):
+        from secondlook.quant.models import TICKER_RE
+
+        if value is None or not str(value).strip():
+            return None
+        ticker = str(value).strip().upper()
+        if not TICKER_RE.fullmatch(ticker):
+            raise ValueError("employer ticker must be 1-6 letters")
+        return ticker
 
     @property
     def years_to_retirement(self) -> int:
