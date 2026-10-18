@@ -166,6 +166,12 @@ def check_before_call(
     return worst
 
 
+def check_run_budget(spent_usd: float, worst_case_usd: float, max_usd: float) -> None:
+    """For scripts that make many calls: raise BudgetExceeded if the next step could push a run past max_usd."""
+    if spent_usd + worst_case_usd > max_usd:
+        raise BudgetExceeded("run", worst_case_usd, max_usd - spent_usd)
+
+
 def record_after_call(
     session_id: str,
     agent: str,

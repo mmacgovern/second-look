@@ -1,31 +1,27 @@
-"""Measure real AI costs and project monthly spend.
+"""Measure real AI costs, project monthly spend, and compare quality against cost.
 
-Runs live (DEMO_MODE forced off) with the app's response cache off AND the Portkey
-gateway cache bypassed (cache_force_refresh), so every step is a real, billed
-model call:
-    3 sample portfolios x 3 fluency levels x 3 repeats (27 full analyses)
-    + 5 Pause Button scenarios
-Each run is its own ledger session. Before every run the script checks the
-worst-case cost of that run and stops if the total would pass --cap ($1.00).
+1. Main pass, live (DEMO_MODE forced off) with the app's response cache off AND the
+   Portkey gateway cache bypassed (cache_force_refresh), so every step is a real,
+   billed model call:
+       3 sample portfolios x 3 fluency levels x 3 repeats (27 full analyses)
+       + 5 Pause Button scenarios
+2. Response-cache pass: the same 27 analyses with the app's response cache on, as
+   when people re-run a portfolio or switch fluency. Repeats and shared steps are
+   served from the cache for free.
+3. Quality vs cost: normal routing (the first repeat of the main pass) against
+   MODEL_SMART for every agent (--smart-model), 3 personas x 3 fluency levels each:
+   first-draft verifier pass rate, rewrites, safe-template fallbacks and cost.
 
-Writes docs/cost_results.json and docs/cost_results.md with, per agent and per
-full analysis: mean input tokens, mean output tokens, mean $ and p95 latency,
-plus monthly projections for 1,000 / 10,000 / 50,000 users at 2 analyses each,
-with and without prompt caching.
+Each run is its own ledger session. --max-usd (default $2.00) is enforced through
+budget.check_run_budget before every run; the script also stops up front if the
+daily budget (DAILY_BUDGET_USD) would block it, instead of changing .env.
 
-"With caching" assumes each agent's fixed system prompt is served from the
-provider's prompt cache, billed at 10% of the input price (the course price
-table lists $0.01 vs $0.10 per 1M tokens for gpt-6-luna). The rest of the input
-(the Facts JSON, which differs for every portfolio) and all output are billed in
-full. Prompt-token counts for the system prompts are estimated at 4 characters
-per token.
-
-Every request carries a Portkey trace id ("<session>-<agent>") so a run can be
-checked against Portkey's own logs.
+Writes docs/cost_results.json + .md and docs/quality_vs_cost.json + .md.
+Every request carries a Portkey trace id ("<session>-<agent>").
 
 Usage:
-    python scripts/measure_costs.py
-    python scripts/measure_costs.py --repeats 1 --cap 0.25
+    python scripts/measure_costs.py --estimate-only
+    python scripts/measure_costs.py --smart-model gpt-6-sol
 """
 
 from __future__ import annotations
@@ -45,16 +41,17 @@ if str(ROOT) not in sys.path:
 
 from secondlook import budget, demo_runs, llm, orchestrator  # noqa: E402
 from secondlook.agents import analyst, explainer, pause, verifier  # noqa: E402
-from secondlook.agents.base import AgentContext, model_for, system_prompt  # noqa: E402
+from secondlook.agents.base import AgentContext, model_for  # noqa: E402
+from secondlook.budget import BudgetExceeded  # noqa: E402
 from secondlook.config import Settings, load_settings  # noqa: E402
 
 DOCS = ROOT / "docs"
-CAP_USD = 1.00
-USERS = (1_000, 10_000, 50_000)
+MAX_USD = 2.00
+USERS = (100, 10_000)
 ANALYSES_PER_USER = 2
-CACHED_INPUT_RATIO = 0.10
 PAUSES = demo_runs.PAUSE_SCENARIOS  # the same 5 Pause Button scenarios the demo recordings cover
 SPECS = {s.name: s for s in (analyst.SPEC, explainer.SPEC, verifier.SPEC, pause.SPEC)}
+ANALYSIS_STEPS = ["analyst", "explainer", "verifier", "explainer"]
 
 
 def p95(values: list[float]) -> float:
@@ -67,25 +64,16 @@ def worst_case(settings: Settings, steps: list[str], input_tokens: int = 4000) -
     return sum(budget.cost_usd(model_for(SPECS[a], settings), input_tokens, SPECS[a].max_tokens) for a in steps)
 
 
-def system_prompt_tokens(agent: str) -> int:
-    return math.ceil(len(system_prompt(agent)) / 4)
-
-
-def cached_cost(row: dict) -> float:
-    """What this call would cost if its system prompt came from the provider's prompt cache."""
-    price = budget.price_for(row["model"])
-    cached = min(system_prompt_tokens(row["agent"]), row["input_tokens"])
-    saving = cached * price.input_per_1m * (1 - CACHED_INPUT_RATIO) / 1_000_000
-    return max(0.0, row["cost_usd"] - saving)
-
-
 def stats(rows: list[dict], latency: list[float] | None = None) -> dict:
+    def mean(key):
+        return round(statistics.fmean(r[key] for r in rows), 1) if rows else 0
+
     return {
         "n": len(rows),
-        "mean_input_tokens": round(statistics.fmean(r["input_tokens"] for r in rows), 1) if rows else 0,
-        "mean_output_tokens": round(statistics.fmean(r["output_tokens"] for r in rows), 1) if rows else 0,
+        "mean_input_tokens": mean("input_tokens"),
+        "mean_cached_input_tokens": mean("cached_input_tokens"),
+        "mean_output_tokens": mean("output_tokens"),
         "mean_usd": round(statistics.fmean(r["cost_usd"] for r in rows), 7) if rows else 0,
-        "mean_usd_with_caching": round(statistics.fmean(r["cached_usd"] for r in rows), 7) if rows else 0,
         "p95_latency_s": round(p95(latency if latency is not None else [r["latency_s"] for r in rows]), 2),
     }
 
@@ -95,31 +83,64 @@ def group(rows: list[dict], sessions: list[str]) -> list[dict]:
     for s in sessions:
         mine = [r for r in rows if r["session_id"] == s]
         if mine:
-            out.append({"input_tokens": sum(r["input_tokens"] for r in mine), "output_tokens": sum(r["output_tokens"] for r in mine),
-                        "cost_usd": sum(r["cost_usd"] for r in mine), "cached_usd": sum(r["cached_usd"] for r in mine),
-                        "latency_s": 0.0, "calls": len(mine)})
+            out.append({k: sum(r[k] for r in mine) for k in ("input_tokens", "cached_input_tokens", "output_tokens", "cost_usd")}
+                       | {"latency_s": 0.0, "calls": len(mine)})
     return out
 
 
-def markdown(report: dict) -> str:
-    lines = [f"# Second Look: measured AI costs", "",
+def quality(runs: list[dict], rows: list[dict]) -> dict:
+    """First-draft verifier pass rate, rewrites, template fallbacks and cost for a set of analyses."""
+    n = len(runs)
+    first_pass = sum(1 for r in runs if "explainer_rewrite" not in r["steps"] and r["source"] == "ai")
+    cost = sum(r["cost_usd"] for r in rows if r["session_id"] in {x["session"] for x in runs})
+    return {
+        "analyses": n,
+        "first_draft_pass_rate": round(first_pass / n, 3) if n else 0,
+        "rewrites": sum(1 for r in runs if "explainer_rewrite" in r["steps"]),
+        "template_fallbacks": sum(1 for r in runs if r["source"] == "template"),
+        "total_usd": round(cost, 6),
+        "mean_usd_per_analysis": round(cost / n, 7) if n else 0,
+    }
+
+
+def cost_markdown(report: dict) -> str:
+    lines = ["# Second Look: measured AI costs", "",
              f"Run {report['run_id']} ({report['run_at']}), models: fast = {report['models']['fast']}, "
-             f"smart = {report['models']['smart']}. App response cache off and Portkey gateway cache bypassed; "
-             f"gateway cache hits during the run: {report['gateway_cache_hits']}.", "",
-             f"Total spent: ${report['total_usd']:.4f} on {report['calls']} calls "
+             f"smart = {report['models']['smart']}. Main pass: app response cache off and Portkey gateway cache bypassed; "
+             f"gateway cache hits: {report['gateway_cache_hits']}.", "",
+             f"Main pass: ${report['total_usd']:.4f} on {report['calls']} calls "
              f"({report['analyses']} analyses, {report['pauses']} pause checks).", "",
-             "| Unit | n | Mean input tokens | Mean output tokens | Mean $ | Mean $ with caching | p95 latency (s) |",
+             "| Unit | n | Mean input tokens | Mean cached input tokens | Mean output tokens | Mean $ | p95 latency (s) |",
              "|---|---:|---:|---:|---:|---:|---:|"]
     for name, s in list(report["per_agent"].items()) + [("**Full analysis**", report["per_analysis"]),
                                                          ("**Pause check**", report["per_pause"])]:
-        lines.append(f"| {name} | {s['n']} | {s['mean_input_tokens']:,.0f} | {s['mean_output_tokens']:,.0f} | "
-                     f"${s['mean_usd']:.6f} | ${s['mean_usd_with_caching']:.6f} | {s['p95_latency_s']:.2f} |")
-    lines += ["", f"## Monthly projection ({ANALYSES_PER_USER} analyses per user per month)", "",
-              "| Users | Analyses / month | Without caching | With caching |", "|---:|---:|---:|---:|"]
-    for p in report["projection"]:
-        lines.append(f"| {p['users']:,} | {p['analyses']:,} | ${p['without_caching_usd']:,.2f} | ${p['with_caching_usd']:,.2f} |")
-    lines += ["", report["caching_note"], "",
-              f"Analysis sources: {report['sources']}. Latency for a full analysis is end-to-end wall time."]
+        lines.append(f"| {name} | {s['n']} | {s['mean_input_tokens']:,.0f} | {s['mean_cached_input_tokens']:,.0f} | "
+                     f"{s['mean_output_tokens']:,.0f} | ${s['mean_usd']:.6f} | {s['p95_latency_s']:.2f} |")
+    rc = report["response_cache"]
+    lines += ["", f"## Monthly cost ({ANALYSES_PER_USER} analyses per user per month)", "",
+              f"With the app's response cache, the same 27 analyses cost ${rc['total_usd']:.4f} "
+              f"(${rc['mean_usd_per_analysis']:.6f} each) because repeats and steps shared across fluency levels are "
+              "served from the cache. That applies when people re-run a portfolio or switch fluency; a brand-new "
+              "portfolio always costs the full amount.", "",
+              "| | Per user per month | 100 users | 10,000 users |", "|---|---:|---:|---:|"]
+    for label, key in (("Without response cache", "without_cache"), ("With response cache", "with_cache")):
+        m = report["monthly"][key]
+        lines.append(f"| {label} | ${m['per_user_usd']:.4f} | ${m['users'][0]['total_usd']:,.2f} | "
+                     f"${m['users'][1]['total_usd']:,.2f} |")
+    lines += ["", f"Analysis sources (main pass): {report['sources']}. Latency for a full analysis is end-to-end wall time."]
+    return "\n".join(lines) + "\n"
+
+
+def quality_markdown(q: dict) -> str:
+    lines = ["# Second Look: quality vs cost", "",
+             f"3 personas x 3 fluency levels per routing ({q['run_id']}). Response cache off, gateway cache bypassed.", "",
+             "| Routing | Models | First-draft verifier pass rate | Rewrites | Template fallbacks | Mean $ per analysis | Total $ |",
+             "|---|---|---:|---:|---:|---:|---:|"]
+    for name, r in q["routings"].items():
+        lines.append(f"| {name} | {r['models']} | {100 * r['first_draft_pass_rate']:.0f}% | {r['rewrites']} | "
+                     f"{r['template_fallbacks']} | ${r['mean_usd_per_analysis']:.6f} | ${r['total_usd']:.4f} |")
+    if q.get("note"):
+        lines += ["", q["note"]]
     return "\n".join(lines) + "\n"
 
 
@@ -127,10 +148,14 @@ def main(argv: list[str] | None = None, client=None, settings: Settings | None =
          db_path: Path | None = None, out_dir: Path = DOCS) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repeats", type=int, default=3)
-    parser.add_argument("--cap", type=float, default=CAP_USD, help="stop before the total could pass this many dollars")
+    parser.add_argument("--max-usd", type=float, default=MAX_USD, help="stop before the run could pass this many dollars")
     parser.add_argument("--personas", nargs="*", default=list(demo_runs.PERSONAS))
     parser.add_argument("--fluencies", nargs="*", default=list(demo_runs.FLUENCIES))
     parser.add_argument("--pauses", type=int, default=len(PAUSES))
+    parser.add_argument("--smart-model", help="model for every agent in the quality comparison (default: MODEL_SMART)")
+    parser.add_argument("--skip-cache-pass", action="store_true")
+    parser.add_argument("--skip-quality", action="store_true")
+    parser.add_argument("--estimate-only", action="store_true", help="print the cost estimate and stop")
     args = parser.parse_args(argv)
 
     base = settings or load_settings()
@@ -139,106 +164,152 @@ def main(argv: list[str] | None = None, client=None, settings: Settings | None =
         return 2
     live = base.model_copy(update={"demo_mode": False, "model_fast": base.model_fast or "gpt-6-luna",
                                    "model_smart": base.model_smart or "gpt-6-luna"})
+    smart_model = args.smart_model or live.model_smart
+    all_smart = live.model_copy(update={"model_fast": smart_model, "model_smart": smart_model})
+    do_quality = not args.skip_quality and smart_model != live.model_fast
+
+    n_analyses = len(args.personas) * len(args.fluencies) * args.repeats
+    n_quality = len(args.personas) * len(args.fluencies) if do_quality else 0
+    worst_analysis, worst_pause = worst_case(live, ANALYSIS_STEPS), worst_case(live, ["pause"])
+    worst_total = (n_analyses * worst_analysis * (1 if args.skip_cache_pass else 2) + args.pauses * worst_pause
+                   + n_quality * worst_case(all_smart, ANALYSIS_STEPS))
+    print(f"Planned: {n_analyses} analyses + {args.pauses} pause checks"
+          f"{'' if args.skip_cache_pass else f' + {n_analyses} response-cache analyses'}"
+          f"{f' + {n_quality} all-{smart_model} analyses' if n_quality else ''}. "
+          f"Worst-case cost ${worst_total:.4f} (cap ${args.max_usd:.2f}).")
+    daily_left = live.daily_budget_usd - budget.spent_today(db_path)
+    if worst_total > daily_left:
+        print(f"The daily budget would block this run: worst case ${worst_total:.4f} but only ${daily_left:.4f} of "
+              f"DAILY_BUDGET_USD=${live.daily_budget_usd:.2f} is left today. Raise DAILY_BUDGET_USD in .env yourself "
+              "or run with fewer repeats; this script does not change .env.")
+        return 3
+    if args.estimate_only:
+        return 0
+
     run_id = f"costs-{datetime.now():%Y%m%d-%H%M%S}"
-    runs, stopped = [], None
+    runs: list[dict] = []
+    stopped = None
 
     def spent() -> float:
         return sum(r["cost_usd"] for r in budget.calls(db_path, run_id))
 
-    def go(kind: str, label: str, steps: list[str], work) -> bool:
+    def go(phase: str, kind: str, label: str, steps: list[str], run_settings: Settings, work) -> bool:
         nonlocal stopped
-        worst = worst_case(live, steps)
-        if spent() + worst > args.cap:
-            stopped = f"stopped before {label}: ${spent():.4f} spent + ${worst:.4f} worst case > ${args.cap:.2f} cap"
+        try:
+            budget.check_run_budget(spent(), worst_case(run_settings, steps), args.max_usd)
+        except BudgetExceeded as exc:
+            stopped = f"stopped before {phase} / {label}: {exc}"
             return False
         session = f"{run_id}-{len(runs):02d}"
         llm.TRACE_PREFIX = session
         start = time.perf_counter()
-        source, used = work(AgentContext(session_id=session, settings=live, client=client, db_path=db_path))
-        runs.append({"kind": kind, "label": label, "session": session, "source": source, "steps": used,
+        source, used = work(AgentContext(session_id=session, settings=run_settings, client=client, db_path=db_path))
+        runs.append({"phase": phase, "kind": kind, "label": label, "session": session, "source": source, "steps": used,
                      "wall_s": round(time.perf_counter() - start, 2)})
-        print(f"  {kind:8} {label:42} {source:10} {time.perf_counter() - start:5.1f}s  total ${spent():.4f}")
+        print(f"  {phase:9} {kind:8} {label:40} {source:10} {time.perf_counter() - start:5.1f}s  total ${spent():.4f}")
         return True
 
-    llm.CACHE.clear()
-    llm.CACHE_ENABLED = False
-    llm.FORCE_REFRESH = True
-    try:
+    def analyses(phase: str, run_settings: Settings, repeats: int) -> None:
         for persona in args.personas:
             facts = demo_runs.persona_facts(persona)
             for fluency in args.fluencies:
-                for r in range(args.repeats):
-                    def analysis(ctx, facts=facts, fluency=fluency):
+                for r in range(repeats):
+                    def work(ctx, facts=facts, fluency=fluency):
                         res = orchestrator.run_analysis(facts, fluency, ctx)
                         return res.source, res.steps
-                    if not go("analysis", f"{persona} / {fluency} / run {r + 1}",
-                              ["analyst", "explainer", "verifier", "explainer"], analysis):
-                        break
-                if stopped:
-                    break
-            if stopped:
-                break
+                    if not go(phase, "analysis", f"{persona} / {fluency} / run {r + 1}", ANALYSIS_STEPS, run_settings, work):
+                        return
+
+    llm.FORCE_REFRESH = True
+    try:
+        llm.CACHE.clear()
+        llm.CACHE_ENABLED = False
+        analyses("main", live, args.repeats)
         for name, action in ([] if stopped else PAUSES[: args.pauses]):
             def pause_run(ctx, name=name, action=action):
                 return orchestrator.run_pause(demo_runs.persona_facts(name, action), ctx).source, ["pause"]
-            if not go("pause", f"{name} / {action.describe()}", ["pause"], pause_run):
+            if not go("main", "pause", f"{name} / {action.describe()}", ["pause"], live, pause_run):
                 break
+        if not stopped and not args.skip_cache_pass:
+            llm.CACHE.clear()
+            llm.CACHE_ENABLED = True
+            analyses("cache", live, args.repeats)
+        if not stopped and do_quality:
+            llm.CACHE.clear()
+            llm.CACHE_ENABLED = False
+            analyses("smart", all_smart, 1)
     finally:
         llm.CACHE_ENABLED = True
         llm.TRACE_PREFIX = None
         llm.FORCE_REFRESH = False
 
     rows = budget.calls(db_path, run_id)
-    for row in rows:
-        row["cached_usd"] = cached_cost(row)
-    analyses = [r for r in runs if r["kind"] == "analysis"]
-    pauses = [r for r in runs if r["kind"] == "pause"]
-    per_analysis = group(rows, [r["session"] for r in analyses])
-    per_pause = group(rows, [r["session"] for r in pauses])
-    analysis_stats = stats(per_analysis, [r["wall_s"] for r in analyses])
-    projection = [{"users": u, "analyses": u * ANALYSES_PER_USER,
-                   "without_caching_usd": round(u * ANALYSES_PER_USER * analysis_stats["mean_usd"], 2),
-                   "with_caching_usd": round(u * ANALYSES_PER_USER * analysis_stats["mean_usd_with_caching"], 2)}
-                  for u in USERS]
-    first = rows[0] if rows else None
+    by_phase = {p: [r for r in runs if r["phase"] == p] for p in ("main", "cache", "smart")}
+    main_sessions = {r["session"] for r in by_phase["main"]}
+    main_rows = [r for r in rows if r["session_id"] in main_sessions]
+    main_analyses = [r for r in by_phase["main"] if r["kind"] == "analysis"]
+    main_pauses = [r for r in by_phase["main"] if r["kind"] == "pause"]
+    analysis_stats = stats(group(main_rows, [r["session"] for r in main_analyses]), [r["wall_s"] for r in main_analyses])
+    cache_runs = by_phase["cache"]
+    cache_cost = sum(r["cost_usd"] for r in rows if r["session_id"] in {x["session"] for x in cache_runs})
+    mean_with_cache = cache_cost / len(cache_runs) if cache_runs else analysis_stats["mean_usd"]
+
+    def monthly(mean_usd: float) -> dict:
+        per_user = ANALYSES_PER_USER * mean_usd
+        return {"per_user_usd": round(per_user, 6),
+                "users": [{"users": u, "total_usd": round(u * per_user, 2)} for u in USERS]}
+
+    first = main_rows[0] if main_rows else None
     report = {
         "run_id": run_id,
         "run_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "models": {"fast": live.model_fast, "smart": live.model_smart},
-        "cap_usd": args.cap,
+        "max_usd": args.max_usd,
         "stopped": stopped,
-        "total_usd": round(sum(r["cost_usd"] for r in rows), 6),
-        "calls": len(rows),
-        "gateway_cache_hits": sum(int(r["cache_hit"]) for r in rows),
-        "analyses": len(analyses),
-        "pauses": len(pauses),
-        "sources": dict(sorted({r["source"]: sum(x["source"] == r["source"] for x in runs) for r in runs}.items())),
-        "per_agent": {a: stats([r for r in rows if r["agent"] == a]) for a in sorted({r["agent"] for r in rows})},
+        "total_usd": round(sum(r["cost_usd"] for r in main_rows), 6),
+        "all_phases_usd": round(sum(r["cost_usd"] for r in rows), 6),
+        "calls": len(main_rows),
+        "gateway_cache_hits": sum(int(r["cache_hit"]) for r in main_rows),
+        "analyses": len(main_analyses),
+        "pauses": len(main_pauses),
+        "sources": dict(sorted({r["source"]: sum(x["source"] == r["source"] for x in by_phase["main"])
+                                for r in by_phase["main"]}.items())),
+        "per_agent": {a: stats([r for r in main_rows if r["agent"] == a]) for a in sorted({r["agent"] for r in main_rows})},
         "per_analysis": analysis_stats,
-        "per_pause": stats(per_pause, [r["wall_s"] for r in pauses]),
-        "projection": projection,
-        "caching_note": ("With caching: each agent's system prompt (about "
-                         + ", ".join(f"{a} {system_prompt_tokens(a)}" for a in sorted(SPECS))
-                         + " tokens) billed at 10% of the input price; Facts JSON and output billed in full. "
-                         "OpenAI only caches prompt prefixes of 1,024 tokens or more, so this saving needs the "
-                         "system prompts to grow past that size or be combined with a longer shared prefix."),
+        "per_pause": stats(group(main_rows, [r["session"] for r in main_pauses]), [r["wall_s"] for r in main_pauses]),
+        "response_cache": {"analyses": len(cache_runs), "total_usd": round(cache_cost, 6),
+                           "mean_usd_per_analysis": round(mean_with_cache, 7)},
+        "monthly": {"without_cache": monthly(analysis_stats["mean_usd"]), "with_cache": monthly(mean_with_cache)},
         "portkey_check": None if first is None else {
             "trace_id": f"{first['session_id']}-{first['agent']}", "timestamp_utc": first["timestamp"],
             "model": first["model"], "input_tokens": first["input_tokens"], "output_tokens": first["output_tokens"],
-            "our_cost_usd": round(first["cost_usd"], 8)},
+            "cached_input_tokens": first["cached_input_tokens"], "our_cost_usd": round(first["cost_usd"], 8)},
         "runs": runs,
     }
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "cost_results.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
-    (out_dir / "cost_results.md").write_text(markdown(report), encoding="utf-8")
+    (out_dir / "cost_results.md").write_text(cost_markdown(report), encoding="utf-8")
     print()
-    print(markdown(report))
+    print(cost_markdown(report))
+
+    normal = [r for r in main_analyses if r["label"].endswith("run 1")]
+    q = {"run_id": run_id, "routings": {
+        "Normal routing": {"models": f"fast {live.model_fast}, smart {live.model_smart}", **quality(normal, rows)}}}
+    if by_phase["smart"]:
+        q["routings"][f"MODEL_SMART for every agent"] = {"models": f"all {smart_model}", **quality(by_phase["smart"], rows)}
+    elif not args.skip_quality:
+        q["note"] = (f"MODEL_SMART ({smart_model}) is the same model as MODEL_FAST, so there is nothing to compare; "
+                     "rerun with --smart-model <model>.")
+    (out_dir / "quality_vs_cost.json").write_text(json.dumps(q, indent=1), encoding="utf-8")
+    (out_dir / "quality_vs_cost.md").write_text(quality_markdown(q), encoding="utf-8")
+    print(quality_markdown(q))
     if stopped:
         print(stopped)
     if first:
         c = report["portkey_check"]
         print(f"Portkey check: filter logs by trace id {c['trace_id']} ({c['timestamp_utc']}): "
-              f"{c['input_tokens']} in / {c['output_tokens']} out tokens, our cost ${c['our_cost_usd']:.8f}")
+              f"{c['input_tokens']} in ({c['cached_input_tokens']} cached) / {c['output_tokens']} out tokens, "
+              f"our cost ${c['our_cost_usd']:.8f}")
     return 0
 
 

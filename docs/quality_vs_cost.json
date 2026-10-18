@@ -1,0 +1,14 @@
+{
+ "run_id": "costs-20261017-214350",
+ "routings": {
+  "Normal routing": {
+   "models": "fast gpt-6-luna, smart gpt-6-luna",
+   "analyses": 9,
+   "first_draft_pass_rate": 0.889,
+   "rewrites": 1,
+   "template_fallbacks": 0,
+   "total_usd": 0.013148,
+   "mean_usd_per_analysis": 0.0014609
+  }
+ }
+}
