@@ -93,7 +93,7 @@ def slides() -> list[str]:
     s.append(slide(5, "Demo", f'<div class="shots">{figs}</div>', "wide"))
 
     s.append(slide(6, "Cost to run", f"""
-<div class="stats">{stat(br.usd(pa['mean_usd'], 4), "per analysis")}
+<div class="stats">{stat(br.usd(cost.get('per_visit_usd', pa['mean_usd']), 4), "per full visit")}
 {stat(br.usd(big['total_usd']), f"per month, {big['users']:,} users")}
 {stat(br.usd(m_with['users'][-1]['total_usd']), "same, with response cache")}</div>
 <p class="src">Measured live, {cost['analyses']} analyses. Source: cost_results.json</p>"""))

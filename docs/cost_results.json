@@ -1,134 +1,169 @@
 {
- "run_id": "costs-20261017-214350",
- "run_at": "2026-10-18T01:55:08+00:00",
+ "run_id": "costs-20261018-103313",
+ "run_at": "2026-10-18T14:45:47+00:00",
  "models": {
   "fast": "gpt-6-luna",
   "smart": "gpt-6-luna"
  },
- "max_usd": 2.0,
+ "max_usd": 0.25,
  "stopped": null,
- "total_usd": 0.045118,
- "all_phases_usd": 0.060325,
- "calls": 95,
+ "total_usd": 0.052112,
+ "all_phases_usd": 0.067538,
+ "calls": 118,
  "gateway_cache_hits": 0,
  "analyses": 27,
  "pauses": 5,
  "sources": {
-  "ai": 22,
-  "ai_rewrite": 8,
-  "template": 2
+  "ai": 40,
+  "ai_rewrite": 10
  },
  "per_agent": {
   "analyst": {
-   "n": 27,
-   "mean_input_tokens": 2162.7,
-   "mean_cached_input_tokens": 2159.7,
-   "mean_output_tokens": 431.9,
-   "mean_usd": 0.0002378,
-   "p95_latency_s": 4.95
+   "n": 29,
+   "mean_input_tokens": 2334.2,
+   "mean_cached_input_tokens": 2022.2,
+   "mean_output_tokens": 383.5,
+   "mean_usd": 0.0002432,
+   "p95_latency_s": 5.52
   },
   "explainer": {
    "n": 37,
-   "mean_input_tokens": 2826.1,
+   "mean_input_tokens": 3061.5,
    "mean_cached_input_tokens": 0.0,
-   "mean_output_tokens": 889.2,
-   "mean_usd": 0.0007272,
-   "p95_latency_s": 8.06
+   "mean_output_tokens": 892.1,
+   "mean_usd": 0.0007522,
+   "p95_latency_s": 9.62
   },
   "pause": {
    "n": 5,
    "mean_input_tokens": 881.8,
    "mean_cached_input_tokens": 0.0,
-   "mean_output_tokens": 404.8,
-   "mean_usd": 0.0002906,
-   "p95_latency_s": 4.52
+   "mean_output_tokens": 371.0,
+   "mean_usd": 0.0002737,
+   "p95_latency_s": 3.89
+  },
+  "sandbox": {
+   "n": 9,
+   "mean_input_tokens": 882.0,
+   "mean_cached_input_tokens": 0.0,
+   "mean_output_tokens": 328.8,
+   "mean_usd": 0.0002526,
+   "p95_latency_s": 5.09
+  },
+  "shifts": {
+   "n": 9,
+   "mean_input_tokens": 765.0,
+   "mean_cached_input_tokens": 0.0,
+   "mean_output_tokens": 350.2,
+   "mean_usd": 0.0002516,
+   "p95_latency_s": 4.34
   },
   "verifier": {
-   "n": 26,
-   "mean_input_tokens": 2503.7,
-   "mean_cached_input_tokens": 84.0,
-   "mean_output_tokens": 309.5,
-   "mean_usd": 0.0003976,
-   "p95_latency_s": 4.32
+   "n": 29,
+   "mean_input_tokens": 2652.1,
+   "mean_cached_input_tokens": 163.2,
+   "mean_output_tokens": 279.9,
+   "mean_usd": 0.0003904,
+   "p95_latency_s": 4.85
   }
  },
  "per_analysis": {
   "n": 27,
-  "mean_input_tokens": 8446.3,
-  "mean_cached_input_tokens": 2240.6,
-  "mean_output_tokens": 1948.5,
-  "mean_usd": 0.0016172,
-  "p95_latency_s": 26.05
+  "mean_input_tokens": 9551.1,
+  "mean_cached_input_tokens": 2347.3,
+  "mean_output_tokens": 1935.0,
+  "mean_usd": 0.0017113,
+  "p95_latency_s": 29.39
  },
  "per_pause": {
   "n": 5,
   "mean_input_tokens": 881.8,
   "mean_cached_input_tokens": 0.0,
-  "mean_output_tokens": 404.8,
-  "mean_usd": 0.0002906,
-  "p95_latency_s": 5.21
+  "mean_output_tokens": 371.0,
+  "mean_usd": 0.0002737,
+  "p95_latency_s": 4.49
  },
+ "shifts_runs": 9,
+ "sandbox_runs": 9,
+ "per_shifts": {
+  "n": 9,
+  "mean_input_tokens": 765.0,
+  "mean_cached_input_tokens": 0.0,
+  "mean_output_tokens": 350.2,
+  "mean_usd": 0.0002516,
+  "p95_latency_s": 4.86
+ },
+ "per_sandbox": {
+  "n": 9,
+  "mean_input_tokens": 882.0,
+  "mean_cached_input_tokens": 0.0,
+  "mean_output_tokens": 328.8,
+  "mean_usd": 0.0002526,
+  "p95_latency_s": 5.61
+ },
+ "per_visit_usd": 0.0022155,
+ "visits_per_user": 2,
  "response_cache": {
   "analyses": 27,
-  "total_usd": 0.015207,
-  "mean_usd_per_analysis": 0.0005632
+  "total_usd": 0.015426,
+  "mean_usd_per_analysis": 0.0005713
  },
  "monthly": {
   "without_cache": {
-   "per_user_usd": 0.003234,
+   "per_user_usd": 0.004431,
    "users": [
     {
      "users": 100,
-     "total_usd": 0.32
+     "total_usd": 0.44
     },
     {
      "users": 10000,
-     "total_usd": 32.34
+     "total_usd": 44.31
     }
    ]
   },
   "with_cache": {
-   "per_user_usd": 0.001126,
+   "per_user_usd": 0.002151,
    "users": [
     {
      "users": 100,
-     "total_usd": 0.11
+     "total_usd": 0.22
     },
     {
      "users": 10000,
-     "total_usd": 11.26
+     "total_usd": 21.51
     }
    ]
   }
  },
  "portkey_check": {
-  "trace_id": "costs-20261017-214350-00-analyst",
-  "timestamp_utc": "2026-10-18T01:43:58.751728+00:00",
+  "trace_id": "costs-20261018-103313-00-analyst",
+  "timestamp_utc": "2026-10-18T14:33:21.057314+00:00",
   "model": "gpt-6-luna",
-  "input_tokens": 1875,
-  "output_tokens": 502,
-  "cached_input_tokens": 1872,
-  "our_cost_usd": 0.00027002
+  "input_tokens": 2029,
+  "output_tokens": 337,
+  "cached_input_tokens": 0,
+  "our_cost_usd": 0.0003714
  },
  "runs": [
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / new / run 1",
-   "session": "costs-20261017-214350-00",
+   "session": "costs-20261018-103313-00",
    "source": "ai",
    "steps": [
     "analyst",
     "explainer",
     "verifier"
    ],
-   "wall_s": 18.08
+   "wall_s": 23.92
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / new / run 2",
-   "session": "costs-20261017-214350-01",
+   "session": "costs-20261018-103313-01",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -136,13 +171,13 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 30.49
+   "wall_s": 29.39
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / new / run 3",
-   "session": "costs-20261017-214350-02",
+   "session": "costs-20261018-103313-02",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -150,13 +185,13 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 25.38
+   "wall_s": 21.82
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / comfortable / run 1",
-   "session": "costs-20261017-214350-03",
+   "session": "costs-20261018-103313-03",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -164,26 +199,27 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 25.21
+   "wall_s": 23.36
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / comfortable / run 2",
-   "session": "costs-20261017-214350-04",
-   "source": "ai",
+   "session": "costs-20261018-103313-04",
+   "source": "ai_rewrite",
    "steps": [
     "analyst",
     "explainer",
-    "verifier"
+    "verifier",
+    "explainer_rewrite"
    ],
-   "wall_s": 16.47
+   "wall_s": 22.82
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / comfortable / run 3",
-   "session": "costs-20261017-214350-05",
+   "session": "costs-20261018-103313-05",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -191,26 +227,27 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 24.74
+   "wall_s": 20.78
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / pro / run 1",
-   "session": "costs-20261017-214350-06",
-   "source": "ai",
+   "session": "costs-20261018-103313-06",
+   "source": "ai_rewrite",
    "steps": [
     "analyst",
     "explainer",
-    "verifier"
+    "verifier",
+    "explainer_rewrite"
    ],
-   "wall_s": 15.84
+   "wall_s": 23.25
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / pro / run 2",
-   "session": "costs-20261017-214350-07",
+   "session": "costs-20261018-103313-07",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -218,318 +255,132 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 26.05
+   "wall_s": 31.4
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "beginner / pro / run 3",
-   "session": "costs-20261017-214350-08",
-   "source": "ai",
+   "session": "costs-20261018-103313-08",
+   "source": "ai_rewrite",
    "steps": [
     "analyst",
     "explainer",
-    "verifier"
+    "verifier",
+    "explainer_rewrite"
    ],
-   "wall_s": 16.88
+   "wall_s": 23.44
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "midcareer / new / run 1",
-   "session": "costs-20261017-214350-09",
+   "session": "costs-20261018-103313-09",
    "source": "ai",
    "steps": [
     "analyst",
     "explainer",
     "verifier"
    ],
-   "wall_s": 17.05
+   "wall_s": 15.44
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "midcareer / new / run 2",
-   "session": "costs-20261017-214350-10",
-   "source": "ai_rewrite",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier",
-    "explainer_rewrite"
-   ],
-   "wall_s": 23.74
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "midcareer / new / run 3",
-   "session": "costs-20261017-214350-11",
-   "source": "ai_rewrite",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier",
-    "explainer_rewrite"
-   ],
-   "wall_s": 21.75
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "midcareer / comfortable / run 1",
-   "session": "costs-20261017-214350-12",
+   "session": "costs-20261018-103313-10",
    "source": "ai",
    "steps": [
     "analyst",
     "explainer",
     "verifier"
    ],
-   "wall_s": 15.22
+   "wall_s": 16.82
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "midcareer / new / run 3",
+   "session": "costs-20261018-103313-11",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 21.32
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "midcareer / comfortable / run 1",
+   "session": "costs-20261018-103313-12",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 15.2
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "midcareer / comfortable / run 2",
-   "session": "costs-20261017-214350-13",
+   "session": "costs-20261018-103313-13",
    "source": "ai",
    "steps": [
     "analyst",
     "explainer",
     "verifier"
    ],
-   "wall_s": 14.17
+   "wall_s": 13.91
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "midcareer / comfortable / run 3",
-   "session": "costs-20261017-214350-14",
-   "source": "ai",
+   "session": "costs-20261018-103313-14",
+   "source": "ai_rewrite",
    "steps": [
     "analyst",
     "explainer",
-    "verifier"
+    "verifier",
+    "explainer_rewrite"
    ],
-   "wall_s": 15.45
+   "wall_s": 20.2
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "midcareer / pro / run 1",
-   "session": "costs-20261017-214350-15",
+   "session": "costs-20261018-103313-15",
    "source": "ai",
    "steps": [
     "analyst",
     "explainer",
     "verifier"
    ],
-   "wall_s": 17.78
+   "wall_s": 16.25
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "midcareer / pro / run 2",
-   "session": "costs-20261017-214350-16",
-   "source": "ai_rewrite",
+   "session": "costs-20261018-103313-16",
+   "source": "ai",
    "steps": [
     "analyst",
     "explainer",
-    "verifier",
-    "explainer_rewrite"
+    "verifier"
    ],
-   "wall_s": 23.14
+   "wall_s": 17.83
   },
   {
    "phase": "main",
    "kind": "analysis",
    "label": "midcareer / pro / run 3",
-   "session": "costs-20261017-214350-17",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 15.01
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / new / run 1",
-   "session": "costs-20261017-214350-18",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 14.9
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / new / run 2",
-   "session": "costs-20261017-214350-19",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 14.38
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / new / run 3",
-   "session": "costs-20261017-214350-20",
-   "source": "template",
-   "steps": [
-    "analyst",
-    "explainer",
-    "explainer_rewrite"
-   ],
-   "wall_s": 17.3
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / comfortable / run 1",
-   "session": "costs-20261017-214350-21",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 15.47
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / comfortable / run 2",
-   "session": "costs-20261017-214350-22",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 13.53
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / comfortable / run 3",
-   "session": "costs-20261017-214350-23",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 13.24
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / pro / run 1",
-   "session": "costs-20261017-214350-24",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 13.64
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / pro / run 2",
-   "session": "costs-20261017-214350-25",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 14.78
-  },
-  {
-   "phase": "main",
-   "kind": "analysis",
-   "label": "retiree / pro / run 3",
-   "session": "costs-20261017-214350-26",
-   "source": "template",
-   "steps": [
-    "analyst",
-    "explainer",
-    "explainer_rewrite"
-   ],
-   "wall_s": 18.06
-  },
-  {
-   "phase": "main",
-   "kind": "pause",
-   "label": "midcareer / Sell all of the whole portfolio to cash",
-   "session": "costs-20261017-214350-27",
-   "source": "ai",
-   "steps": [
-    "pause"
-   ],
-   "wall_s": 4.27
-  },
-  {
-   "phase": "main",
-   "kind": "pause",
-   "label": "retiree / Sell 50% of the whole portfolio to cash",
-   "session": "costs-20261017-214350-28",
-   "source": "ai",
-   "steps": [
-    "pause"
-   ],
-   "wall_s": 3.7
-  },
-  {
-   "phase": "main",
-   "kind": "pause",
-   "label": "beginner / Buy $5,000 of QQQ with new money",
-   "session": "costs-20261017-214350-29",
-   "source": "ai",
-   "steps": [
-    "pause"
-   ],
-   "wall_s": 4.99
-  },
-  {
-   "phase": "main",
-   "kind": "pause",
-   "label": "midcareer / Sell 30% of QQQ to cash",
-   "session": "costs-20261017-214350-30",
-   "source": "ai",
-   "steps": [
-    "pause"
-   ],
-   "wall_s": 5.21
-  },
-  {
-   "phase": "main",
-   "kind": "pause",
-   "label": "retiree / Sell all of the whole portfolio to cash",
-   "session": "costs-20261017-214350-31",
-   "source": "ai",
-   "steps": [
-    "pause"
-   ],
-   "wall_s": 4.03
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "beginner / new / run 1",
-   "session": "costs-20261017-214350-32",
+   "session": "costs-20261018-103313-17",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -537,13 +388,397 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 24.88
+   "wall_s": 22.15
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / new / run 1",
+   "session": "costs-20261018-103313-18",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.2
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / new / run 2",
+   "session": "costs-20261018-103313-19",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 17.22
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / new / run 3",
+   "session": "costs-20261018-103313-20",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 12.98
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / comfortable / run 1",
+   "session": "costs-20261018-103313-21",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.75
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / comfortable / run 2",
+   "session": "costs-20261018-103313-22",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.03
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / comfortable / run 3",
+   "session": "costs-20261018-103313-23",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 15.58
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / pro / run 1",
+   "session": "costs-20261018-103313-24",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.75
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / pro / run 2",
+   "session": "costs-20261018-103313-25",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.62
+  },
+  {
+   "phase": "main",
+   "kind": "analysis",
+   "label": "retiree / pro / run 3",
+   "session": "costs-20261018-103313-26",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 14.08
+  },
+  {
+   "phase": "main",
+   "kind": "pause",
+   "label": "midcareer / Sell all of the whole portfolio to cash",
+   "session": "costs-20261018-103313-27",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 3.73
+  },
+  {
+   "phase": "main",
+   "kind": "pause",
+   "label": "retiree / Sell 50% of the whole portfolio to cash",
+   "session": "costs-20261018-103313-28",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 4.49
+  },
+  {
+   "phase": "main",
+   "kind": "pause",
+   "label": "beginner / Buy $5,000 of QQQ with new money",
+   "session": "costs-20261018-103313-29",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 4.11
+  },
+  {
+   "phase": "main",
+   "kind": "pause",
+   "label": "midcareer / Sell 30% of QQQ to cash",
+   "session": "costs-20261018-103313-30",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 4.48
+  },
+  {
+   "phase": "main",
+   "kind": "pause",
+   "label": "retiree / Sell all of the whole portfolio to cash",
+   "session": "costs-20261018-103313-31",
+   "source": "ai",
+   "steps": [
+    "pause"
+   ],
+   "wall_s": 3.88
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "beginner / new",
+   "session": "costs-20261018-103313-32",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 4.73
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "beginner / new",
+   "session": "costs-20261018-103313-33",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 3.62
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "beginner / comfortable",
+   "session": "costs-20261018-103313-34",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 4.18
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "beginner / comfortable",
+   "session": "costs-20261018-103313-35",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 4.57
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "beginner / pro",
+   "session": "costs-20261018-103313-36",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 4.86
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "beginner / pro",
+   "session": "costs-20261018-103313-37",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 5.61
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "midcareer / new",
+   "session": "costs-20261018-103313-38",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 4.24
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "midcareer / new",
+   "session": "costs-20261018-103313-39",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 3.52
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "midcareer / comfortable",
+   "session": "costs-20261018-103313-40",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 4.3
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "midcareer / comfortable",
+   "session": "costs-20261018-103313-41",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 3.56
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "midcareer / pro",
+   "session": "costs-20261018-103313-42",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 4.11
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "midcareer / pro",
+   "session": "costs-20261018-103313-43",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 4.21
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "retiree / new",
+   "session": "costs-20261018-103313-44",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 3.54
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "retiree / new",
+   "session": "costs-20261018-103313-45",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 3.19
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "retiree / comfortable",
+   "session": "costs-20261018-103313-46",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 3.53
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "retiree / comfortable",
+   "session": "costs-20261018-103313-47",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 3.47
+  },
+  {
+   "phase": "main",
+   "kind": "shifts",
+   "label": "retiree / pro",
+   "session": "costs-20261018-103313-48",
+   "source": "ai",
+   "steps": [
+    "shifts"
+   ],
+   "wall_s": 3.35
+  },
+  {
+   "phase": "main",
+   "kind": "sandbox",
+   "label": "retiree / pro",
+   "session": "costs-20261018-103313-49",
+   "source": "ai",
+   "steps": [
+    "sandbox"
+   ],
+   "wall_s": 3.67
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "beginner / new / run 1",
+   "session": "costs-20261018-103313-50",
+   "source": "ai_rewrite",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier",
+    "explainer_rewrite"
+   ],
+   "wall_s": 20.89
   },
   {
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / new / run 2",
-   "session": "costs-20261017-214350-33",
+   "session": "costs-20261018-103313-51",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -557,7 +792,7 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / new / run 3",
-   "session": "costs-20261017-214350-34",
+   "session": "costs-20261018-103313-52",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -571,7 +806,7 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / comfortable / run 1",
-   "session": "costs-20261017-214350-35",
+   "session": "costs-20261018-103313-53",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -579,13 +814,13 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 18.3
+   "wall_s": 17.37
   },
   {
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / comfortable / run 2",
-   "session": "costs-20261017-214350-36",
+   "session": "costs-20261018-103313-54",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -599,7 +834,7 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / comfortable / run 3",
-   "session": "costs-20261017-214350-37",
+   "session": "costs-20261018-103313-55",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -613,7 +848,7 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / pro / run 1",
-   "session": "costs-20261017-214350-38",
+   "session": "costs-20261018-103313-56",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -621,13 +856,13 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 18.01
+   "wall_s": 17.73
   },
   {
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / pro / run 2",
-   "session": "costs-20261017-214350-39",
+   "session": "costs-20261018-103313-57",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -641,7 +876,74 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "beginner / pro / run 3",
-   "session": "costs-20261017-214350-40",
+   "session": "costs-20261018-103313-58",
+   "source": "ai_rewrite",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier",
+    "explainer_rewrite"
+   ],
+   "wall_s": 0.04
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "midcareer / new / run 1",
+   "session": "costs-20261018-103313-59",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 13.7
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "midcareer / new / run 2",
+   "session": "costs-20261018-103313-60",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 0.03
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "midcareer / new / run 3",
+   "session": "costs-20261018-103313-61",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 0.02
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "midcareer / comfortable / run 1",
+   "session": "costs-20261018-103313-62",
+   "source": "ai_rewrite",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier",
+    "explainer_rewrite"
+   ],
+   "wall_s": 19.95
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "midcareer / comfortable / run 2",
+   "session": "costs-20261018-103313-63",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -654,50 +956,103 @@
   {
    "phase": "cache",
    "kind": "analysis",
-   "label": "midcareer / new / run 1",
-   "session": "costs-20261017-214350-41",
+   "label": "midcareer / comfortable / run 3",
+   "session": "costs-20261018-103313-64",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
     "explainer",
-    "explainer_rewrite",
-    "verifier"
-   ],
-   "wall_s": 23.4
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "midcareer / new / run 2",
-   "session": "costs-20261017-214350-42",
-   "source": "ai_rewrite",
-   "steps": [
-    "analyst",
-    "explainer",
-    "explainer_rewrite",
-    "verifier"
+    "verifier",
+    "explainer_rewrite"
    ],
    "wall_s": 0.03
   },
   {
    "phase": "cache",
    "kind": "analysis",
-   "label": "midcareer / new / run 3",
-   "session": "costs-20261017-214350-43",
+   "label": "midcareer / pro / run 1",
+   "session": "costs-20261018-103313-65",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 11.53
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "midcareer / pro / run 2",
+   "session": "costs-20261018-103313-66",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 0.02
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "midcareer / pro / run 3",
+   "session": "costs-20261018-103313-67",
+   "source": "ai",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier"
+   ],
+   "wall_s": 0.02
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "retiree / new / run 1",
+   "session": "costs-20261018-103313-68",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
     "explainer",
-    "explainer_rewrite",
-    "verifier"
+    "verifier",
+    "explainer_rewrite"
+   ],
+   "wall_s": 23.51
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "retiree / new / run 2",
+   "session": "costs-20261018-103313-69",
+   "source": "ai_rewrite",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier",
+    "explainer_rewrite"
+   ],
+   "wall_s": 0.04
+  },
+  {
+   "phase": "cache",
+   "kind": "analysis",
+   "label": "retiree / new / run 3",
+   "session": "costs-20261018-103313-70",
+   "source": "ai_rewrite",
+   "steps": [
+    "analyst",
+    "explainer",
+    "verifier",
+    "explainer_rewrite"
    ],
    "wall_s": 0.03
   },
   {
    "phase": "cache",
    "kind": "analysis",
-   "label": "midcareer / comfortable / run 1",
-   "session": "costs-20261017-214350-44",
+   "label": "retiree / comfortable / run 1",
+   "session": "costs-20261018-103313-71",
    "source": "ai",
    "steps": [
     "analyst",
@@ -709,128 +1064,8 @@
   {
    "phase": "cache",
    "kind": "analysis",
-   "label": "midcareer / comfortable / run 2",
-   "session": "costs-20261017-214350-45",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 0.02
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "midcareer / comfortable / run 3",
-   "session": "costs-20261017-214350-46",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 0.02
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "midcareer / pro / run 1",
-   "session": "costs-20261017-214350-47",
-   "source": "ai_rewrite",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier",
-    "explainer_rewrite"
-   ],
-   "wall_s": 17.59
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "midcareer / pro / run 2",
-   "session": "costs-20261017-214350-48",
-   "source": "ai_rewrite",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier",
-    "explainer_rewrite"
-   ],
-   "wall_s": 0.03
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "midcareer / pro / run 3",
-   "session": "costs-20261017-214350-49",
-   "source": "ai_rewrite",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier",
-    "explainer_rewrite"
-   ],
-   "wall_s": 0.03
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "retiree / new / run 1",
-   "session": "costs-20261017-214350-50",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 13.89
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "retiree / new / run 2",
-   "session": "costs-20261017-214350-51",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 0.02
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "retiree / new / run 3",
-   "session": "costs-20261017-214350-52",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 0.02
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
-   "label": "retiree / comfortable / run 1",
-   "session": "costs-20261017-214350-53",
-   "source": "ai",
-   "steps": [
-    "analyst",
-    "explainer",
-    "verifier"
-   ],
-   "wall_s": 10.55
-  },
-  {
-   "phase": "cache",
-   "kind": "analysis",
    "label": "retiree / comfortable / run 2",
-   "session": "costs-20261017-214350-54",
+   "session": "costs-20261018-103313-72",
    "source": "ai",
    "steps": [
     "analyst",
@@ -843,7 +1078,7 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "retiree / comfortable / run 3",
-   "session": "costs-20261017-214350-55",
+   "session": "costs-20261018-103313-73",
    "source": "ai",
    "steps": [
     "analyst",
@@ -856,7 +1091,7 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "retiree / pro / run 1",
-   "session": "costs-20261017-214350-56",
+   "session": "costs-20261018-103313-74",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -864,13 +1099,13 @@
     "verifier",
     "explainer_rewrite"
    ],
-   "wall_s": 19.8
+   "wall_s": 15.38
   },
   {
    "phase": "cache",
    "kind": "analysis",
    "label": "retiree / pro / run 2",
-   "session": "costs-20261017-214350-57",
+   "session": "costs-20261018-103313-75",
    "source": "ai_rewrite",
    "steps": [
     "analyst",
@@ -884,7 +1119,7 @@
    "phase": "cache",
    "kind": "analysis",
    "label": "retiree / pro / run 3",
-   "session": "costs-20261017-214350-58",
+   "session": "costs-20261018-103313-76",
    "source": "ai_rewrite",
    "steps": [
     "analyst",

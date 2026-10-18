@@ -5,6 +5,9 @@
    billed model call:
        3 sample portfolios x 3 fluency levels x 3 repeats (27 full analyses)
        + 5 Pause Button scenarios
+       + 3 x 3 Possible Shifts wordings and 3 x 3 Try a Shift explanations (one per sample and level)
+   A "full visit" is one analysis + one Possible Shifts + one Try a Shift; monthly projections
+   assume VISITS_PER_USER full visits per user per month.
 2. Response-cache pass: the same 27 analyses with the app's response cache on, as
    when people re-run a portfolio or switch fluency. Repeats and shared steps are
    served from the cache for free.
@@ -40,7 +43,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from secondlook import budget, demo_runs, llm, orchestrator  # noqa: E402
-from secondlook.agents import analyst, explainer, pause, verifier  # noqa: E402
+from secondlook.agents import analyst, explainer, pause, sandbox, shifts, verifier  # noqa: E402
 from secondlook.agents.base import AgentContext, model_for  # noqa: E402
 from secondlook.budget import BudgetExceeded  # noqa: E402
 from secondlook.config import Settings, load_settings  # noqa: E402
@@ -48,9 +51,9 @@ from secondlook.config import Settings, load_settings  # noqa: E402
 DOCS = ROOT / "docs"
 MAX_USD = 2.00
 USERS = (100, 10_000)
-ANALYSES_PER_USER = 2
+VISITS_PER_USER = 2  # full visits (analysis + Possible Shifts + Try a Shift) per user per month
 PAUSES = demo_runs.PAUSE_SCENARIOS  # the same 5 Pause Button scenarios the demo recordings cover
-SPECS = {s.name: s for s in (analyst.SPEC, explainer.SPEC, verifier.SPEC, pause.SPEC)}
+SPECS = {s.name: s for s in (analyst.SPEC, explainer.SPEC, verifier.SPEC, pause.SPEC, shifts.SPEC, sandbox.SPEC)}
 ANALYSIS_STEPS = ["analyst", "explainer", "verifier", "explainer"]
 
 
@@ -113,15 +116,18 @@ def cost_markdown(report: dict) -> str:
              "| Unit | n | Mean input tokens | Mean cached input tokens | Mean output tokens | Mean $ | p95 latency (s) |",
              "|---|---:|---:|---:|---:|---:|---:|"]
     for name, s in list(report["per_agent"].items()) + [("**Full analysis**", report["per_analysis"]),
-                                                         ("**Pause check**", report["per_pause"])]:
+                                                         ("**Pause check**", report["per_pause"]),
+                                                         ("**Possible Shifts**", report["per_shifts"]),
+                                                         ("**Try a Shift**", report["per_sandbox"])]:
         lines.append(f"| {name} | {s['n']} | {s['mean_input_tokens']:,.0f} | {s['mean_cached_input_tokens']:,.0f} | "
                      f"{s['mean_output_tokens']:,.0f} | ${s['mean_usd']:.6f} | {s['p95_latency_s']:.2f} |")
     rc = report["response_cache"]
-    lines += ["", f"## Monthly cost ({ANALYSES_PER_USER} analyses per user per month)", "",
+    lines += ["", f"A full visit (analysis + Possible Shifts + Try a Shift) costs ${report['per_visit_usd']:.6f}.", "",
+              f"## Monthly cost ({VISITS_PER_USER} full visits per user per month)", "",
               f"With the app's response cache, the same 27 analyses cost ${rc['total_usd']:.4f} "
               f"(${rc['mean_usd_per_analysis']:.6f} each) because repeats and steps shared across fluency levels are "
               "served from the cache. That applies when people re-run a portfolio or switch fluency; a brand-new "
-              "portfolio always costs the full amount.", "",
+              "portfolio always costs the full amount. Possible Shifts and Try a Shift are counted at full price.", "",
               "| | Per user per month | 100 users | 10,000 users |", "|---|---:|---:|---:|"]
     for label, key in (("Without response cache", "without_cache"), ("With response cache", "with_cache")):
         m = report["monthly"][key]
@@ -171,9 +177,10 @@ def main(argv: list[str] | None = None, client=None, settings: Settings | None =
     n_analyses = len(args.personas) * len(args.fluencies) * args.repeats
     n_quality = len(args.personas) * len(args.fluencies) if do_quality else 0
     worst_analysis, worst_pause = worst_case(live, ANALYSIS_STEPS), worst_case(live, ["pause"])
+    n_tabs = len(args.personas) * len(args.fluencies)
     worst_total = (n_analyses * worst_analysis * (1 if args.skip_cache_pass else 2) + args.pauses * worst_pause
-                   + n_quality * worst_case(all_smart, ANALYSIS_STEPS))
-    print(f"Planned: {n_analyses} analyses + {args.pauses} pause checks"
+                   + n_tabs * worst_case(live, ["shifts", "sandbox"]) + n_quality * worst_case(all_smart, ANALYSIS_STEPS))
+    print(f"Planned: {n_analyses} analyses + {args.pauses} pause checks + {n_tabs} shifts + {n_tabs} sandbox"
           f"{'' if args.skip_cache_pass else f' + {n_analyses} response-cache analyses'}"
           f"{f' + {n_quality} all-{smart_model} analyses' if n_quality else ''}. "
           f"Worst-case cost ${worst_total:.4f} (cap ${args.max_usd:.2f}).")
@@ -230,6 +237,21 @@ def main(argv: list[str] | None = None, client=None, settings: Settings | None =
                 return orchestrator.run_pause(demo_runs.persona_facts(name, action), ctx).source, ["pause"]
             if not go("main", "pause", f"{name} / {action.describe()}", ["pause"], live, pause_run):
                 break
+        for persona in ([] if stopped else args.personas):
+            sh_facts, details, sh_banned = demo_runs.persona_shifts(persona)
+            sb_facts, sb_banned = demo_runs.persona_sandbox(persona)
+            for fluency in args.fluencies:
+                def shifts_run(ctx, f=sh_facts, d=details, b=sh_banned, fluency=fluency):
+                    r = orchestrator.run_shifts(f, d, fluency, ctx, b)
+                    return r.source, ["shifts"] if r.source != "none" else []
+
+                def sandbox_run(ctx, f=sb_facts, b=sb_banned, fluency=fluency):
+                    return orchestrator.run_sandbox(f, fluency, ctx, b).source, ["sandbox"]
+
+                if not go("main", "shifts", f"{persona} / {fluency}", ["shifts"], live, shifts_run):
+                    break
+                if not go("main", "sandbox", f"{persona} / {fluency}", ["sandbox"], live, sandbox_run):
+                    break
         if not stopped and not args.skip_cache_pass:
             llm.CACHE.clear()
             llm.CACHE_ENABLED = True
@@ -249,13 +271,20 @@ def main(argv: list[str] | None = None, client=None, settings: Settings | None =
     main_rows = [r for r in rows if r["session_id"] in main_sessions]
     main_analyses = [r for r in by_phase["main"] if r["kind"] == "analysis"]
     main_pauses = [r for r in by_phase["main"] if r["kind"] == "pause"]
+    main_shifts = [r for r in by_phase["main"] if r["kind"] == "shifts"]
+    main_sandbox = [r for r in by_phase["main"] if r["kind"] == "sandbox"]
     analysis_stats = stats(group(main_rows, [r["session"] for r in main_analyses]), [r["wall_s"] for r in main_analyses])
     cache_runs = by_phase["cache"]
     cache_cost = sum(r["cost_usd"] for r in rows if r["session_id"] in {x["session"] for x in cache_runs})
     mean_with_cache = cache_cost / len(cache_runs) if cache_runs else analysis_stats["mean_usd"]
 
+    shifts_stats = stats(group(main_rows, [r["session"] for r in main_shifts]), [r["wall_s"] for r in main_shifts])
+    sandbox_stats = stats(group(main_rows, [r["session"] for r in main_sandbox]), [r["wall_s"] for r in main_sandbox])
+    tabs_usd = shifts_stats["mean_usd"] + sandbox_stats["mean_usd"]
+    visit_usd = analysis_stats["mean_usd"] + tabs_usd
+
     def monthly(mean_usd: float) -> dict:
-        per_user = ANALYSES_PER_USER * mean_usd
+        per_user = VISITS_PER_USER * mean_usd
         return {"per_user_usd": round(per_user, 6),
                 "users": [{"users": u, "total_usd": round(u * per_user, 2)} for u in USERS]}
 
@@ -277,9 +306,16 @@ def main(argv: list[str] | None = None, client=None, settings: Settings | None =
         "per_agent": {a: stats([r for r in main_rows if r["agent"] == a]) for a in sorted({r["agent"] for r in main_rows})},
         "per_analysis": analysis_stats,
         "per_pause": stats(group(main_rows, [r["session"] for r in main_pauses]), [r["wall_s"] for r in main_pauses]),
+        "shifts_runs": len(main_shifts),
+        "sandbox_runs": len(main_sandbox),
+        "per_shifts": shifts_stats,
+        "per_sandbox": sandbox_stats,
+        "per_visit_usd": round(visit_usd, 7),
+        "visits_per_user": VISITS_PER_USER,
         "response_cache": {"analyses": len(cache_runs), "total_usd": round(cache_cost, 6),
                            "mean_usd_per_analysis": round(mean_with_cache, 7)},
-        "monthly": {"without_cache": monthly(analysis_stats["mean_usd"]), "with_cache": monthly(mean_with_cache)},
+        # the response cache is measured for analyses only; shifts and sandbox are counted at full price
+        "monthly": {"without_cache": monthly(visit_usd), "with_cache": monthly(mean_with_cache + tabs_usd)},
         "portkey_check": None if first is None else {
             "trace_id": f"{first['session_id']}-{first['agent']}", "timestamp_utc": first["timestamp"],
             "model": first["model"], "input_tokens": first["input_tokens"], "output_tokens": first["output_tokens"],

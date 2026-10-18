@@ -20,7 +20,8 @@ spec.loader.exec_module(mc)
 
 LIVE = Settings(portkey_api_key=ODD_KEY, demo_mode=False, model_fast="test-fast-model", model_smart="test-smart-model")
 # (input tokens, cached input tokens, output tokens) the fake model reports for each agent
-USAGE = {"analyst": (1000, 400, 100), "explainer": (2000, 0, 300), "verifier": (1500, 0, 50), "pause": (800, 0, 200)}
+USAGE = {"analyst": (1000, 400, 100), "explainer": (2000, 0, 300), "verifier": (1500, 0, 50), "pause": (800, 0, 200),
+         "shifts": (900, 0, 200), "sandbox": (1000, 0, 250)}
 REPLIES = {
     "analyst": {"findings": [{"title": "Fees", "why_it_matters": "Fees compound.", "fact_keys": ["fees.annual_fees_usd"],
                               "dollar_fact_key": "fees.annual_fees_usd"}]},
@@ -28,6 +29,8 @@ REPLIES = {
                   "advisor_questions": ["How do my fees compare?", "What would you look at first?"]},
     "verifier": {"passed": True, "problems": []},
     "pause": {"summary": "The check compares the portfolio before and after.", "points": ["Cash changes."]},
+    "sandbox": {"summary": "More stocks grew more and fell further; your replay has hindsight built in.",
+                "points": ["Mixes trade growth for steadiness.", "Past results do not predict the future."]},
 }
 
 
@@ -38,13 +41,18 @@ class UsageClient:
         self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
 
     def _create(self, **kwargs):
-        agent = self.by_prompt[kwargs["messages"][0]["content"]]
+        system, user = kwargs["messages"][0]["content"], kwargs["messages"][1]["content"]
+        agent = "shifts" if system == system_prompt("shifts") else self.by_prompt[system]
         self.calls.append((agent, kwargs["model"]))
         inp, cached, out = USAGE[agent]
         usage = SimpleNamespace(prompt_tokens=inp, completion_tokens=out,
                                 prompt_tokens_details=SimpleNamespace(cached_tokens=cached))
-        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(REPLIES[agent])))],
-                               usage=usage)
+        if agent == "shifts":  # one item per computed shift, no numbers
+            body = {"summary": "Some shifts stand out.",
+                    "items": [{"title": f"Shift {i}", "body": "Consider shifting some money."} for i in range(user.count('"kind":'))]}
+        else:
+            body = REPLIES[agent]
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(body)))], usage=usage)
 
 
 # smart = $5 / $20 per 1M, fast = $1 / $4 per 1M (test-only prices without a cached rate)
@@ -53,6 +61,9 @@ EXPLAINER = (2000 * 5 + 300 * 20) / 1e6     # $0.016
 VERIFIER = (1500 * 1 + 50 * 4) / 1e6        # $0.0017
 ANALYSIS = ANALYST + EXPLAINER + VERIFIER   # $0.0247
 PAUSE = (800 * 5 + 200 * 20) / 1e6          # $0.008
+SHIFTS = (900 * 5 + 200 * 20) / 1e6         # $0.0085
+SANDBOX = (1000 * 5 + 250 * 20) / 1e6       # $0.010
+VISIT = ANALYSIS + SHIFTS + SANDBOX         # $0.0432
 SMART_VERIFIER = (1500 * 5 + 50 * 20) / 1e6  # $0.0085 when the verifier runs on the smart model
 
 
@@ -72,9 +83,11 @@ def test_p95_nearest_rank():
 def test_main_pass_by_hand(tmp_path, ledger):
     code, report, client = run(tmp_path, ledger, "--skip-cache-pass", "--skip-quality")
     assert code == 0 and report["stopped"] is None
-    # caching off: 4 analyses x 3 calls + 1 pause, even though repeats are identical requests
-    assert len(client.calls) == 13 and report["calls"] == 13
-    assert report["total_usd"] == pytest.approx(4 * ANALYSIS + PAUSE)
+    # caching off: 4 analyses x 3 calls + 1 pause + 2 shifts + 2 sandbox (one per fluency level)
+    assert len(client.calls) == 17 and report["calls"] == 17
+    assert report["total_usd"] == pytest.approx(4 * ANALYSIS + PAUSE + 2 * SHIFTS + 2 * SANDBOX)
+    assert report["per_shifts"]["mean_usd"] == pytest.approx(SHIFTS) and report["per_sandbox"]["mean_usd"] == pytest.approx(SANDBOX)
+    assert report["per_visit_usd"] == pytest.approx(VISIT)
     assert report["per_agent"]["analyst"]["mean_cached_input_tokens"] == 400
     assert report["per_agent"]["explainer"]["mean_cached_input_tokens"] == 0
     assert report["per_analysis"]["mean_usd"] == pytest.approx(ANALYSIS)
@@ -89,11 +102,12 @@ def test_response_cache_pass_and_monthly_by_hand(tmp_path, ledger):
     assert report["response_cache"]["total_usd"] == pytest.approx(cached_total)
     assert report["response_cache"]["mean_usd_per_analysis"] == pytest.approx(cached_total / 4)
     without, with_cache = report["monthly"]["without_cache"], report["monthly"]["with_cache"]
-    assert without["per_user_usd"] == pytest.approx(2 * ANALYSIS)                      # $0.0494
-    assert [u["total_usd"] for u in without["users"]] == pytest.approx([4.94, 494.0])  # 100 and 10,000 users
-    assert with_cache["per_user_usd"] == pytest.approx(2 * cached_total / 4, abs=1e-6)
+    assert without["per_user_usd"] == pytest.approx(2 * VISIT)                         # 2 full visits: $0.0864
+    assert [u["total_usd"] for u in without["users"]] == pytest.approx([8.64, 864.0])  # 100 and 10,000 users
+    assert with_cache["per_user_usd"] == pytest.approx(2 * (cached_total / 4 + SHIFTS + SANDBOX), abs=1e-6)
     md = (tmp_path / "cost_results.md").read_text(encoding="utf-8")
     assert "Mean cached input tokens" in md and "| 100 users | 10,000 users |" in md
+    assert "**Try a Shift**" in md and "full visit" in md
 
 
 def test_quality_vs_cost_by_hand(tmp_path, ledger):

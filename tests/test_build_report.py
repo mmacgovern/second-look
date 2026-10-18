@@ -98,3 +98,11 @@ def test_no_tools_choice_is_explained(page):
     red = json.loads((ROOT / "docs" / "redteam_results.json").read_text(encoding="utf-8"))
     wrong = red["summary"]["by_suite"]["wrong-number drafts / verifier"]
     assert f"caught {wrong['passed']} of {wrong['total']} red-team drafts" in page
+
+
+def test_tokenomics_includes_the_new_tabs_and_full_visit(page):
+    cost = json.loads((ROOT / "docs" / "cost_results.json").read_text(encoding="utf-8"))
+    if "per_visit_usd" in cost:
+        section = page[page.index("<h2>5. Tokenomics</h2>"):page.index("<h2>6. Safety</h2>")]
+        assert "<strong>Possible Shifts</strong>" in section and "<strong>Try a Shift</strong>" in section
+        assert f"${cost['per_visit_usd']:,.4f}" in section and "full visits per user per month" in section

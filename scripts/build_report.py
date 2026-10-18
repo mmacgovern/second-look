@@ -442,6 +442,16 @@ def build() -> str:
     agent_rows.append(["<strong>Full analysis</strong>", pa["n"], f"{pa['mean_input_tokens']:,.0f}",
                        f"{pa['mean_cached_input_tokens']:,.0f}", f"{pa['mean_output_tokens']:,.0f}", usd(pa["mean_usd"], 6),
                        f"{pa['p95_latency_s']:.1f}"])
+    for label, key in (("Possible Shifts", "per_shifts"), ("Try a Shift", "per_sandbox")):
+        if key in cost:
+            u = cost[key]
+            agent_rows.append([f"<strong>{label}</strong>", u["n"], f"{u['mean_input_tokens']:,.0f}",
+                               f"{u['mean_cached_input_tokens']:,.0f}", f"{u['mean_output_tokens']:,.0f}",
+                               usd(u["mean_usd"], 6), f"{u['p95_latency_s']:.1f}"])
+    if "per_visit_usd" in cost:
+        agent_rows.append(["<strong>Full visit</strong> (analysis + Possible Shifts + Try a Shift)", "", "", "", "",
+                           f"<strong>{usd(cost['per_visit_usd'], 6)}</strong>", ""])
+    visits = cost.get("visits_per_user", 2)
     m_without, m_with = cost["monthly"]["without_cache"], cost["monthly"]["with_cache"]
     monthly_rows = [[label, usd(m["per_user_usd"], 4)] + [usd(u["total_usd"]) for u in m["users"]]
                     for label, m in (("Without response cache", m_without), ("With response cache", m_with))]
@@ -456,15 +466,6 @@ def build() -> str:
                                 f"{r['sources'].get('template', 0)} of {r['analyses'] + r['pauses']}", f"<code>{esc(src)}</code>"])
         else:
             effort_rows.append([label, todo("result not found"), "", "", ""])
-    cache_bar_max = max(pa["mean_usd"], 1e-9)
-    bars = f"""
-<svg viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cost per analysis with and without the response cache">
-  <style>.t{{font:12px sans-serif;fill:#0B1F3A}}</style>
-  <text class="t" x="0" y="30">Without cache</text><rect x="120" y="16" width="{460 * pa['mean_usd'] / cache_bar_max:.1f}" height="22" fill="#0B1F3A"/>
-  <text class="t" x="{125 + 460 * pa['mean_usd'] / cache_bar_max:.1f}" y="32">{usd(pa['mean_usd'], 6)}</text>
-  <text class="t" x="0" y="80">With cache</text><rect x="120" y="66" width="{460 * rc['mean_usd_per_analysis'] / cache_bar_max:.1f}" height="22" fill="#0E7C86"/>
-  <text class="t" x="{125 + 460 * rc['mean_usd_per_analysis'] / cache_bar_max:.1f}" y="82">{usd(rc['mean_usd_per_analysis'], 6)}</text>
-</svg>"""
     routings = quality["routings"]
     smart = routings.get("MODEL_SMART for every agent")
     if smart:
@@ -484,19 +485,23 @@ def build() -> str:
 <section class="cont">
   <h2>5. Tokenomics</h2>
   <p>Measured live on {esc(cost['run_at'][:10])} (run <code>{esc(cost['run_id'])}</code>): {cost['analyses']} full analyses
-  (3 personas × 3 fluency levels × 3 repeats) and {cost['pauses']} pause checks, with the app's response cache off and the
+  (3 personas × 3 fluency levels × 3 repeats), {cost['pauses']} pause checks, {cost.get('shifts_runs', 0)} Possible Shifts
+  wordings and {cost.get('sandbox_runs', 0)} Try a Shift explanations, with the app's response cache off and the
   Portkey gateway cache bypassed, so every call was a real model call. Main pass: {usd(cost['total_usd'], 4)} for
   {cost['calls']} calls. Source: <code>docs/cost_results.json</code>.</p>
   {table(["Unit", "n", "Mean input tokens", "Mean cached input", "Mean output tokens", "Mean $", "p95 latency (s)"], agent_rows)}
   <p>A typical analysis uses about {pa['mean_input_tokens']:,.0f} input tokens (of which {pa['mean_cached_input_tokens']:,.0f}
   were served from the provider's prompt cache) and {pa['mean_output_tokens']:,.0f} output tokens, and costs
-  <strong>{usd(pa['mean_usd'], 4)}</strong>. A pause check costs {usd(cost['per_pause']['mean_usd'], 4)}.</p>
-  <h3>Per user and at scale (2 analyses per user per month)</h3>
+  <strong>{usd(pa['mean_usd'], 4)}</strong>. A pause check costs {usd(cost['per_pause']['mean_usd'], 4)}; opening Possible
+  Shifts and Try a Shift adds {usd(cost.get('per_shifts', {}).get('mean_usd', 0), 4)} and
+  {usd(cost.get('per_sandbox', {}).get('mean_usd', 0), 4)}, so a full visit costs
+  <strong>{usd(cost.get('per_visit_usd', pa['mean_usd']), 4)}</strong>.</p>
+  <h3>Per user and at scale ({visits} full visits per user per month)</h3>
   {table(["", "Per user per month", "100 users", "10,000 users"], monthly_rows)}
-  {bars}
   <p class="note">"With response cache" is measured: the same 27 analyses re-run with the app's cache on cost
   {usd(rc['total_usd'], 4)}, because repeats and steps shared across fluency levels come from the cache. It applies when
-  people re-run a portfolio or switch fluency; a brand-new portfolio always pays the full price.</p>
+  people re-run a portfolio or switch fluency; a brand-new portfolio always pays the full price. Possible Shifts and
+  Try a Shift are counted at full price in both rows.</p>
   <h3>What was done to cut cost</h3>
   <ul>
     <li>All arithmetic in Python; the AI sees a compact Facts JSON (kept under 2,000 tokens) instead of raw data.</li>
@@ -514,7 +519,8 @@ def build() -> str:
   {table(["Routing", "Models", "First-draft verifier pass rate", "Rewrites", "Template fallbacks", "Mean $ per analysis"], q_rows)}
   {smart_note}
   <p class="note">The latest run cost more per analysis than the {LOW_EFFORT_COMMIT} run because a stricter verifier rule
-  (plan figures must be a labeled range) now triggers more rewrites: {cost['sources']}.</p>
+  (plan figures must be a labeled range) now triggers more rewrites. Where the shown answers came from, across all
+  main-pass runs: {cost['sources']}.</p>
 </section>"""
 
     # --- 6 -----------------------------------------------------------------------
@@ -580,10 +586,12 @@ def build() -> str:
     est = '<span class="est">estimate</span>'
     cost_rows = [
         ["Cost of one full analysis", usd(pa["mean_usd"], 4), "Measured", "docs/cost_results.json"],
+        ["Cost of one full visit (analysis + Possible Shifts + Try a Shift)", usd(cost.get("per_visit_usd", pa["mean_usd"]), 4),
+         "Measured", "docs/cost_results.json"],
         ["Cost of one analysis with the response cache", usd(cost["response_cache"]["mean_usd_per_analysis"], 4), "Measured",
          "docs/cost_results.json"],
     ] + [[f"Monthly cost, {u['users']:,} users", f"{usd(u['total_usd'])} ({usd(uc['total_usd'])} with cache)",
-          f"{est}: assumes 2 analyses per user per month", "docs/cost_results.json"]
+          f"{est}: assumes {cost.get('visits_per_user', 2)} full visits per user per month", "docs/cost_results.json"]
          for u, uc in zip(m_wo["users"], m_w["users"])]
     persona_rows = []
     for name, label in (("beginner", "Starting out"), ("midcareer", "Mid-career"), ("retiree", "Retired")):
@@ -686,7 +694,7 @@ svg{max-width:100%;height:auto}.cards{display:grid;gap:10px;margin:10px 0}.card{
 .card p{margin:0;font-size:14px}.policy{background:var(--mist);border-left:4px solid var(--teal);padding:12px 16px;border-radius:6px}
 code{background:var(--mist);padding:1px 4px;border-radius:3px;font-size:12.5px}section{margin-bottom:40px}
 .video video{background:#0B1F3A;max-width:100%;height:200px;border-radius:6px}
-@media print{@page{size:Letter;margin:0.6in}body{font-size:10pt}table{font-size:9pt}main{padding:0;max-width:none}
+@media print{@page{size:Letter;margin:0.5in}body{font-size:10pt}table{font-size:9pt}main{padding:0;max-width:none}
 section{page-break-before:always;margin:0}section.cover{page-break-before:avoid}section.cont{page-break-before:auto;margin-top:18pt}
 img{max-height:2.3in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
 figure,.card,.policy,tr{page-break-inside:avoid}a{color:inherit}.video video{display:none}}

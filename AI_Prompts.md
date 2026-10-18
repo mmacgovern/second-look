@@ -420,3 +420,5 @@ Alright we will push to GitHub Public at the very end - and only when I say so. 
 ```
 
 **Result (item 4):** Added three red-team suites for the Possible Shifts and Try a Shift tabs: 16 deliberately bad drafts (named stock, ticker or fund family, invented number, guarantee, prediction, price target, missing suggestion, missing hindsight warning), the real recorded output for every sample and fluency level (18 cases), and a data-isolation check that injection text in an uploaded CSV never reaches either tab; demo red-team now 99/99, report Section 6 and slide 7 grouped by suite; report 15 pages; 524 tests passed.
+
+**Result (item 3):** The cost harness now measures Possible Shifts and Try a Shift (9 runs each) and a full visit (analysis + both tabs: $0.002216); live run $0.0675 gives $44.31/month for 10,000 users at 2 visits each ($21.51 with the response cache); live red-team re-run 99/99 ($0.0052); report Sections 5-7 and slides 6-7 updated, report 15 pages; 525 tests passed.
