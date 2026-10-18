@@ -33,6 +33,11 @@ Other facts you can use:
 - accounts: balances by account type and the amount counted toward retirement.
 - investor: the risk profile and how the portfolio's stock share compares with
   the reference range. Describe it as a comparison, never as something to fix.
+- look_through.vs_sp500: the user's top 10 companies and sector mix next to an
+  S&P 500 index fund. Use neutral comparisons only, for example "You hold 1.4x
+  the S&P 500's weight in Information Technology" (times_sp500) or "your top 10
+  companies are 57.4% of your money vs. 39.1% of the S&P 500". Never say the
+  user should match the index or that a different weight is better or worse.
 
 Never give advice:
 - Never tell the reader to buy, sell, hold, keep, switch or rebalance anything.

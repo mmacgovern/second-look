@@ -4,6 +4,10 @@ For every ticker in data/sample_portfolios/*.csv plus the crash-replay proxies,
 downloads daily prices from 2007 to today and the fund/stock profile (top
 holdings, sector weights, asset classes, expense ratio) from yfinance.
 
+Also writes the S&P 500 reference (an index fund's top holdings and sector
+weights, with its name and "as of" date) to data/reference/sp500_benchmark.json:
+live from yfinance, or from the offline snapshot if that fails.
+
 Usage:
     python scripts/build_snapshot.py                 # everything
     python scripts/build_snapshot.py --tickers ARKK  # also include extra tickers
@@ -23,6 +27,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from secondlook import market_data as md  # noqa: E402
+from secondlook.quant import benchmark as bm  # noqa: E402
 
 SAMPLES_DIR = ROOT / "data" / "sample_portfolios"
 
@@ -84,12 +89,33 @@ def build(
     return manifest
 
 
+def write_benchmark(
+    path: Path = bm.BENCHMARK_FILE,
+    ticker: str = bm.BENCHMARK_TICKER,
+    fetch_profile=md.fetch_profile_live,
+    snapshot_dir: Path | None = None,
+) -> dict:
+    """Save the S&P 500 reference file from the index fund's profile (live first, snapshot fallback)."""
+    try:
+        profile, source = fetch_profile(ticker), "yfinance"
+    except Exception as exc:
+        print(f"Live profile for {ticker} failed ({exc!r}); using the offline snapshot")
+        profile, source = md.load_snapshot_profile(ticker, snapshot_dir), "offline snapshot"
+    data = bm.benchmark_from_profile(profile, source)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=1), encoding="utf-8")
+    print(f"S&P 500 reference: {data['fund_name']} ({data['fund']}), as of {data['as_of']}, from {source} -> {path}")
+    return data
+
+
 def main(argv: list[str] | None = None, **build_kwargs) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, default=md.SNAPSHOT_DIR)
     parser.add_argument("--samples", type=Path, default=SAMPLES_DIR)
     parser.add_argument("--start", default=md.PRICE_START)
     parser.add_argument("--tickers", nargs="*", default=[], help="extra tickers to include")
+    parser.add_argument("--benchmark-out", type=Path, default=None,
+                        help="default: data/reference/sp500_benchmark.json, or next to --out when --out is elsewhere")
     args = parser.parse_args(argv)
 
     tickers = list(dict.fromkeys(sample_tickers(args.samples) + list(md.PROXIES) + [t.upper() for t in args.tickers]))
@@ -97,6 +123,10 @@ def main(argv: list[str] | None = None, **build_kwargs) -> int:
     print(f"\n{len(tickers)} tickers, {len(manifest['failures'])} failures -> {args.out}")
     for failure in manifest["failures"]:
         print(f"  FAILED {failure['ticker']} {failure['part']}: {failure['error']}")
+    bench_out = args.benchmark_out or (bm.BENCHMARK_FILE if Path(args.out) == md.SNAPSHOT_DIR
+                                       else Path(args.out) / "sp500_benchmark.json")
+    write_benchmark(bench_out, fetch_profile=build_kwargs.get("fetch_profile", md.fetch_profile_live),
+                    snapshot_dir=args.out)
     return 0
 
 

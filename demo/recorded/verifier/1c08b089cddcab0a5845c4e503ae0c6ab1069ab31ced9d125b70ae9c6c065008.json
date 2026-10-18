@@ -1,0 +1,6 @@
+{
+ "agent": "verifier",
+ "text": "{\"passed\":false,\"problems\":[\"Replace “a 15% flat tax on pre-tax accounts”: the facts only specify a 15% reduction to pre-tax accounts, not a flat tax.\"]}",
+ "input_tokens": 2727,
+ "output_tokens": 333
+}

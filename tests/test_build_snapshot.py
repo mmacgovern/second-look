@@ -20,8 +20,9 @@ def fake_prices(ticker, start, end):
 
 
 def fake_profile(ticker):
-    return {"ticker": ticker, "quote_type": "ETF", "expense_ratio": 0.001, "top_holdings": [{"symbol": "X"}],
-            "sector_weights": {"technology": 1.0}}
+    return {"ticker": ticker, "name": f"{ticker} Fund", "quote_type": "ETF", "expense_ratio": 0.001, "as_of": "2026-10-17",
+            "top_holdings": [{"symbol": "X", "name": "X Corp", "weight": 0.07}],
+            "sector_weights": {"technology": 0.6, "healthcare": 0.4}}
 
 
 def test_sample_tickers_reads_all_csvs_and_skips_cash():
@@ -48,3 +49,18 @@ def test_main_includes_samples_proxies_and_extras(tmp_path):
     built = set(json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))["tickers"])
     assert {"VOO", "^GSPC", "AGG", "ARKK"} <= built
     assert (tmp_path / "prices" / "_GSPC.parquet").exists()
+    bench = json.loads((tmp_path / "sp500_benchmark.json").read_text(encoding="utf-8"))  # not data/reference
+    assert bench["fund"] == "VOO" and bench["source"] == "yfinance"
+
+
+def test_benchmark_falls_back_to_snapshot(tmp_path):
+    md.save_profile(fake_profile("VOO"), tmp_path)
+    out = tmp_path / "ref.json"
+
+    def broken(ticker):
+        raise ConnectionError("offline")
+
+    data = build_snapshot.write_benchmark(out, fetch_profile=broken, snapshot_dir=tmp_path)
+    assert data["source"] == "offline snapshot" and data["fund_name"] == "VOO Fund" and data["as_of"] == "2026-10-17"
+    assert data["sector_weights"] == {"Information Technology": 0.6, "Health Care": 0.4}
+    assert json.loads(out.read_text(encoding="utf-8"))["top_holdings"][0]["symbol"] == "X"

@@ -1,0 +1,6 @@
+{
+ "agent": "analyst",
+ "text": "{\"findings\":[{\"title\":\"Retirement gap in middle scenario\",\"why_it_matters\":\"At the middle return assumption, the projected retirement balance is $266,538 below the target nest egg.\",\"fact_keys\":[\"retirement_plan.scenarios[1].gap_usd\",\"retirement_plan.scenarios[1].projected_at_retirement_usd\",\"retirement_plan.target_nest_egg_usd\"],\"dollar_fact_key\":\"retirement_plan.scenarios[1].gap_usd\"},{\"title\":\"Large replayed 2008 drawdown\",\"why_it_matters\":\"The 2008–09 replay shows a potential portfolio drawdown of $8,460, with recovery taking 24.6 months.\",\"fact_keys\":[\"crash_replays[0].max_drawdown_usd\",\"crash_replays[0].max_drawdown_pct\",\"crash_replays[0].months_to_recover\"],\"dollar_fact_key\":\"crash_replays[0].max_drawdown_usd\"},{\"title\":\"Two companies exceed concentration threshold\",\"why_it_matters\":\"NVIDIA and Apple each exceed 10% of the portfolio, with NVIDIA the largest holding at 14.3%.\",\"fact_keys\":[\"concentration.companies_over_threshold[0].pct\",\"concentration.companies_over_threshold[1].pct\",\"concentration.largest_company.pct\",\"portfolio.largest_holdings[1].usd\"],\"dollar_fact_key\":\"portfolio.largest_holdings[1].usd\"}]}",
+ "input_tokens": 2029,
+ "output_tokens": 311
+}

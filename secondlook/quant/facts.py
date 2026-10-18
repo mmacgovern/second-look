@@ -14,6 +14,7 @@ import math
 import pandas as pd
 
 from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, RETIREMENT_TAX_RATE, AccountSummary, Household, summarize
+from secondlook.quant.benchmark import BENCHMARK_FILE, Benchmark, facts_block, load_benchmark
 from secondlook.quant.concentration import CONCENTRATION_THRESHOLD, Concentration, concentration, stock_sectors
 from secondlook.quant.fees import BASELINE_EXPENSE_RATIO, fee_report
 from secondlook.quant.models import CASH, Action, Portfolio
@@ -270,6 +271,8 @@ def assemble(portfolio: Portfolio, xr: XRay, fees, replays, pause, level: dict, 
     if extras.get("user") is not None:
         facts["investor"] = _investor(extras["user"], extras.get("risk"), xr, extras.get("glide"))
         facts["retirement_plan"] = _plan(extras["plan"], extras["user"])
+    if extras.get("benchmark") is not None:
+        facts["look_through"]["vs_sp500"] = facts_block(xr, extras["benchmark"], 3 if level["sectors"] >= 6 else 2)
     if xr.funds_without_holdings:
         facts["look_through"]["funds_without_holdings"] = xr.funds_without_holdings
     if xr.unknown_symbols:
@@ -302,6 +305,7 @@ def build_facts(
     threshold: float = CONCENTRATION_THRESHOLD,
     market_sectors: dict[str, float] | None = None,
     glide_path: GlidePath | None = None,
+    benchmark: Benchmark | None = None,
 ) -> dict:
     """Facts for one portfolio, or for a household (all accounts merged) plus an optional plan."""
     if household is not None:
@@ -314,7 +318,10 @@ def build_facts(
     replays = replay(values, adj, SCENARIOS, PROXY_MAP)
     pause = pause_check(values, action, profiles, adj) if action is not None else None
 
+    if benchmark is None and BENCHMARK_FILE.exists():
+        benchmark = load_benchmark()
     extras: dict = {
+        "benchmark": benchmark,
         "threshold": threshold,
         "tax_rate": tax_rate,
         "concentration": concentration(values, profiles, reference=market_sectors, threshold=threshold,

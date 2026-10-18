@@ -1,0 +1,6 @@
+{
+ "agent": "verifier",
+ "text": "{\"passed\":false,\"problems\":[\"Revise “a 15% flat tax on pre-tax accounts”: the facts show this account is a Roth IRA, so that assumption does not describe the account being projected.\"]}",
+ "input_tokens": 2365,
+ "output_tokens": 292
+}

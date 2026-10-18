@@ -24,6 +24,9 @@ from secondlook import budget, demo_runs, orchestrator
 from secondlook.agents.base import AgentContext
 from secondlook.config import get_settings
 from secondlook.quant.accounts import ACCOUNT_TYPE_LABELS, RETIREMENT_TAX_RATE, counted_balance, household_from_csvs
+from secondlook.quant.benchmark import (
+    BENCHMARK_FILE, comparison_sentence, donut_slices, load_benchmark, sector_rows, stock_sector_weights, top_ten,
+)
 from secondlook.quant.concentration import CONCENTRATION_THRESHOLD, concentration
 from secondlook.quant.facts import build_facts, load_market_inputs
 from secondlook.quant.fees import fee_report
@@ -408,6 +411,99 @@ def plot_layout(fig: go.Figure, height: int = 420) -> go.Figure:
     return fig
 
 
+@st.cache_resource(show_spinner=False)
+def sp500_benchmark():
+    return load_benchmark() if BENCHMARK_FILE.exists() else None
+
+
+# Gold shades plus greys for the donut; every slice is also labelled, so colour is never the only cue.
+SLICE_COLORS = ["#D4AF37", "#B8902A", "#F1D67A", "#8A6D1C", "#E6C76B", "#6B5A33", "#A08A55", "#5A5548", "#C9B98A",
+                "#3A362C", "#8C877A", "#2A2720"]
+
+
+def what_you_own(inputs: Inputs, xr) -> None:
+    """Top 10 companies and sector mix next to the S&P 500 (all numbers from Python; no AI)."""
+    bench = sp500_benchmark()
+    st.markdown("#### What you own")
+    if bench is None:
+        st.info("The S&P 500 reference (data/reference/sp500_benchmark.json) is missing; run scripts/build_snapshot.py.")
+        return
+
+    look_through = st.toggle("Count shares inside funds", value=True, key=f"lt-{inputs.key}",
+                             help="On: companies you own through funds count too. Off: direct holdings only.")
+    top = top_ten(xr, bench, look_through=look_through)
+    mode = "counting shares inside funds" if look_through else "direct holdings only"
+    st.markdown(f'<div class="sl-headline">Top 10 = {100 * top.weight:.1f}% of your money vs. '
+                f'{100 * top.sp500_weight:.1f}% of the S&P 500</div>'
+                f'<p class="sl-muted">Your 10 largest companies ({mode}) as a share of your whole portfolio, next to '
+                f'each company\'s weight in the S&P 500.</p>', unsafe_allow_html=True)
+    if not top.rows:
+        st.markdown('<p class="sl-muted">You hold no individual companies directly.</p>', unsafe_allow_html=True)
+    else:
+        rows = list(reversed(top.rows))  # largest at the top of a horizontal chart
+        names = [f"{r.name} ({r.symbol})" for r in rows]
+        sp = [100 * r.sp500_weight if r.sp500_weight is not None else 0 for r in rows]
+        sp_text = [f"S&P 500 {100 * r.sp500_weight:.1f}%" if r.sp500_weight is not None else "S&P 500: not in fund's top 10"
+                   for r in rows]
+        fig = go.Figure([
+            go.Bar(name="S&P 500", y=names, x=sp, orientation="h", marker=dict(color="#5A5548", pattern_shape="/",
+                   pattern_fgcolor="#8C877A"), text=sp_text, textposition="outside", cliponaxis=False,
+                   hovertemplate="%{y}: %{text}<extra></extra>"),
+            go.Bar(name="You", y=names, x=[100 * r.weight for r in rows], orientation="h", marker_color=ACCENT,
+                   text=[f"You {100 * r.weight:.1f}%" for r in rows], textposition="outside", cliponaxis=False,
+                   hovertemplate="%{y}: %{text}<extra></extra>"),
+        ])
+        fig.update_layout(barmode="group", bargap=0.25, legend=dict(traceorder="reversed"))
+        fig.update_xaxes(ticksuffix="%", range=[0, max([100 * r.weight for r in rows] + sp) * 1.45])
+        st.plotly_chart(plot_layout(fig, 90 + 58 * len(rows)), key=f"top10-{inputs.key}-{look_through}")
+
+    st.markdown("##### Industry mix")
+    mine = stock_sector_weights(xr)
+    if not mine:
+        st.markdown('<p class="sl-muted">No stock holdings to sort into industries.</p>', unsafe_allow_html=True)
+    else:
+        slices = donut_slices(mine)
+        left, right = st.columns([3, 2], vertical_alignment="center")
+        with left:
+            pie = go.Figure(go.Pie(labels=list(slices), values=[100 * v for v in slices.values()], hole=0.55, sort=False,
+                                   marker=dict(colors=SLICE_COLORS[:len(slices)], line=dict(color=BG, width=2)),
+                                   texttemplate="%{label}<br>%{value:.1f}%", textposition="outside",
+                                   textfont=dict(size=14), hovertemplate="%{label}: %{value:.1f}%<extra></extra>"))
+            pie.update_layout(showlegend=False, annotations=[dict(text="Your<br>stocks", showarrow=False,
+                                                                  font=dict(size=14, color=INK))])
+            pie = plot_layout(pie, 470)
+            pie.update_layout(margin=dict(l=90, r=90, t=50, b=50))
+            st.plotly_chart(pie, key=f"donut-{inputs.key}")
+        with right:
+            for row in sector_rows(xr, bench)[:3]:
+                st.markdown(f"- {safe(comparison_sentence(row))}")
+            other = [k for k in mine if k not in slices]
+            if other:
+                st.caption(f"Other = sectors under 3% each: {', '.join(other)}.")
+            labels = {"cash": "cash (including cash inside funds)"}
+            bonds_cash = [f"{labels.get(k, SECTOR_LABELS.get(k, k).lower())} {100 * xr.sectors[k]:.1f}%"
+                          for k in ("bonds", "cash", "other", "unclassified") if xr.sectors.get(k, 0) >= 0.0005]
+            st.caption("Shares of your stock holdings only" + (f"; not included: {', '.join(bonds_cash)} of the portfolio."
+                                                                 if bonds_cash else "."))
+
+        st.markdown("##### Each sector: you vs. the S&P 500 (biggest differences first)")
+        rows = list(reversed(sector_rows(xr, bench)))
+        names = [r.sector for r in rows]
+        fig = go.Figure([
+            go.Bar(name="S&P 500", y=names, x=[100 * r.sp500_weight for r in rows], orientation="h",
+                   marker=dict(color="#5A5548", pattern_shape="/", pattern_fgcolor="#8C877A"),
+                   text=[f"S&P 500 {100 * r.sp500_weight:.1f}%" for r in rows], textposition="outside", cliponaxis=False),
+            go.Bar(name="You", y=names, x=[100 * r.weight for r in rows], orientation="h", marker_color=ACCENT,
+                   text=[f"You {100 * r.weight:.1f}%" for r in rows], textposition="outside", cliponaxis=False),
+        ])
+        fig.update_layout(barmode="group", bargap=0.25, legend=dict(traceorder="reversed"))
+        fig.update_xaxes(ticksuffix="%", range=[0, max(max(100 * r.weight, 100 * r.sp500_weight) for r in rows) * 1.4])
+        st.plotly_chart(plot_layout(fig, 90 + 52 * len(rows)), key=f"sectors-sp-{inputs.key}")
+    st.caption(f"{bench.label} ({bench.source}). The fund reports only its top 10 holdings. "
+               "These are comparisons, not recommendations.")
+    st.divider()
+
+
 def xray_tab(inputs: Inputs) -> None:
     xr = xray(inputs.values, inputs.profiles, top_n=1_000_000)
     lt = inputs.facts["look_through"]
@@ -417,6 +513,8 @@ def xray_tab(inputs: Inputs) -> None:
     b.metric("Traced to named companies", f"{lt['coverage_pct_of_invested']}%",
              help="Share of the invested money (not cash) that could be traced to individual companies.")
     c.metric("Cash", f"{100 * xr.cash_weight:.1f}%")
+
+    what_you_own(inputs, xr)
 
     frame = treemap_frame(xr)
     colors = {"root": BG, "company": "#D4AF37", "part": "#B8902A", "other": "#8A6D1C",

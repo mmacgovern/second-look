@@ -72,7 +72,7 @@ def slides() -> list[str]:
 <p class="cap">Python computes. Agents explain. Verifier checks. At most 4 AI calls.</p>""", "wide"))
 
     # (file, caption, top, bottom): the slice of each screenshot that shows the feature
-    shots = [("06-midcareer-xray.png", "What you really own", 0.17, 0.52), ("10-midcareer-top3.png", "Top 3 findings", 0.33, 0.66),
+    shots = [("06-midcareer-xray.png", "What you own vs. S&P 500", 0.145, 0.34), ("10-midcareer-top3.png", "Top 3 findings", 0.33, 0.66),
              ("18-midcareer-pause-sell-all.png", "Pause Button", 0.54, 0.89)]
     figs = "".join(f"<figure>{br.crop_image(f, c, top, bottom, 700, *br.APP_CONTENT)}<figcaption>{c}</figcaption></figure>"
                    for f, c, top, bottom in shots)

@@ -1,6 +1,0 @@
-{
- "agent": "verifier",
- "text": "{\"passed\":false,\"problems\":[\"Qualify “Apple accounts for 13.3% of the portfolio” and “or $24,068” as minimum identified look-through exposure; fund holdings coverage is incomplete.\"]}",
- "input_tokens": 2838,
- "output_tokens": 238
-}

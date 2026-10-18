@@ -1,0 +1,72 @@
+{
+ "fund": "VOO",
+ "fund_name": "Vanguard S&P 500 ETF",
+ "as_of": "2026-10-17",
+ "source": "yfinance",
+ "note": "S&P 500 reference = this index fund's reported top holdings and sector weights. The fund reports only its top 10 holdings.",
+ "top_holdings": [
+  {
+   "symbol": "NVDA",
+   "name": "NVIDIA Corp",
+   "weight": 0.083926
+  },
+  {
+   "symbol": "AAPL",
+   "name": "Apple Inc",
+   "weight": 0.073805
+  },
+  {
+   "symbol": "MSFT",
+   "name": "Microsoft Corp",
+   "weight": 0.057835
+  },
+  {
+   "symbol": "AMZN",
+   "name": "Amazon.com Inc",
+   "weight": 0.037137
+  },
+  {
+   "symbol": "GOOGL",
+   "name": "Alphabet Inc Class A",
+   "weight": 0.03072
+  },
+  {
+   "symbol": "AVGO",
+   "name": "Broadcom Inc",
+   "weight": 0.025373
+  },
+  {
+   "symbol": "GOOG",
+   "name": "Alphabet Inc Class C",
+   "weight": 0.024537
+  },
+  {
+   "symbol": "META",
+   "name": "Meta Platforms Inc Class A",
+   "weight": 0.024284
+  },
+  {
+   "symbol": "MU",
+   "name": "Micron Technology Inc",
+   "weight": 0.018267
+  },
+  {
+   "symbol": "TSLA",
+   "name": "Tesla Inc",
+   "weight": 0.015184
+  }
+ ],
+ "sector_weights": {
+  "Real Estate": 0.017,
+  "Consumer Discretionary": 0.0875,
+  "Materials": 0.0156,
+  "Consumer Staples": 0.0433,
+  "Information Technology": 0.4048,
+  "Communication Services": 0.0995,
+  "Financials": 0.1114,
+  "Utilities": 0.0188,
+  "Industrials": 0.0755,
+  "Energy": 0.034,
+  "Health Care": 0.0926
+ }
+}

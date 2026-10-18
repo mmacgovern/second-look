@@ -365,3 +365,18 @@ Use no invented user numbers. Run the tests and commit.
 **Result:** Rewrote report Section 7 and slide 8 around measured costs and the sample personas' computed fee and concentration figures (assumption-based numbers labeled "estimate"), removed the user-time sentence from Section 2, made "Run a user study (5-6 people, timed against a spreadsheet, with a comprehension check)" the first next step, and removed every user-test TODO and user_test_results.md reference; report still 15 printed pages; 481 tests passed.
 
 **Result (live red-team):** Ran the live red-team against the real model (63/63 passed, $0.0068), saved to docs/redteam_results_live.json, and updated report Section 6 to show demo and live results side by side; 481 tests passed.
+
+### #20 — 2026-10-17 23:53 — Phase 17 — What you own
+
+```text
+Add a "What you own" view to the X-Ray tab. Use the existing look-through data; add no LLM calls. Don't read .env.
+
+1. Top 10 holdings: a horizontal bar chart of the 10 largest companies by % of the user's total portfolio (look-through, counting shares inside funds). Next to each bar, show that company's weight in the S&P 500. Add a toggle for "Count shares inside funds" (on by default) vs. "Direct holdings only". Show "Top 10 = X% of your money vs. Y% of the S&P 500" as a headline.
+2. Industry mix: a donut chart of the user's sector weights (standard 11 GICS sectors, with small slices grouped into "Other"). Below it, a paired bar chart of each sector: you vs. the S&P 500, with the biggest differences sorted to the top.
+3. Benchmark data: use the holdings and sector weights of an S&P 500 index ETF (SPY or VOO) as the S&P 500 reference, from yfinance with the offline snapshot as fallback. Save it in data/reference/ with the fund name and an "as of" date, and show "S&P 500 weights via [fund], as of [date]" under the charts. Add it to build_snapshot.py.
+4. Wording: neutral comparisons only ("You hold 2.4x the S&P 500's weight in Technology"), never advice. Add these comparison numbers to Facts JSON so the explainer can mention them and the verifier checks them.
+5. Match the black and gold theme. Label every slice and bar with its %, and don't rely on color alone. Make it readable on a laptop screen.
+6. Add tests for the top-10 and sector math, including that percentages sum to 100. Re-record demo mode for the 3 sample personas (ask me before any live API calls), retake X-Ray screenshots, update the report's demo screenshots and slide 5, then commit.
+```
+
+**Result:** Added the "What you own" view to the X-Ray tab (top 10 companies vs. S&P 500 with a direct-only toggle and headline, GICS industry donut, you-vs-S&P sector bars, all labeled with %), an S&P 500 reference from VOO (data/reference/sp500_benchmark.json, written by build_snapshot.py with snapshot fallback), neutral vs_sp500 numbers in Facts JSON for the explainer and verifier, math tests; re-recorded demo mode live ($0.0154, 14/14 replay free), retook screenshots and updated the report and slide 5; 494 tests passed.

@@ -131,3 +131,16 @@ def test_risk_ranges_are_labelled_rule_of_thumb(monkeypatch):
     at = open_app(monkeypatch, tab="Retirement Plan")  # the stock-mix comparison lives on the plan tab
     text = " ".join(m.value for m in at.markdown)
     assert RANGE_LABEL in text and "rule-of-thumb range" in text
+
+
+def test_what_you_own_headline_and_direct_toggle(monkeypatch):
+    at = open_app(monkeypatch, tab="X-Ray")
+    text = " ".join(m.value for m in at.markdown)
+    assert "Top 10 = 57.4% of your money vs. 39.1% of the S&P 500" in text
+    assert any("S&P 500 weights via Vanguard S&P 500 ETF (VOO), as of" in c.value for c in at.caption)
+    toggle = next(t for t in at.toggle if t.label == "Count shares inside funds")
+    assert toggle.value is True
+    toggle.set_value(False).run()
+    assert not at.exception
+    direct = " ".join(m.value for m in at.markdown)
+    assert "(direct holdings only)" in direct and "Top 10 = 57.4%" not in direct

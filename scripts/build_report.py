@@ -343,6 +343,7 @@ def build() -> str:
     {table(["Agent", "Input tokens", "Output tokens"], ledger_rows)}</li>
   </ol>
   <figure>{crop_image("10-midcareer-top3.png", "Top 3 tab for the mid-career sample", 0.33, 0.66, 900, *APP_CONTENT)}<figcaption>The same run in the app (Top 3 Things Worth Knowing tab).</figcaption></figure>
+  <figure>{crop_image("06-midcareer-xray.png", "What you own: top 10 companies and industry mix vs. the S&P 500", 0.14, 0.46, 900, *APP_CONTENT)}<figcaption>The X-Ray tab's "What you own" view for the same sample: top 10 companies and industry mix next to the S&P 500. Pure Python, no AI calls; the comparison numbers also go into the Facts JSON so the explainer can mention them and the verifier checks them.</figcaption></figure>
 </section>"""
 
     # --- 5 -----------------------------------------------------------------------

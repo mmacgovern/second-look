@@ -1,0 +1,6 @@
+{
+ "agent": "analyst",
+ "text": "{\"findings\":[{\"title\":\"Retirement Gap in Cautious Scenario\",\"why_it_matters\":\"The cautious scenario projects a $1,043,314 shortfall against the target nest egg at retirement.\",\"fact_keys\":[\"retirement_plan.scenarios[0].gap_usd\",\"retirement_plan.scenarios[0].projected_at_retirement_usd\",\"retirement_plan.target_nest_egg_usd\"],\"dollar_fact_key\":\"retirement_plan.scenarios[0].gap_usd\"},{\"title\":\"Large Replay Drawdown\",\"why_it_matters\":\"In the 2008–09 crisis replay, the portfolio’s maximum drawdown was $98,155, or 54.2%.\",\"fact_keys\":[\"crash_replays[0].max_drawdown_usd\",\"crash_replays[0].max_drawdown_pct\",\"crash_replays[0].months_to_recover\"],\"dollar_fact_key\":\"crash_replays[0].max_drawdown_usd\"},{\"title\":\"Apple Exposure Across Holdings\",\"why_it_matters\":\"Look-through estimates show at least $24,068 in Apple exposure, including exposure through multiple funds as well as direct holdings.\",\"fact_keys\":[\"look_through.top_companies[0].usd\",\"look_through.top_companies[0].pct\",\"look_through.top_companies[0].via_pct\",\"look_through.coverage_pct_of_invested\"],\"dollar_fact_key\":\"look_through.top_companies[0].usd\"}]}",
+ "input_tokens": 2594,
+ "output_tokens": 447
+}
