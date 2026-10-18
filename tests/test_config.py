@@ -78,3 +78,29 @@ def test_get_logger_adds_filter_once():
 def test_reasoning_effort_setting():
     assert load_settings(env_file=None, environ={}).reasoning_effort == "low"
     assert load_settings(env_file=None, environ={"REASONING_EFFORT": " high "}).reasoning_effort == "high"
+
+
+def test_env_one_folder_up_is_read_and_project_env_wins(tmp_path):
+    parent, project = tmp_path / "parent.env", tmp_path / "project.env"
+    parent.write_text(f"PORTKEY_API_KEY={ODD_KEY}\nMODEL_FAST=parent-model\n", encoding="utf-8")
+    s = load_settings(env_file=project, environ={}, parent_env_file=parent)  # project .env missing
+    assert s.has_key and s.model_fast == "parent-model"
+    project.write_text("MODEL_FAST=project-model\n", encoding="utf-8")
+    assert load_settings(env_file=project, environ={}, parent_env_file=parent).model_fast == "project-model"
+    assert load_settings(env_file=project, environ={"MODEL_FAST": "env-model"}, parent_env_file=parent).model_fast == "env-model"
+
+
+def test_key_without_demo_setting_runs_live_and_demo_true_forces_demo(tmp_path):
+    parent = tmp_path / "parent.env"
+    parent.write_text(f"PORTKEY_API_KEY={ODD_KEY}\n", encoding="utf-8")
+    assert load_settings(env_file=tmp_path / "none.env", environ={}, parent_env_file=parent).demo_mode is False
+    assert load_settings(env_file=tmp_path / "none.env", environ={"DEMO_MODE": "true"}, parent_env_file=parent).demo_mode
+    parent.write_text(f"PORTKEY_API_KEY={ODD_KEY}\nDEMO_MODE=\n", encoding="utf-8")  # blank, as in .env.example
+    assert load_settings(env_file=tmp_path / "none.env", environ={}, parent_env_file=parent).demo_mode is False
+
+
+def test_no_key_is_always_demo_and_env_file_none_skips_both_files(tmp_path):
+    parent = tmp_path / "parent.env"
+    parent.write_text(f"PORTKEY_API_KEY={ODD_KEY}\n", encoding="utf-8")
+    assert load_settings(env_file=None, environ={}, parent_env_file=parent).demo_mode is True
+    assert load_settings(env_file=None, environ={"DEMO_MODE": "false"}).demo_mode is True

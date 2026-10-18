@@ -16,6 +16,7 @@ def isolated(tmp_path, monkeypatch):
     for name in config.ENV_FIELDS:
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(config, "ENV_FILE", tmp_path / "no-such.env")
+    monkeypatch.setattr(config, "PARENT_ENV_FILE", tmp_path / "no-such-parent.env")
     config.get_settings.cache_clear()
     monkeypatch.setattr(budget, "LEDGER_PATH", tmp_path / ".runtime" / "ledger.db")
     # Test-only models with round prices, so hand-calculated costs stay simple.

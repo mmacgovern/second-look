@@ -390,3 +390,11 @@ Also I push back on the Apps' stated priority to never advice. I'd like the App 
 ```
 
 **Result:** Added a Possible Shifts tab: Python rules (secondlook/quant/shifts.py) suggest shifts between sectors (vs. the S&P 500), asset types (vs. the risk-profile rule of thumb), away from single-company concentration, toward low-cost index funds and bonds into pre-tax accounts; a new shifts agent words them and is rejected if it names any stock, fund or ticker; a generative-AI / not-a-financial-advisor disclaimer now sits on the tab and in the footer; README, CLAUDE.md, report and slides updated; demo re-recorded live ($0.0112, 23/23 replay free); screenshots retaken; report still 15 pages; 507 tests passed.
+
+### #22 — 2026-10-18 08:34 — Phase 19 — Rubric fixes
+
+```text
+Do items 1, 3 and 5: fix the .env location and live default, add a per-agent run trace to the report, and explain the no-tools design choice. Run tests and commit each separately.
+```
+
+**Result (item 1):** Settings now read `.env` one folder up as well as in the project folder (project wins, environment wins over both), a key with DEMO_MODE left empty runs live, DEMO_MODE=true forces demo, run_app.py gained --demo, .env.example and the README were updated; 511 tests passed.

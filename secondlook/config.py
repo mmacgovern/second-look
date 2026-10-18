@@ -1,8 +1,12 @@
 """Settings for Second Look. The only module that reads environment variables.
 
-Values come from the process environment, then from `.env` (loaded with
-python-dotenv without modifying os.environ). The Portkey key is held as a
+Values come from the process environment first, then from `.env` in the project
+folder, then from `.env` one folder up (where graders keep theirs). Files are loaded
+with python-dotenv without modifying os.environ. The Portkey key is held as a
 pydantic SecretStr, so it never appears in repr/str of the settings object.
+
+Mode: with a key and DEMO_MODE unset, the app runs live; without a key it always
+runs in demo mode; DEMO_MODE=true forces demo mode even with a key.
 """
 
 from __future__ import annotations
@@ -18,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, m
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = PROJECT_ROOT / ".env"
+PARENT_ENV_FILE = PROJECT_ROOT.parent / ".env"
 REDACTED = "[REDACTED]"
 
 PLACEHOLDER_KEYS = {"", "your-key-here"}
@@ -92,22 +97,28 @@ class Settings(BaseModel):
         return [self.portkey_api_key.get_secret_value()] if self.portkey_api_key else []
 
 
-def load_settings(env_file: Path | str | None = ENV_FILE, environ: dict | None = None) -> Settings:
-    """Build Settings from `.env` plus the environment (environment wins)."""
+def load_settings(env_file: Path | str | None = ENV_FILE, environ: dict | None = None,
+                  parent_env_file: Path | str | None = PARENT_ENV_FILE) -> Settings:
+    """Build Settings from the parent-folder `.env`, then the project `.env`, then the environment
+    (later sources win). env_file=None skips both files."""
     values: dict[str, str | None] = {}
-    if env_file is not None and Path(env_file).exists():
-        values.update(dotenv_values(env_file))
+    if env_file is not None:
+        for path in (parent_env_file, env_file):
+            if path is not None and Path(path).exists():
+                values.update(dotenv_values(path))
     source = os.environ if environ is None else environ
     values.update({k: source[k] for k in ENV_FIELDS if k in source})
     data = {field: values[env] for env, field in ENV_FIELDS.items() if values.get(env) not in (None, "")}
     if "portkey_api_key" not in data:
         data["demo_mode"] = True
+    elif "demo_mode" not in data:
+        data["demo_mode"] = False  # a key and no DEMO_MODE setting: run live
     return Settings(**data)
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return load_settings(ENV_FILE)
+    return load_settings(ENV_FILE, parent_env_file=PARENT_ENV_FILE)
 
 
 def redact(text: object, secrets: list[str] | None = None) -> str:

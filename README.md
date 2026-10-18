@@ -58,10 +58,9 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```bash
    cp .env.example .env
    ```
-7. **Optional: add a Portkey key** for live AI explanations. Skip this step to run free in demo mode. Open the file with `open -e .env`, replace `your-key-here` with your own key and `true` with `false` on these two lines, then save and close:
+7. **Optional: add a Portkey key** for live AI explanations. Skip this step to run free in demo mode. Open the file with `open -e .env`, replace `your-key-here` with your own key, then save and close. (A `.env` one folder up, next to the project folder, also works; the project's own `.env` wins if both exist.)
    ```
    PORTKEY_API_KEY=your-key-here
-   DEMO_MODE=true
    ```
 8. **Start the app.** Your browser opens at http://localhost:8501. To stop the app, click the Terminal window and press Ctrl+C.
    ```bash
@@ -97,10 +96,9 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```powershell
    copy .env.example .env
    ```
-7. **Optional: add a Portkey key** for live AI explanations. Skip this step to run free in demo mode. Open the file with `notepad .env`, replace `your-key-here` with your own key and `true` with `false` on these two lines, then save and close:
+7. **Optional: add a Portkey key** for live AI explanations. Skip this step to run free in demo mode. Open the file with `notepad .env`, replace `your-key-here` with your own key, then save and close. (A `.env` one folder up, next to the project folder, also works; the project's own `.env` wins if both exist.)
    ```
    PORTKEY_API_KEY=your-key-here
-   DEMO_MODE=true
    ```
 8. **Start the app.** Your browser opens at http://localhost:8501. To stop the app, click the PowerShell window and press Ctrl+C.
    ```powershell
@@ -115,7 +113,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
 - Tabs: **X-Ray** (what you really own), **Fee Clock** (what fees cost), **Crash Replay** (past crises), **Retirement Plan** (with adjustable assumptions), **Top 3 Things Worth Knowing** (the AI explanation), **Possible Shifts** (suggested shifts between industries, asset types and account types; never specific securities).
 - The **Pause button** shows what a trade you are considering would change, and what happened to people who made similar moves in past crashes. It never says whether to do it.
 
-**Demo mode** (the default, `DEMO_MODE=true`) costs nothing and needs no key. It replays saved AI explanations for the three sample portfolios. For your own uploads, or if you change a sample's answers, it shows a standard summary built straight from the numbers instead.
+**Demo mode** (used automatically when no key is found, or forced with `DEMO_MODE=true`) costs nothing and needs no key. With a key and `DEMO_MODE` left empty, the app runs live. It replays saved AI explanations for the three sample portfolios. For your own uploads, or if you change a sample's answers, it shows a standard summary built straight from the numbers instead.
 
 **Your privacy:** uploaded files are processed in memory and never saved. Account numbers and descriptions are removed before anything reaches the AI, and the AI only sees computed numbers.
 
@@ -168,7 +166,7 @@ Every AI call goes through a budget check first and is recorded in a local ledge
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `DEMO_MODE` | `true` | `true` replays saved answers for free; `false` makes live AI calls (needs a key) |
+| `DEMO_MODE` | empty | Empty: live when a key is set, demo without one. `true` forces free demo mode; `false` asks for live calls (needs a key) |
 | `PORTKEY_API_KEY` | `your-key-here` | Your own Portkey key. Keep it only in `.env`, which git never uploads |
 | `MODEL_FAST` / `MODEL_SMART` | `gpt-6-luna` | Models for quick checks / explanations |
 | `SESSION_BUDGET_USD` | `0.10` | Most one visit can spend |
