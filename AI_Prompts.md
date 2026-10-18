@@ -380,3 +380,5 @@ Add a "What you own" view to the X-Ray tab. Use the existing look-through data; 
 ```
 
 **Result:** Added the "What you own" view to the X-Ray tab (top 10 companies vs. S&P 500 with a direct-only toggle and headline, GICS industry donut, you-vs-S&P sector bars, all labeled with %), an S&P 500 reference from VOO (data/reference/sp500_benchmark.json, written by build_snapshot.py with snapshot fallback), neutral vs_sp500 numbers in Facts JSON for the explainer and verifier, math tests; re-recorded demo mode live ($0.0154, 14/14 replay free), retook screenshots and updated the report and slide 5; 494 tests passed.
+
+**Result (big-model comparison):** Ran the quality comparison with every agent on gpt-6-sol ($0.3493 including the normal-routing runs): it cost 24x as much per analysis and passed the verifier on 11% of first drafts vs. 78% for normal routing; copied docs/quality_vs_cost.json/.md and updated report Section 5 and 8; 494 tests passed. (Correction: the previous Result line should say 493 tests.)

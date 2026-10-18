@@ -377,8 +377,21 @@ def build() -> str:
   <text class="t" x="0" y="80">With cache</text><rect x="120" y="66" width="{460 * rc['mean_usd_per_analysis'] / cache_bar_max:.1f}" height="22" fill="#0E7C86"/>
   <text class="t" x="{125 + 460 * rc['mean_usd_per_analysis'] / cache_bar_max:.1f}" y="82">{usd(rc['mean_usd_per_analysis'], 6)}</text>
 </svg>"""
-    smart_note = "" if len(quality["routings"]) > 1 else (
-        f'<p>{todo("MODEL_SMART-for-every-agent comparison (skipped to save cost; run scripts/measure_costs.py --smart-model gpt-6-sol, about $0.22)")}</p>')
+    routings = quality["routings"]
+    smart = routings.get("MODEL_SMART for every agent")
+    if smart:
+        normal = routings["Normal routing"]
+        smart_note = (
+            f"<p>Running every agent on the larger model ({esc(smart['models'])}) cost "
+            f"{smart['mean_usd_per_analysis'] / normal['mean_usd_per_analysis']:.0f}x as much per analysis "
+            f"({usd(smart['mean_usd_per_analysis'], 4)} vs. {usd(normal['mean_usd_per_analysis'], 4)}) and did not "
+            f"improve quality on this measure: {100 * smart['first_draft_pass_rate']:.0f}% of its first drafts passed the "
+            f"verifier, against {100 * normal['first_draft_pass_rate']:.0f}% for normal routing, with "
+            f"{smart['template_fallbacks']} fallback(s) to the safe template. The verifier rewards drafts that use only "
+            f"numbers from the facts, so this measures accuracy and rule-following, not writing style. "
+            f"{normal['analyses']} analyses per routing (run <code>{esc(quality['run_id'])}</code>).</p>")
+    else:
+        smart_note = f'<p>{todo("MODEL_SMART-for-every-agent comparison (run scripts/measure_costs.py --smart-model gpt-6-sol)")}</p>'
     s5 = f"""
 <section>
   <h2>5. Tokenomics</h2>
@@ -525,7 +538,7 @@ def build() -> str:
   <ul>
     <li><strong>Run a user study (5-6 people, timed against a spreadsheet, with a comprehension check).</strong></li>
     <li>Full fund holdings from fund filings instead of top 10.</li>
-    <li>Tune the verifier using its recorded reasons to cut rewrites; run the MODEL_SMART quality comparison.</li>
+    <li>Tune the verifier using its recorded reasons to cut rewrites.</li>
     <li>Deploy online with proper secret handling.</li>
     <li>Monte Carlo ranges instead of three fixed scenarios; basic tax awareness.</li>
     <li>Parking-lot ideas: {todo("add the parking-lot list (none is recorded in the repository yet)")}</li>

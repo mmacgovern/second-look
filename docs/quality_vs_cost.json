@@ -1,14 +1,23 @@
 {
- "run_id": "costs-20261017-214350",
+ "run_id": "costs-20261018-072604",
  "routings": {
   "Normal routing": {
    "models": "fast gpt-6-luna, smart gpt-6-luna",
    "analyses": 9,
-   "first_draft_pass_rate": 0.889,
-   "rewrites": 1,
+   "first_draft_pass_rate": 0.778,
+   "rewrites": 2,
    "template_fallbacks": 0,
-   "total_usd": 0.013148,
-   "mean_usd_per_analysis": 0.0014609
+   "total_usd": 0.013907,
+   "mean_usd_per_analysis": 0.0015452
+  },
+  "MODEL_SMART for every agent": {
+   "models": "all gpt-6-sol",
+   "analyses": 9,
+   "first_draft_pass_rate": 0.111,
+   "rewrites": 8,
+   "template_fallbacks": 2,
+   "total_usd": 0.335417,
+   "mean_usd_per_analysis": 0.0372686
   }
  }
 }

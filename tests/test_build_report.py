@@ -71,3 +71,11 @@ def test_required_pieces(page):
 def test_prompt_log_parses_phases():
     log = br.prompt_log()
     assert log and log[0]["n"] == 1 and all(e["phase"] for e in log)
+
+
+def test_big_model_comparison_reported_from_quality_file(page):
+    q = json.loads((ROOT / "docs" / "quality_vs_cost.json").read_text(encoding="utf-8"))["routings"]
+    if "MODEL_SMART for every agent" in q:
+        smart = q["MODEL_SMART for every agent"]
+        assert f"{100 * smart['first_draft_pass_rate']:.0f}% of its first drafts passed" in page
+        assert "TODO: MODEL_SMART" not in page
