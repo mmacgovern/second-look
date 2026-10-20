@@ -438,3 +438,5 @@ Apply the fixes: pin numpy 2.5.3 and pyarrow 25.0.1 (and reinstall them in the m
 ```
 
 **Result:** Pinned numpy 2.5.3 and pyarrow 25.0.1 (reinstalled in the main .venv, which Smart App Control had broken), switched the README to python -m pip / python -m streamlit with a Smart App Control troubleshooting entry and a short-path tip, and shortened the 49 demo recording file names to 20 characters (old long names still load); demo replay 32/32 for $0; 527 tests passed.
+
+**Result (rehearsal re-run):** After the fixes, a fresh clone 95 characters deep installed with python -m pip (no Smart App Control blocks), passed all 527 tests and ran every page in demo mode; the README now says to keep the project folder path under about 90 characters (deeper folders hit Windows' path limit inside pyarrow's own files); temp folders and launch entry removed.

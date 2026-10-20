@@ -80,7 +80,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
    git clone https://github.com/YOUR-ACCOUNT/second-look.git
    cd second-look
    ```
-   Tip: clone into a short folder path (for example your Desktop or `C:\code`). Very deep folders can run into Windows' 260-character path limit.
+   Tip: clone into a folder whose path is under about 90 characters (your Desktop, Downloads or `C:\code` are fine). Deeper folders run into Windows' 260-character path limit while installing the add-ons.
 3. **Create a virtual environment** (a private folder for this app's add-ons, so nothing else on your computer changes).
    ```powershell
    py -3.12 -m venv .venv
