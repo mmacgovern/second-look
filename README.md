@@ -52,7 +52,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```
 5. **Install the add-ons.** This takes a few minutes the first time.
    ```bash
-   pip install -r requirements.txt
+   python -m pip install -r requirements.txt
    ```
 6. **Create your settings file** by copying the example.
    ```bash
@@ -64,7 +64,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```
 8. **Start the app.** Your browser opens at http://localhost:8501. To stop the app, click the Terminal window and press Ctrl+C.
    ```bash
-   streamlit run app.py
+   python -m streamlit run app.py
    ```
 
 ## Install and run on Windows (tested)
@@ -80,6 +80,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
    git clone https://github.com/YOUR-ACCOUNT/second-look.git
    cd second-look
    ```
+   Tip: clone into a short folder path (for example your Desktop or `C:\code`). Very deep folders can run into Windows' 260-character path limit.
 3. **Create a virtual environment** (a private folder for this app's add-ons, so nothing else on your computer changes).
    ```powershell
    py -3.12 -m venv .venv
@@ -90,7 +91,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```
 5. **Install the add-ons.** This takes a few minutes the first time.
    ```powershell
-   pip install -r requirements.txt
+   python -m pip install -r requirements.txt
    ```
 6. **Create your settings file** by copying the example.
    ```powershell
@@ -102,7 +103,7 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```
 8. **Start the app.** Your browser opens at http://localhost:8501. To stop the app, click the PowerShell window and press Ctrl+C.
    ```powershell
-   streamlit run app.py
+   python -m streamlit run app.py
    ```
 
 ## Using the app
@@ -131,11 +132,18 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 Answer **Y** if asked. (Alternatively use Command Prompt and run `.venv\Scripts\activate.bat`.)
 
-**3. Wrong Python version: `pip install` says "No matching distribution found", or the app or tests fail with "DLL load failed ... An Application Control policy has blocked this file"**
-The first message means your Python is too old. The second is Windows 11's **Smart App Control** refusing to load part of the `pyarrow` add-on built for a very new Python (3.14), which breaks the sample portfolios and price charts. Either way, use **Python 3.12**: install it (see [What you need first](#what-you-need-first)), delete the `.venv` folder, and redo steps 3 to 5 (`py -3.12 -m venv .venv` on Windows). Do not turn off Smart App Control to work around it.
+**3. Wrong Python version: `pip install` says "No matching distribution found"**
+Your Python is too old (or very new). Use **Python 3.12**: install it (see [What you need first](#what-you-need-first)), delete the `.venv` folder, and redo steps 3 to 5 (`py -3.12 -m venv .venv` on Windows).
+
+**3b. Windows: "An Application Control policy has blocked this file" (Smart App Control)**
+Windows 11's **Smart App Control** blocks programs and add-on files it does not yet trust. Two things can trigger it:
+- Typing `pip` or `streamlit` on their own: the small launcher programs a new virtual environment creates are blocked. Always use `python -m pip ...` and `python -m streamlit run app.py`, as the steps above do; they run through Python itself, which Windows trusts.
+- "DLL load failed ... blocked" when the app or tests start: an add-on version Windows does not trust yet. `requirements.txt` pins versions that were checked on a machine with Smart App Control on (numpy 2.5.3, pyarrow 25.0.1), so reinstall them with `python -m pip install -r requirements.txt`. Python 3.14 is known to be blocked; use 3.12.
+
+Do not turn off Smart App Control to work around it.
 
 **4. "streamlit: command not found" / "streamlit is not recognized", or "Port 8501 is already in use"**
-The virtual environment is not turned on: repeat step 4 (your prompt should start with `(.venv)`), or run `python -m streamlit run app.py`. If the port is busy because the app is already running in another window, either use that window or start a second copy on another port: `streamlit run app.py --server.port 8502`.
+The virtual environment is not turned on: repeat step 4 (your prompt should start with `(.venv)`), and start the app with `python -m streamlit run app.py`. If the port is busy because the app is already running in another window, either use that window or start a second copy on another port: `python -m streamlit run app.py --server.port 8502`.
 
 **Also good to know:** if the Top 3 tab says it is showing "the standard summary", the AI was not used (demo mode without a saved answer, no key, or a spending limit reached). The numbers are the same either way.
 

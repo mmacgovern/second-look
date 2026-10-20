@@ -67,9 +67,18 @@ def cache_key(model: str, system: str, messages: list[dict], response_schema: ty
 
 
 def demo_key(system: str, messages: list[dict], response_schema: type[BaseModel] | None = None) -> str:
-    """Key for demo/recorded/<agent>/<key>.json. Model-independent, so a recording made
+    """Key for demo/recorded/<agent>/<demo_file_name(key)>. Model-independent, so a recording made
     with any model replays in demo mode even when no model is configured."""
     return cache_key("", system, messages, response_schema)
+
+
+DEMO_FILE_CHARS = 20  # file names use the first 20 hex characters of the key: short paths for Windows, no clashes
+
+
+def demo_file_name(key: str) -> str:
+    """demo/recorded/<agent>/<this>.json: a short form of the demo key, so a clone in a deep folder stays
+    under the Windows 260-character path limit."""
+    return f"{key[:DEMO_FILE_CHARS]}.json"
 
 
 def record_responses_to(path: Path | None) -> None:
@@ -82,7 +91,7 @@ def _save_recording(agent_name: str, key: str, response: "LLMResponse") -> None:
     """Save only the model's answer and token counts. Nothing from settings or .env."""
     from secondlook.config import redact
 
-    path = RECORD_DIR / agent_name / f"{key}.json"
+    path = RECORD_DIR / agent_name / demo_file_name(key)
     path.parent.mkdir(parents=True, exist_ok=True)
     record = {  # no model name either: it may come from .env
         "agent": agent_name,
@@ -131,7 +140,9 @@ def _parse(text: str, schema: type[BaseModel] | None) -> BaseModel | None:
 
 
 def _load_recording(agent_name: str, key: str) -> dict | None:
-    for path in (DEMO_DIR / agent_name / f"{key}.json", DEMO_DIR / f"{agent_name}.json"):
+    # the short name, then the full-length name older recordings used, then a single per-agent file
+    for path in (DEMO_DIR / agent_name / demo_file_name(key), DEMO_DIR / agent_name / f"{key}.json",
+                 DEMO_DIR / f"{agent_name}.json"):
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
     return None

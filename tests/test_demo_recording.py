@@ -41,7 +41,7 @@ def test_demo_key_ignores_model():
 def test_live_answer_recorded_without_settings_or_key(recording, ledger):
     client = FakeClient(fake_completion(f"Answer mentioning {ODD_KEY}", 120, 30))
     llm.call_agent("explainer", "test-smart-model", SYSTEM, MESSAGES, 500, settings=LIVE, client=client, db_path=ledger)
-    path = recording / "explainer" / f"{llm.demo_key(SYSTEM, MESSAGES)}.json"
+    path = recording / "explainer" / llm.demo_file_name(llm.demo_key(SYSTEM, MESSAGES))
     saved = json.loads(path.read_text(encoding="utf-8"))
     assert set(saved) == {"agent", "text", "input_tokens", "output_tokens"}
     assert (saved["input_tokens"], saved["output_tokens"]) == (120, 30)
@@ -69,7 +69,7 @@ def test_recorded_answer_replays_in_demo_with_no_model_or_key(recording, ledger,
 def test_demo_mode_budgets_as_free_demo_model(ledger):
     # 1,400 tokens at the unknown-model fallback price would exceed $0.05 per call; demo calls cost $0
     (llm.DEMO_DIR / "explainer").mkdir(parents=True)
-    (llm.DEMO_DIR / "explainer" / f"{llm.demo_key(SYSTEM, MESSAGES)}.json").write_text(
+    (llm.DEMO_DIR / "explainer" / llm.demo_file_name(llm.demo_key(SYSTEM, MESSAGES))).write_text(
         json.dumps({"text": "ok"}), encoding="utf-8")
     llm.call_agent("explainer", "", SYSTEM, MESSAGES, 1400, settings=Settings(demo_mode=True), db_path=ledger)
     assert budget.summary(ledger)["total_usd"] == 0
@@ -146,3 +146,22 @@ def test_record_demo_refuses_without_key(capsys):
 def test_check_demo_fails_without_recordings(capsys):
     assert load_script("check_demo").main([]) == 1
     assert "FAIL" in capsys.readouterr().out
+
+
+
+def test_demo_file_names_are_short_and_old_long_names_still_load(tmp_path, monkeypatch):
+    key = llm.demo_key(SYSTEM, MESSAGES)
+    assert llm.demo_file_name(key) == key[:20] + ".json"
+    monkeypatch.setattr(llm, "DEMO_DIR", tmp_path)
+    (tmp_path / "explainer").mkdir()
+    (tmp_path / "explainer" / f"{key}.json").write_text('{"text": "old"}', encoding="utf-8")  # full-length name
+    assert llm._load_recording("explainer", key) == {"text": "old"}
+
+
+def test_recorded_files_fit_windows_path_limit():
+    """Every saved demo answer has a short name, so a clone 100+ characters deep still fits in 260."""
+    root = Path(__file__).resolve().parents[1]
+    files = list((root / "demo" / "recorded").rglob("*.json"))
+    assert files and all(len(f.stem) == llm.DEMO_FILE_CHARS for f in files)
+    longest = max(len(str(f.relative_to(root))) for f in files)
+    assert longest < 60

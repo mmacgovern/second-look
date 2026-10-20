@@ -275,7 +275,7 @@ def build() -> str:
     log = prompt_log()
 
     links = [f'<a href="{esc(REPO_URL)}">GitHub repository</a>' if REPO_URL else todo("GitHub repository link (not pushed yet)"),
-             f'<a href="{esc(APP_URL)}">Live app</a>' if APP_URL else todo("app link (not deployed online; runs locally with streamlit run app.py)")]
+             f'<a href="{esc(APP_URL)}">Live app</a>' if APP_URL else todo("app link (not deployed online; runs locally with python -m streamlit run app.py)")]
 
     # --- 1 -----------------------------------------------------------------------
     s1 = f"""

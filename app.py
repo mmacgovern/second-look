@@ -1,6 +1,6 @@
 """Second Look: an AI second opinion on an investment portfolio.
 
-Run:  streamlit run app.py
+Run:  python -m streamlit run app.py
 
 All numbers come from secondlook/quant (Python). The AI only explains them,
 through secondlook/orchestrator.py, and every AI answer is checked before it

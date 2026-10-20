@@ -422,3 +422,19 @@ Alright we will push to GitHub Public at the very end - and only when I say so. 
 **Result (item 4):** Added three red-team suites for the Possible Shifts and Try a Shift tabs: 16 deliberately bad drafts (named stock, ticker or fund family, invented number, guarantee, prediction, price target, missing suggestion, missing hindsight warning), the real recorded output for every sample and fluency level (18 cases), and a data-isolation check that injection text in an uploaded CSV never reaches either tab; demo red-team now 99/99, report Section 6 and slide 7 grouped by suite; report 15 pages; 524 tests passed.
 
 **Result (item 3):** The cost harness now measures Possible Shifts and Try a Shift (9 runs each) and a full visit (analysis + both tabs: $0.002216); live run $0.0675 gives $44.31/month for 10,000 users at 2 visits each ($21.51 with the response cache); live red-team re-run 99/99 ($0.0052); report Sections 5-7 and slides 6-7 updated, report 15 pages; 525 tests passed.
+
+### #25 — 2026-10-20 10:50 — Phase 22 — Fresh-clone rehearsal
+
+```text
+Run the fresh-clone rehearsal: clone into a temp folder, set up Python 3.12 following the README, install requirements, run the tests and start the app in demo mode, then report and clean up. Don't push anything.
+```
+
+**Result:** Fresh-clone rehearsal (no push): the clone installed and ran, with all 525 tests passing and the app working in demo mode, after three workarounds that point to needed fixes: Windows long paths broke a clone into a deep folder (64-character demo file names), Smart App Control blocks the new venv's pip.exe/streamlit.exe launchers (use python -m pip / python -m streamlit), and Smart App Control on this PC now blocks numpy 2.5.4 and pyarrow 26.0.0 (numpy 2.5.3 + pyarrow 25.0.1 work; the main project venv is affected too); temp folders and launch entry removed.
+
+### #26 — 2026-10-20 16:08 — Phase 22 — Fresh-clone rehearsal
+
+```text
+Apply the fixes: pin numpy 2.5.3 and pyarrow 25.0.1 (and reinstall them in the main .venv), switch the README to python -m pip / python -m streamlit with a Smart App Control note, and shorten the demo recording file names for long paths. Run tests, re-run the rehearsal, and commit.
+```
+
+**Result:** Pinned numpy 2.5.3 and pyarrow 25.0.1 (reinstalled in the main .venv, which Smart App Control had broken), switched the README to python -m pip / python -m streamlit with a Smart App Control troubleshooting entry and a short-path tip, and shortened the 49 demo recording file names to 20 characters (old long names still load); demo replay 32/32 for $0; 527 tests passed.
