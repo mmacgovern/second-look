@@ -106,3 +106,13 @@ def test_tokenomics_includes_the_new_tabs_and_full_visit(page):
         section = page[page.index("<h2>5. Tokenomics</h2>"):page.index("<h2>6. Safety</h2>")]
         assert "<strong>Possible Shifts</strong>" in section and "<strong>Try a Shift</strong>" in section
         assert f"${cost['per_visit_usd']:,.4f}" in section and "full visits per user per month" in section
+
+
+
+def test_section_2_cites_public_data_and_parking_lot_is_filled(page):
+    motivation = page[page.index("<h2>2. Motivation</h2>"):page.index("<h2>3. What is new here</h2>")]
+    assert "56 percent of US households" in motivation and "https://www.ici.org/news-release/25-factbook" in motivation
+    assert "37% of Americans work with a financial advisor" in motivation and "northwesternmutual.com" in motivation
+    assert "TODO" not in motivation
+    limits = page[page.index("<h2>8. Limits"):]
+    assert "Parking lot" in limits and "parking-lot list" not in limits and "AI-chosen shifts" in limits

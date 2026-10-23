@@ -321,7 +321,12 @@ def build() -> str:
     <li>Fear: a repeat of the {esc(pn['mid_gfc']['scenario'])} would have cut the mid-career portfolio by
     {pn['mid_gfc']['max_drawdown_pct']}% (${pn['mid_gfc']['max_drawdown_usd']:,}) at the worst point. People who sold near
     the bottom locked that in.</li>
-    <li>How many people this affects: {todo("public data on how many households hold several funds without an advisor, with source")}.</li>
+    <li>How many people this affects: fund ownership is widespread, advice is not. In 2024, 56 percent of US households
+    owned mutual funds or other registered funds (<a href="https://www.ici.org/news-release/25-factbook">Investment
+    Company Institute, 2025 Fact Book release, April 2025</a>), while only 37% of Americans work with a financial advisor
+    (<a href="https://news.northwesternmutual.com/2023-07-24-Two-Thirds-of-Americans-Say-Their-Financial-Planning-Needs-Improvement">Northwestern
+    Mutual 2023 Planning &amp; Progress Study</a>, 2,740 US adults). The two surveys measure different groups, so they are
+    not combined into one number here.</li>
   </ul>
   <p><strong>Why anyone should care.</strong> These are expensive, slow-to-notice mistakes made by people who are trying
   to do the right thing. A tool that explains them plainly, never sells anything and never picks specific stocks or funds
@@ -391,7 +396,7 @@ def build() -> str:
     findings_rows = [[esc(f.title), f"<code>{esc(f.dollar_fact_key)}</code>", usd(f.dollar_impact_usd or 0, 0)] for f in res.findings]
     cards_html = "".join(f'<div class="card"><h4>{esc(c.title)}</h4><p>{esc(c.body)}</p></div>' for c in res.cards)
     s4 = f"""
-<section>
+<section class="cont">
   <h2>4. The agents</h2>
   <p>Python does all the finance. The agents never calculate and have no tools to call: they receive the computed
   Facts JSON and return structured JSON that Python validates. The orchestrator runs <em>analyst → explainer →
@@ -651,7 +656,10 @@ def build() -> str:
     <li>Tune the verifier using its recorded reasons to cut rewrites.</li>
     <li>Deploy online with proper secret handling.</li>
     <li>Monte Carlo ranges instead of three fixed scenarios; basic tax awareness.</li>
-    <li>Parking-lot ideas: {todo("add the parking-lot list (none is recorded in the repository yet)")}</li>
+    <li>Parking lot (raised during the project, deliberately set aside): AI-chosen shifts (kept as fixed Python rules
+    the verifier can check); suggestions in Top 3 and the Pause Button (kept neutral); every agent on the larger model
+    (24x the cost, fewer drafts passing); a user-chosen amount in Try a Shift (kept at $1,000 so demo answers stay valid);
+    cross-checking costs against Portkey's logs (the course key cannot export them).</li>
   </ul>
 </section>"""
 
@@ -696,7 +704,7 @@ code{background:var(--mist);padding:1px 4px;border-radius:3px;font-size:12.5px}s
 .video video{background:#0B1F3A;max-width:100%;height:200px;border-radius:6px}
 @media print{@page{size:Letter;margin:0.5in}body{font-size:10pt}table{font-size:9pt}main{padding:0;max-width:none}
 section{page-break-before:always;margin:0}section.cover{page-break-before:avoid}section.cont{page-break-before:auto;margin-top:18pt}
-img{max-height:2.3in;width:auto;display:block;margin:0 auto}h2,h3{page-break-after:avoid}
+img{max-height:2.3in;width:auto;display:block;margin:0 auto}.cover img{max-height:2.6in}.cover .video{margin:6pt 0}h2,h3{page-break-after:avoid}
 figure,.card,.policy,tr{page-break-inside:avoid}a{color:inherit}.video video{display:none}}
 """
     return f"""<!doctype html>

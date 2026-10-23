@@ -440,3 +440,11 @@ Apply the fixes: pin numpy 2.5.3 and pyarrow 25.0.1 (and reinstall them in the m
 **Result:** Pinned numpy 2.5.3 and pyarrow 25.0.1 (reinstalled in the main .venv, which Smart App Control had broken), switched the README to python -m pip / python -m streamlit with a Smart App Control troubleshooting entry and a short-path tip, and shortened the 49 demo recording file names to 20 characters (old long names still load); demo replay 32/32 for $0; 527 tests passed.
 
 **Result (rehearsal re-run):** After the fixes, a fresh clone 95 characters deep installed with python -m pip (no Smart App Control blocks), passed all 527 tests and ran every page in demo mode; the README now says to keep the project folder path under about 90 characters (deeper folders hit Windows' path limit inside pyarrow's own files); temp folders and launch entry removed.
+
+### #27 — 2026-10-23 10:01 — Phase 23 — Report TODOs
+
+```text
+Can you add the parking-lot list and a cited public statistic (+1). Gives Section 2 a source and fills the visible TODOs.
+```
+
+**Result:** Report Section 2 now cites public data (ICI 2025 Fact Book release: 56% of US households owned funds in 2024; Northwestern Mutual 2023 Planning & Progress Study: 37% of Americans work with a financial advisor; not combined into one number) and Section 8 lists the parking-lot ideas set aside during the project; only the GitHub link, app link and demo video remain as TODOs; report 15 pages; 528 tests passed.
