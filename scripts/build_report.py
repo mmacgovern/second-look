@@ -42,7 +42,7 @@ OUT = DOCS / "report.html"
 SHOTS = DOCS / "screenshots"
 AUTHOR = "Michael MacGovern"
 REPO_URL = None   # TODO: set once the repository is pushed to GitHub
-APP_URL = None    # TODO: set if the app is deployed online
+APP_URL = None    # not deployed online by design: graders run it from a fresh clone (README)
 VIDEO_URL = None  # TODO: set to the demo video link
 LOW_EFFORT_COMMIT = "095e211"
 LIVE_REDTEAM_COMMIT = "559d9e6"
@@ -275,7 +275,8 @@ def build() -> str:
     log = prompt_log()
 
     links = [f'<a href="{esc(REPO_URL)}">GitHub repository</a>' if REPO_URL else todo("GitHub repository link (not pushed yet)"),
-             f'<a href="{esc(APP_URL)}">Live app</a>' if APP_URL else todo("app link (not deployed online; runs locally with python -m streamlit run app.py)")]
+             f'<a href="{esc(APP_URL)}">Live app</a>' if APP_URL else
+             "Runs locally from a fresh clone by following the README (not deployed online, by design)"]
 
     # --- 1 -----------------------------------------------------------------------
     s1 = f"""

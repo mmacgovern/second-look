@@ -116,3 +116,9 @@ def test_section_2_cites_public_data_and_parking_lot_is_filled(page):
     assert "TODO" not in motivation
     limits = page[page.index("<h2>8. Limits"):]
     assert "Parking lot" in limits and "parking-lot list" not in limits and "AI-chosen shifts" in limits
+
+
+
+def test_app_link_line_says_local_by_design(page):
+    if not br.APP_URL:
+        assert "not deployed online, by design" in page and "TODO: app link" not in page

@@ -448,3 +448,11 @@ Can you add the parking-lot list and a cited public statistic (+1). Gives Sectio
 ```
 
 **Result:** Report Section 2 now cites public data (ICI 2025 Fact Book release: 56% of US households owned funds in 2024; Northwestern Mutual 2023 Planning & Progress Study: 37% of Americans work with a financial advisor; not combined into one number) and Section 8 lists the parking-lot ideas set aside during the project; only the GitHub link, app link and demo video remain as TODOs; report 15 pages; 528 tests passed.
+
+### #28 — 2026-10-23 10:18 — Phase 24 — Run locally (README)
+
+```text
+Lets do that Claude
+```
+
+**Result:** Added a "For graders: how to run it" section at the top of the README (runs locally by design, no online version; four-command quick start; .env one folder up runs live, no key runs free demo mode; Windows tips; how to run the tests) and replaced the report's app-link TODO with "Runs locally from a fresh clone by following the README (not deployed online, by design)"; report 15 pages; 530 tests passed.

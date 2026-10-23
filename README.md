@@ -8,6 +8,22 @@ More screenshots are in [`docs/screenshots/`](docs/screenshots/).
 
 > **Generative AI, not a financial advisor.** Second Look uses generative AI and is not a professional financial advisor. It provides educational information and general suggestions only, never recommendations of specific stocks or securities, and it is not investment, tax or legal advice. Past results do not predict future results. Talk to a licensed, fiduciary financial advisor before making decisions.
 
+## For graders: how to run it
+
+**Second Look runs locally, by design: there is no online version.** Clone the repository and follow the steps below; it takes about 5 minutes.
+
+- **Quick start (Windows, PowerShell), from inside the cloned folder:**
+  ```powershell
+  py -3.12 -m venv .venv
+  .venv\Scripts\Activate.ps1
+  python -m pip install -r requirements.txt
+  python -m streamlit run app.py
+  ```
+  The app opens at http://localhost:8501. Full steps: [Windows](#install-and-run-on-windows-tested) or [macOS](#install-and-run-on-macos-not-yet-tested-on-a-mac).
+- **Your `.env` can stay one folder up.** If it contains `PORTKEY_API_KEY`, the app runs live (real AI calls, capped at $0.10 per session and $2.00 per day). Without a key it runs in free **demo mode**: every tab works, and the three sample portfolios show saved AI answers.
+- **Windows tips:** use Python 3.12, keep the project folder's path under about 90 characters, and use `python -m pip` / `python -m streamlit` as shown. If Windows says "An Application Control policy has blocked this file", see [Troubleshooting](#troubleshooting).
+- **Check it works:** `python -m pytest` runs the full test suite (about a minute, no AI calls).
+
 ---
 
 ## What you need first

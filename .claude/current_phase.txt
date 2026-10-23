@@ -1,1 +1,1 @@
-Phase 23 — Report TODOs
+Phase 24 — Run locally (README)
