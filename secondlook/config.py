@@ -26,6 +26,7 @@ PARENT_ENV_FILE = PROJECT_ROOT.parent / ".env"
 REDACTED = "[REDACTED]"
 
 PLACEHOLDER_KEYS = {"", "your-key-here"}
+DEFAULT_MODEL = "gpt-6-luna"  # the course model all costs were measured with; MODEL_FAST / MODEL_SMART override it
 
 # Every key value a Settings object has held in this process; redact() uses it.
 _KNOWN_SECRETS: set[str] = set()
@@ -58,8 +59,8 @@ class Settings(BaseModel):
     portkey_api_key: SecretStr | None = None
     portkey_provider: str = "openai"
     demo_mode: bool = True
-    model_fast: str = ""
-    model_smart: str = ""
+    model_fast: str = DEFAULT_MODEL   # a .env with only PORTKEY_API_KEY still gets working AI calls
+    model_smart: str = DEFAULT_MODEL
     session_budget_usd: float = Field(default=0.10, ge=0)
     daily_budget_usd: float = Field(default=2.00, ge=0)
     max_tokens_per_call: int = Field(default=1500, gt=0)

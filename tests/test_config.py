@@ -104,3 +104,16 @@ def test_no_key_is_always_demo_and_env_file_none_skips_both_files(tmp_path):
     parent.write_text(f"PORTKEY_API_KEY={ODD_KEY}\n", encoding="utf-8")
     assert load_settings(env_file=None, environ={}, parent_env_file=parent).demo_mode is True
     assert load_settings(env_file=None, environ={"DEMO_MODE": "false"}).demo_mode is True
+
+
+def test_key_only_env_gets_the_default_models(tmp_path):
+    """A grader's .env one folder up with only PORTKEY_API_KEY must still make working AI calls."""
+    parent = tmp_path / "parent.env"
+    parent.write_text(f"PORTKEY_API_KEY={ODD_KEY}\n", encoding="utf-8")
+    s = load_settings(env_file=tmp_path / "none.env", environ={}, parent_env_file=parent)
+    assert s.demo_mode is False and s.model_fast == s.model_smart == "gpt-6-luna"
+    blank = tmp_path / "blank.env"
+    blank.write_text(f"PORTKEY_API_KEY={ODD_KEY}\nMODEL_FAST=\nMODEL_SMART=\n", encoding="utf-8")  # blank lines count as unset
+    s = load_settings(env_file=blank, environ={}, parent_env_file=None)
+    assert s.model_fast == s.model_smart == "gpt-6-luna"
+    assert load_settings(env_file=None, environ={"PORTKEY_API_KEY": ODD_KEY, "MODEL_SMART": "gpt-6-sol"}).model_smart == "gpt-6-sol"

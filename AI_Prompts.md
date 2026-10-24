@@ -512,3 +512,11 @@ Good work Claude. Push the project (code) to a public Github repository so grade
 ```
 
 **Result:** Set the public repository URL (https://github.com/mmacgovern/second-look) in the report (cover link and prompt-log link), the README clone steps and output/github_url.txt, renamed the branch to main, and confirmed no TODO markers remain in the report, slides or README (report 15 pages); no .env exists or is tracked, and the spending ledger stays local by choice; 559 tests passed.
+
+### #36 — 2026-10-24 18:24 — Phase 30 — Final rehearsal
+
+```text
+Run the final rehearsal: clone from https://github.com/mmacgovern/second-look into a temp folder, follow the README, run the tests and start the app in demo mode, plus the small live check (~$0.01). Then clean up.
+```
+
+**Result:** Final rehearsal from GitHub (commit 77f58ac): cloned, installed with python -m pip, all 559 tests passed and every page worked in demo mode, including the video and the GitHub link; the live check found that a key-only .env left MODEL_FAST/MODEL_SMART blank so every AI call fell back to the standard summary ($0 spent); fixed by defaulting both models to gpt-6-luna (as the README already stated), verified live in the clone (6 calls, $0.0027, all three AI tabs answered by the AI); fix committed locally, not yet pushed; 560 tests passed.
