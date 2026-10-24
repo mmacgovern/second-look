@@ -351,19 +351,32 @@ def facts_json(facts: dict) -> str:
 
 
 def load_market_inputs(
-    portfolio: Portfolio, prefer_live: bool = False, extra: list[str] | tuple[str, ...] = ()
+    portfolio: Portfolio, prefer_live: bool = False, extra: list[str] | tuple[str, ...] = (), progress=None,
 ) -> tuple[dict[str, dict], pd.DataFrame]:
     """Profiles for every holding (plus `extra` tickers, e.g. one being bought) and adjusted
-    closes for those and the replay proxies."""
+    closes for those and the replay proxies. progress(done, total, label) is called before each
+    fetch, so the app can show a live count."""
     from secondlook import market_data as md
 
     symbols = list(dict.fromkeys([s for s in portfolio.values_by_symbol() if s != CASH] + [t.upper() for t in extra]))
+    proxy_tickers = {p for proxy in PROXY_MAP.values() for p in proxy} | {"SPY"}
+    price_tickers = list(dict.fromkeys(t.upper() for t in symbols + sorted(proxy_tickers) if t.upper() not in md.CASH_SYMBOLS))
+    total, done = len(symbols) + len(price_tickers), 0
+
+    def step(label: str) -> None:
+        nonlocal done
+        if progress is not None:
+            progress(done, total, label)
+        done += 1
+
     profiles = {}
     for symbol in symbols:
+        step(f"fund and company data for {symbol}")
         try:
             profiles[symbol], _ = md.get_profile(symbol, prefer_live=prefer_live)
         except md.DataUnavailable:
             continue
-    proxy_tickers = {p for proxy in PROXY_MAP.values() for p in proxy} | {"SPY"}
-    prices = md.get_prices(symbols + sorted(proxy_tickers), prefer_live=prefer_live)
+    prices = md.get_prices(price_tickers, prefer_live=prefer_live, on_ticker=lambda t: step(f"price history for {t}"))
+    if progress is not None:
+        progress(total, total, "done")
     return profiles, prices.adj_close

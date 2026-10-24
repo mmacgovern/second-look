@@ -472,3 +472,11 @@ Fix the class-share ticker spellings so BRKB, BRK.B and BRK/B (and similar) map 
 ```
 
 **Result:** Class-share tickers are now normalised to Yahoo Finance's form (BRK.B, BRK/B, "BRK B" and BRKB become BRK-B; also BRK-A, BF-B and any BASE.CLASS spelling) in CSV uploads, pasted text (grounding still checks the spelling as written) and the Pause Button, so Berkshire gets live prices and matches funds' holdings in the look-through (live BRK-B lookup confirmed); 550 tests passed.
+
+### #31 — 2026-10-24 16:09 — Phase 27 — Upload status panel
+
+```text
+Build the upload status panel: show live steps while an upload is processed (reading the file, fetching prices with a count, building the analysis), then a clear 'Your report is ready — see the tabs below' message plus a note listing any holdings that couldn't be priced. Add tests and commit.
+```
+
+**Result:** Uploads now show a live status panel (reading the file, holdings and accounts found, a progress bar counting each market-data fetch, building the analysis) that ends with "Your report is ready — see the tabs below", plus a note above the portfolio naming any holdings without market data and what that means; tested end to end in Chrome with BRK/B (priced) and a made-up ticker (named in the note), no AI calls; 554 tests passed.

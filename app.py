@@ -41,7 +41,8 @@ from secondlook.quant.xray import SECTOR_LABELS, xray
 from secondlook.ui_data import (
     FLUENCY, PLAN_LABEL, RANGE_LABEL, SAMPLES, Inputs, asset_mix, balances_frame, company_table, crash_frame,
     fee_curves, friendly_note, gap_headline, holdings_for_buy, load_risk_ranges, mix_vs_range, overlap_table,
-    params_to_reset, parse_action, plan_band_frame, session_cost, treemap_frame,
+    params_to_reset, parse_action, plan_band_frame, session_cost, treemap_frame, unpriced_holdings,
+    upload_ready_notes,
 )
 
 ROOT = Path(__file__).resolve().parent
@@ -174,15 +175,41 @@ def default_persona_facts(name: str) -> dict:
     return demo_runs.persona_facts(name)
 
 
-def save_upload(files: list[tuple[bytes, str]]) -> str:
-    """Parse uploaded CSVs (in memory) into a household; returns its key."""
+def upload_label(u: dict) -> str:
+    return f"Your upload: {u['files']} file(s), {len(u['household'].accounts)} account(s)"
+
+
+def save_upload(files: list[tuple[bytes, str]], status=None) -> str:
+    """Parse uploaded CSVs (in memory) into a household and build its analysis; returns its key.
+    With a Streamlit status panel, each step is shown live (reading, fetching market data, building)."""
+    def say(text: str) -> None:
+        if status is not None:
+            status.write(text)
+
     digest = hashlib.sha256(b"".join(data + kind.encode() for data, kind in files)).hexdigest()[:16]
     key = f"upload:{digest}"
     if key not in state.uploads:
+        say("Reading your file...")
         household = household_from_csvs([(data, kind, None) for data, kind in files])
+        values = household.portfolio().values_by_symbol()
+        holdings = len([s for s in values if s != CASH])
+        say(f"Found {holdings} holding(s) across {len(household.accounts)} account(s).")
+        bar = status.progress(0.0, text="Fetching market data...") if status is not None else None
+
+        def progress(done: int, total: int, label: str) -> None:
+            if bar is not None:
+                bar.progress(done / total if total else 1.0,
+                             text=f"Fetching market data: {min(done + 1, total)} of {total} ({label})"
+                             if done < total else f"Fetched market data: {total} of {total}")
+
         profiles, adj = load_market_inputs(household.portfolio(), prefer_live=not settings.demo_mode,
-                                           extra=["VOO", "VTI", "QQQ"])
+                                           extra=["VOO", "VTI", "QQQ"], progress=progress)
         state.uploads[key] = {"household": household, "profiles": profiles, "adj": adj, "files": len(files)}
+        say("Building your analysis (look-through, fees, crash replays, plan)...")
+        u = state.uploads[key]
+        make_inputs(key, upload_label(u), household, profiles, adj, None, (None, None))
+        state["upload_notice"] = {"holdings": holdings, "accounts": len(household.accounts),
+                                  "unpriced": unpriced_holdings(values, profiles, adj)}
     return key
 
 
@@ -332,12 +359,15 @@ def landing(compact: bool) -> None:
             st.caption("Add one file per account (for example your 401(k) and your IRA) and pick each one's type.")
         if tagged and st.button("Analyze my files", type="primary"):
             try:
-                state["upload_key"] = save_upload(tagged)
+                with st.status("Preparing your report...", expanded=True) as status:
+                    state["upload_key"] = save_upload(tagged, status)
+                    status.update(label="Your report is ready — see the tabs below", state="complete", expanded=False)
                 for k in params_to_reset(list(params)):
                     del params[k]
                 params["sample"] = "upload"
                 st.rerun()
             except ValueError as exc:
+                state.pop("upload_notice", None)
                 st.error(f"That file could not be read: {exc}")
         st.markdown('<div class="sl-privacy">Your file is processed in memory and never saved. Account numbers and '
                     'descriptions are removed before anything reaches the AI, and the AI only sees computed numbers.</div>',
@@ -363,8 +393,7 @@ def current_inputs() -> Inputs | None:
     key = state.get("upload_key")
     if choice == "upload" and key in state.uploads:
         u = state.uploads[key]
-        label = f"Your upload: {u['files']} file(s), {len(u['household'].accounts)} account(s)"
-        return make_inputs(key, label, u["household"], u["profiles"], u["adj"], None, (None, None))
+        return make_inputs(key, upload_label(u), u["household"], u["profiles"], u["adj"], None, (None, None))
     return None
 
 
@@ -1042,6 +1071,14 @@ def analysis_page() -> None:
         st.sidebar.markdown('<div class="sl-risk"><div class="sub">Not set yet. Complete About you.</div></div>',
                             unsafe_allow_html=True)
     st.sidebar.markdown(f"**AI mode:** {'Demo, no charges' if settings.demo_mode else 'Live'}")
+
+    notice = state.pop("upload_notice", None) if inputs.key.startswith("upload:") else None
+    if notice:
+        ready, unpriced_note = upload_ready_notes(notice["holdings"], notice["accounts"], notice["unpriced"])
+        st.success(ready, icon=":material/task_alt:")
+        if unpriced_note:
+            st.warning(unpriced_note, icon=":material/help:")
+        st.toast("Your report is ready")
 
     p = inputs.facts["portfolio"]
     note = " (demo replay, no charge)" if settings.demo_mode else ""

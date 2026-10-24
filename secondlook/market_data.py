@@ -225,12 +225,16 @@ def get_prices(
     prefer_live: bool = True,
     fetch: Callable = fetch_prices_live,
     snapshot_dir: Path | None = None,
+    on_ticker: Callable[[str], None] | None = None,
 ) -> PriceData:
-    """Daily prices for each ticker (cash symbols skipped); missing tickers are reported, not raised."""
+    """Daily prices for each ticker (cash symbols skipped); missing tickers are reported, not raised.
+    on_ticker(ticker) is called before each ticker is fetched (for progress displays)."""
     adj, close, sources = {}, {}, {}
     for ticker in dict.fromkeys(t.upper() for t in tickers):
         if ticker in CASH_SYMBOLS:
             continue
+        if on_ticker is not None:
+            on_ticker(ticker)
         try:
             df, source = get_ticker_prices(
                 ticker, start, end, prefer_live=prefer_live, fetch=fetch, snapshot_dir=snapshot_dir

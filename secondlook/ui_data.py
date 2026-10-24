@@ -287,3 +287,24 @@ def mix_vs_range(stock_pct: float, profile_label: str, ranges: dict) -> tuple[tu
     lo, hi = band
     position = "below" if stock_pct < lo else "above" if stock_pct > hi else "within"
     return (float(lo), float(hi)), position
+
+
+def unpriced_holdings(values: dict[str, float], profiles: dict[str, dict], adj: pd.DataFrame) -> list[str]:
+    """Holdings (not cash) with no price history or no fund/company data, in portfolio order."""
+    def has_prices(symbol: str) -> bool:
+        return symbol in adj.columns and adj[symbol].notna().any()
+
+    return [s for s in values if s != "CASH" and (not has_prices(s) or s not in profiles)]
+
+
+def upload_ready_notes(holdings: int, accounts: int, unpriced: list[str]) -> tuple[str, str | None]:
+    """The message shown once an upload's report is ready, and a note about holdings without market data."""
+    ready = (f"Your report is ready — see the tabs below. {holdings} holding(s) across {accounts} account(s) "
+             "were analyzed.")
+    if not unpriced:
+        return ready, None
+    names = ", ".join(unpriced)
+    note = (f"No market data was found for {names}. Their dollar value still counts in your totals, but they are not "
+            "looked through to the companies inside, and the crash replays use the S&P 500 as a stand-in for them. "
+            "Check the ticker spelling in your file if that looks wrong.")
+    return ready, note
