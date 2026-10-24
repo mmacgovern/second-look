@@ -496,3 +496,11 @@ Great work Claude! Lets do that. I approve your recommendation. Please implement
 ```
 
 **Result:** Replaced docs/Demo Video recording.mp4 with a 29.7 MB copy cut fresh from the original recording (0:15-8:28, two-pass encode at about the original bitrate; side-by-side frames look identical) and folded it into the unpushed video commit so the 58 MB version never enters the history; temporary ffmpeg download deleted; 556 tests passed.
+
+### #34 — 2026-10-24 18:04 — Phase 28 — Demo video
+
+```text
+Demo Video Can't be found
+```
+
+**Result:** Fixed "Demo video can't be found": inside the app, the embedded report's video player and the slide deck's link pointed at a file name that only works when the files are opened from docs/; the in-app copies now point to the working Demo Video recording tab instead (files on disk unchanged), verified in the browser; 557 tests passed.

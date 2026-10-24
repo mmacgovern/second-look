@@ -190,3 +190,15 @@ def test_widget_params_match_app_bindings():
     app = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
     bound = set(re.findall(r'key="(\w+)"[^)]*bind="query-params"', app))
     assert bound == set(ui_data.WIDGET_PARAMS)
+
+
+def test_in_app_report_and_slides_point_to_the_video_tab():
+    from pathlib import Path
+
+    docs = Path(__file__).resolve().parents[1] / "docs"
+    for name in ("report.html", "slides.html"):
+        original = (docs / name).read_text(encoding="utf-8")
+        assert "Demo%20Video%20recording.mp4" in original  # the files on disk still link the video next to them
+        embedded = ui_data.point_video_to_tab(original)
+        assert "Demo%20Video%20recording.mp4" not in embedded and "<video" not in embedded
+        assert "Play it in the <b>Demo Video recording</b> tab above" in embedded

@@ -308,3 +308,19 @@ def upload_ready_notes(holdings: int, accounts: int, unpriced: list[str]) -> tup
             "looked through to the companies inside, and the crash replays use the S&P 500 as a stand-in for them. "
             "Check the ticker spelling in your file if that looks wrong.")
     return ready, note
+
+
+VIDEO_FILE_URL = "Demo%20Video%20recording.mp4"
+VIDEO_TAB_NOTE = "Play it in the <b>Demo Video recording</b> tab above."
+
+
+def point_video_to_tab(html: str) -> str:
+    """The report and slides link the video by its file name, which works when they are opened from docs/ but not
+    when the app shows them inside a page. For the in-app copies, replace the player and links with a pointer to the
+    app's own Demo Video recording tab."""
+    import re
+
+    html = re.sub(rf'<video[^>]*src="{re.escape(VIDEO_FILE_URL)}"[^>]*>.*?</video>',
+                  f'<p class="note">{VIDEO_TAB_NOTE}</p>', html, flags=re.S)
+    return re.sub(rf'<a href="{re.escape(VIDEO_FILE_URL)}"[^>]*>(.*?)</a>(?:\s*\([^)]*\))?',
+                  rf'\1 ({VIDEO_TAB_NOTE.rstrip(".")})', html, flags=re.S)

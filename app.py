@@ -41,8 +41,8 @@ from secondlook.quant.xray import SECTOR_LABELS, xray
 from secondlook.ui_data import (
     FLUENCY, PLAN_LABEL, RANGE_LABEL, SAMPLES, Inputs, asset_mix, balances_frame, company_table, crash_frame,
     fee_curves, friendly_note, gap_headline, holdings_for_buy, load_risk_ranges, mix_vs_range, overlap_table,
-    params_to_reset, parse_action, plan_band_frame, session_cost, treemap_frame, unpriced_holdings,
-    upload_ready_notes,
+    params_to_reset, parse_action, plan_band_frame, point_video_to_tab, session_cost, treemap_frame,
+    unpriced_holdings, upload_ready_notes,
 )
 
 ROOT = Path(__file__).resolve().parent
@@ -1051,7 +1051,7 @@ def docs_page() -> None:
             left.caption(hint)
             right.download_button(f"Download {name}", content, file_name=name, mime="text/html", width="stretch",
                                   key=f"dl-{name}")
-            st.iframe(content, height=height)
+            st.iframe(point_video_to_tab(content), height=height)  # the video plays in its own tab here
 
 
 def analysis_page() -> None:
