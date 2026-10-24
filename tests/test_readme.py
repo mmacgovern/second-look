@@ -25,3 +25,8 @@ def test_graders_section_says_local_only_and_how_to_run():
 def test_readme_links_the_demo_video_recording():
     assert "[Demo Video recording](docs/Demo%20Video%20recording.mp4)" in README
     assert (Path(__file__).resolve().parents[1] / "docs" / "Demo Video recording.mp4").exists()
+
+
+def test_readme_clone_steps_use_the_real_repository():
+    assert "YOUR-ACCOUNT" not in README
+    assert README.count("git clone https://github.com/mmacgovern/second-look.git") == 2

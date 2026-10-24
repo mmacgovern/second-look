@@ -504,3 +504,11 @@ Demo Video Can't be found
 ```
 
 **Result:** Fixed "Demo video can't be found": inside the app, the embedded report's video player and the slide deck's link pointed at a file name that only works when the files are opened from docs/; the in-app copies now point to the working Demo Video recording tab instead (files on disk unchanged), verified in the browser; 557 tests passed.
+
+### #35 — 2026-10-24 18:12 — Phase 29 — GitHub push
+
+```text
+Good work Claude. Push the project (code) to a public Github repository so graders can clone it. Provide me with the Repo URL and also put it in output/github_url.txt. The link will also need to be added to the "Final Report" Tab in the project. Please confirm that will be the last "TODO" before it is uploaded to GITHUB.  I will manually upload the URL to Canvas for the formal submission. Do not push my real .env to the Github Repo. Do include both database files under data/ (the original and working copy) so graders can run your app easily.
+```
+
+**Result:** Set the public repository URL (https://github.com/mmacgovern/second-look) in the report (cover link and prompt-log link), the README clone steps and output/github_url.txt, renamed the branch to main, and confirmed no TODO markers remain in the report, slides or README (report 15 pages); no .env exists or is tracked, and the spending ledger stays local by choice; 559 tests passed.

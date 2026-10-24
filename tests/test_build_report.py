@@ -128,3 +128,12 @@ def test_demo_video_recording_is_linked_and_present(page):
     assert (ROOT / "docs" / "Demo Video recording.mp4").exists()
     assert 'src="Demo%20Video%20recording.mp4"' in page and "Watch the Demo Video recording" in page
     assert "TODO: demo video link" not in page
+
+
+def test_report_has_no_todos_left_and_links_the_repository(page):
+    import re
+
+    visible = re.sub(r"data:[a-z/+]+;base64,[A-Za-z0-9+/=]+", "", page)  # embedded images can contain any letters
+    assert 'class="todo"' not in visible and "TODO:" not in visible  # markers, not the phase name "Report TODOs"
+    assert '<a href="https://github.com/mmacgovern/second-look">GitHub repository</a>' in page
+    assert "https://github.com/mmacgovern/second-look/blob/main/AI_Prompts.md" in page

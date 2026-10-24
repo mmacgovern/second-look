@@ -53,9 +53,9 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```bash
    python3 --version
    ```
-2. **Download the code** and go into its folder. Replace the address with the repository link you were given.
+2. **Download the code** and go into its folder.
    ```bash
-   git clone https://github.com/YOUR-ACCOUNT/second-look.git
+   git clone https://github.com/mmacgovern/second-look.git
    cd second-look
    ```
 3. **Create a virtual environment** (a private folder for this app's add-ons, so nothing else on your computer changes).
@@ -91,9 +91,9 @@ Type each command, press Enter, and wait for it to finish before typing the next
    ```powershell
    py -3.12 --version
    ```
-2. **Download the code** and go into its folder. Replace the address with the repository link you were given.
+2. **Download the code** and go into its folder.
    ```powershell
-   git clone https://github.com/YOUR-ACCOUNT/second-look.git
+   git clone https://github.com/mmacgovern/second-look.git
    cd second-look
    ```
    Tip: clone into a folder whose path is under about 90 characters (your Desktop, Downloads or `C:\code` are fine). Deeper folders run into Windows' 260-character path limit while installing the add-ons.

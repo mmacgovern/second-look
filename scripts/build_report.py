@@ -41,7 +41,7 @@ DOCS = ROOT / "docs"
 OUT = DOCS / "report.html"
 SHOTS = DOCS / "screenshots"
 AUTHOR = "Michael MacGovern"
-REPO_URL = None   # TODO: set once the repository is pushed to GitHub
+REPO_URL = "https://github.com/mmacgovern/second-look"
 APP_URL = None    # not deployed online by design: graders run it from a fresh clone (README)
 VIDEO_URL = "Demo%20Video%20recording.mp4"  # docs/Demo Video recording.mp4, next to report.html
 LOW_EFFORT_COMMIT = "095e211"
@@ -675,7 +675,7 @@ def build() -> str:
         # first clause of each Result line, without bracketed details (the full text stays in AI_Prompts.md)
         clauses = [re.sub(r"\s*\([^)]*\)", "", r.split(";")[0]).rstrip(".") + "." for r in p["results"][:3]]
         produced = " ".join(clauses) or "No Result line under this entry; see AI_Prompts.md."
-        rows.append([esc(phase), p["count"], esc(produced[:400])])
+        rows.append([esc(phase), p["count"], esc(produced[:220] + ("..." if len(produced) > 220 else ""))])
     log_link = f'<a href="{esc(REPO_URL)}/blob/main/AI_Prompts.md">AI_Prompts.md</a>' if REPO_URL else '<code>AI_Prompts.md</code> in the repository root'
     appendix = f"""
 <section class="cont">
