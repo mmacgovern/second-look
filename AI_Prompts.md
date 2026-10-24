@@ -520,3 +520,11 @@ Run the final rehearsal: clone from https://github.com/mmacgovern/second-look in
 ```
 
 **Result:** Final rehearsal from GitHub (commit 77f58ac): cloned, installed with python -m pip, all 559 tests passed and every page worked in demo mode, including the video and the GitHub link; the live check found that a key-only .env left MODEL_FAST/MODEL_SMART blank so every AI call fell back to the standard summary ($0 spent); fixed by defaulting both models to gpt-6-luna (as the README already stated), verified live in the clone (6 calls, $0.0027, all three AI tabs answered by the AI); fix committed locally, not yet pushed; 560 tests passed.
+
+### #37 — 2026-10-24 18:40 — Phase 30 — Final rehearsal
+
+```text
+Push the model-default fix to GitHub (main).
+```
+
+**Result:** Pushed the model-default fix (commit 1fde33e) to https://github.com/mmacgovern/second-look main.
