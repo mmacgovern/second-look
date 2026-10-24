@@ -50,8 +50,8 @@ def test_flexible_column_matching():
 
 def test_messy_export_positions(messy):
     by_symbol = messy.values_by_symbol()
-    # cash 2,500 + AAPL 2,000 + 1,000 + VOO 4 x 500 + BRK.B 900
-    assert by_symbol == {"CASH": 2500.0, "AAPL": 3000.0, "VOO": 2000.0, "BRK.B": 900.0}
+    # cash 2,500 + AAPL 2,000 + 1,000 + VOO 4 x 500 + BRK.B 900 (stored in Yahoo's form, BRK-B)
+    assert by_symbol == {"CASH": 2500.0, "AAPL": 3000.0, "VOO": 2000.0, "BRK-B": 900.0}
     assert messy.total_value == 8400.0
 
 

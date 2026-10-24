@@ -11,6 +11,20 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 TICKER_RE = re.compile(r"^[A-Z.\-]{1,6}$")
 CASH = "CASH"
 
+# Class shares: brokerages write Berkshire Hathaway B as BRK.B, BRK/B, "BRK B" or BRKB; Yahoo Finance only knows BRK-B.
+CLASS_SHARE_SEPARATED = re.compile(r"^([A-Z]{1,5})[./ ]([A-Z])$")
+# Joined spellings cannot be told apart from ordinary tickers, so only well-known ones are mapped.
+CLASS_SHARE_JOINED = {"BRKA": "BRK-A", "BRKB": "BRK-B", "BFA": "BF-A", "BFB": "BF-B"}
+
+
+def normalize_ticker(raw: str) -> str:
+    """A ticker in the form Yahoo Finance uses: upper case, class shares as BASE-CLASS (BRK.B -> BRK-B)."""
+    symbol = " ".join(raw.strip().upper().split())
+    if symbol in CLASS_SHARE_JOINED:
+        return CLASS_SHARE_JOINED[symbol]
+    match = CLASS_SHARE_SEPARATED.fullmatch(symbol)
+    return f"{match.group(1)}-{match.group(2)}" if match else symbol
+
 
 class Holding(BaseModel):
     symbol: str
@@ -66,7 +80,7 @@ class Action(BaseModel):
     def _valid_ticker(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        value = value.strip().upper()
+        value = normalize_ticker(value)
         if not TICKER_RE.fullmatch(value):
             raise ValueError("invalid ticker")
         return value

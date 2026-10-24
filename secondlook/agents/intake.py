@@ -13,7 +13,7 @@ import re
 from pydantic import BaseModel, Field
 
 from secondlook.agents.base import AgentContext, AgentSpec, call, tagged
-from secondlook.quant.models import CASH, TICKER_RE, Holding, Portfolio, RejectedRow
+from secondlook.quant.models import CASH, TICKER_RE, Holding, Portfolio, RejectedRow, normalize_ticker
 from secondlook.quant.parse import CASH_SYMBOLS
 
 SPEC = AgentSpec(name="intake", model="fast", max_tokens=1200)
@@ -72,7 +72,7 @@ def to_portfolio(rows: list[IntakeRow], source: str | None = None) -> Portfolio:
     for i, row in enumerate(rows, start=1):
         raw = row.symbol.strip().upper()
         is_cash = raw.endswith("**") or raw.rstrip("*") in CASH_SYMBOLS
-        symbol = CASH if is_cash else raw
+        symbol = CASH if is_cash else normalize_ticker(raw)
         value, qty, price = row.market_value, row.quantity, row.price
         if not TICKER_RE.fullmatch(symbol):
             rejected.append(RejectedRow(row_number=i, reason="invalid or missing ticker"))
@@ -84,7 +84,8 @@ def to_portfolio(rows: list[IntakeRow], source: str | None = None) -> Portfolio:
         if value is None or qty is None or value < 0 or qty < 0:
             rejected.append(RejectedRow(row_number=i, reason="missing or negative quantity or value"))
             continue
-        if source is not None and not _grounded(row, symbol, is_cash, source, source_numbers):
+        # grounding checks the spelling as written in the pasted text (BRK.B), not the normalised one (BRK-B)
+        if source is not None and not _grounded(row, raw, is_cash, source, source_numbers):
             rejected.append(RejectedRow(row_number=i, reason="ticker or numbers not found in the pasted text"))
             continue
         holdings.append(Holding(symbol=symbol, quantity=qty, price=1.0 if is_cash and price is None else price,

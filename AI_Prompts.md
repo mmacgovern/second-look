@@ -464,3 +464,11 @@ Yes please change that Claude.
 ```
 
 **Result:** Changed the landing-page badge from "Never tells you what to buy or sell" to "Never picks specific stocks or funds", matching the Possible Shifts policy; retook the landing screenshot and rebuilt the report cover; 531 tests passed.
+
+### #30 — 2026-10-24 16:05 — Phase 26 — Class-share tickers
+
+```text
+Fix the class-share ticker spellings so BRKB, BRK.B and BRK/B (and similar) map to Yahoo's BRK-B form; add tests and commit.
+```
+
+**Result:** Class-share tickers are now normalised to Yahoo Finance's form (BRK.B, BRK/B, "BRK B" and BRKB become BRK-B; also BRK-A, BF-B and any BASE.CLASS spelling) in CSV uploads, pasted text (grounding still checks the spelling as written) and the Pause Button, so Berkshire gets live prices and matches funds' holdings in the look-through (live BRK-B lookup confirmed); 550 tests passed.

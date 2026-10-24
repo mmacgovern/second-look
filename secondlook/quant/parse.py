@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 from typing import IO
 
-from secondlook.quant.models import CASH, TICKER_RE, Holding, Portfolio, RejectedRow
+from secondlook.quant.models import CASH, TICKER_RE, Holding, Portfolio, RejectedRow, normalize_ticker
 
 MAX_BYTES = 1_000_000
 MAX_ROWS = 1_000
@@ -110,7 +110,7 @@ def parse_csv(source: str | bytes | Path | IO) -> Portfolio:
 
         raw_symbol = cell(row, "symbol").upper()
         is_cash = raw_symbol.endswith("**") or raw_symbol.rstrip("*") in CASH_SYMBOLS
-        symbol = CASH if is_cash else raw_symbol
+        symbol = CASH if is_cash else normalize_ticker(raw_symbol)
         if not TICKER_RE.fullmatch(symbol):
             rejected.append(RejectedRow(row_number=line_number, reason="invalid or missing ticker"))
             continue
