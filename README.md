@@ -10,7 +10,7 @@ More screenshots are in [`docs/screenshots/`](docs/screenshots/).
 
 ## For graders: how to run it
 
-**Second Look runs locally, by design: there is no online version.** Clone the repository and follow the steps below; it takes about 5 minutes.
+**Second Look runs locally, by design: there is no online version.** Clone the repository and follow the steps below; it takes about 5 minutes. To see it in action first, watch the [Demo Video recording](docs/Demo%20Video%20recording.mp4) (about 8 minutes; also on the app's Report & slides page).
 
 - **Quick start (Windows, PowerShell), from inside the cloned folder:**
   ```powershell

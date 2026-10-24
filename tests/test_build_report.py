@@ -122,3 +122,9 @@ def test_section_2_cites_public_data_and_parking_lot_is_filled(page):
 def test_app_link_line_says_local_by_design(page):
     if not br.APP_URL:
         assert "not deployed online, by design" in page and "TODO: app link" not in page
+
+
+def test_demo_video_recording_is_linked_and_present(page):
+    assert (ROOT / "docs" / "Demo Video recording.mp4").exists()
+    assert 'src="Demo%20Video%20recording.mp4"' in page and "Watch the Demo Video recording" in page
+    assert "TODO: demo video link" not in page

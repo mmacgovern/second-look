@@ -480,3 +480,19 @@ Build the upload status panel: show live steps while an upload is processed (rea
 ```
 
 **Result:** Uploads now show a live status panel (reading the file, holdings and accounts found, a progress bar counting each market-data fetch, building the analysis) that ends with "Your report is ready — see the tabs below", plus a note above the portfolio naming any holdings without market data and what that means; tested end to end in Chrome with BRK/B (priced) and a made-up ticker (named in the note), no AI calls; 554 tests passed.
+
+### #32 — 2026-10-24 17:12 — Phase 28 — Demo video
+
+```text
+Thanks Claude! You did a good job. Please use this video for the app. Re-label it as Demo Video recording.
+```
+
+**Result:** Added the trimmed walk-through as docs/Demo Video recording.mp4 (8:13): a "Demo Video recording" tab on the app's Report & slides page plays it, and the report cover, README (graders section) and title slide link to it, removing the demo-video TODO; report 15 pages; 556 tests passed.
+
+### #33 — 2026-10-24 17:27 — Phase 28 — Demo video
+
+```text
+Great work Claude! Lets do that. I approve your recommendation. Please implement.
+```
+
+**Result:** Replaced docs/Demo Video recording.mp4 with a 29.7 MB copy cut fresh from the original recording (0:15-8:28, two-pass encode at about the original bitrate; side-by-side frames look identical) and folded it into the unpushed video commit so the 58 MB version never enters the history; temporary ffmpeg download deleted; 556 tests passed.

@@ -43,7 +43,7 @@ SHOTS = DOCS / "screenshots"
 AUTHOR = "Michael MacGovern"
 REPO_URL = None   # TODO: set once the repository is pushed to GitHub
 APP_URL = None    # not deployed online by design: graders run it from a fresh clone (README)
-VIDEO_URL = None  # TODO: set to the demo video link
+VIDEO_URL = "Demo%20Video%20recording.mp4"  # docs/Demo Video recording.mp4, next to report.html
 LOW_EFFORT_COMMIT = "095e211"
 LIVE_REDTEAM_COMMIT = "559d9e6"
 
@@ -289,8 +289,8 @@ def build() -> str:
   <p><strong>Author:</strong> {esc(AUTHOR)}</p>
   <p>{' &nbsp;·&nbsp; '.join(links)}</p>
   <div class="video">
-    <video controls width="640" {'src="' + esc(VIDEO_URL) + '"' if VIDEO_URL else ''}>Demo video</video>
-    <p>{f'<a href="{esc(VIDEO_URL)}">Watch the demo video</a>' if VIDEO_URL else todo("demo video link")}</p>
+    <video controls width="640" {'src="' + esc(VIDEO_URL) + '"' if VIDEO_URL else ''}>Demo Video recording</video>
+    <p>{f'<a href="{esc(VIDEO_URL)}">Watch the Demo Video recording</a> (docs/Demo Video recording.mp4, about 8 minutes)' if VIDEO_URL else todo("demo video link")}</p>
   </div>
   {image("00-landing.png", "Second Look landing page", 820)}
   <p class="note">Second Look uses generative AI and is not a professional financial advisor. Its suggestions are general

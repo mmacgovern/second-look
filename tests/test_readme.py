@@ -20,3 +20,8 @@ def test_graders_section_says_local_only_and_how_to_run():
     assert ".env" in section and "demo mode" in section and "90 characters" in section
     for anchor in ("#install-and-run-on-windows-tested", "#install-and-run-on-macos-not-yet-tested-on-a-mac", "#troubleshooting"):
         assert anchor in section
+
+
+def test_readme_links_the_demo_video_recording():
+    assert "[Demo Video recording](docs/Demo%20Video%20recording.mp4)" in README
+    assert (Path(__file__).resolve().parents[1] / "docs" / "Demo Video recording.mp4").exists()

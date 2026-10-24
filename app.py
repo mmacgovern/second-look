@@ -47,6 +47,7 @@ from secondlook.ui_data import (
 
 ROOT = Path(__file__).resolve().parent
 ASSETS, DOCS = ROOT / "assets", ROOT / "docs"
+DEMO_VIDEO = DOCS / "Demo Video recording.mp4"
 # Black and gold theme: INK is the main text colour, ACCENT the gold, SURFACE the card background.
 BG, SURFACE, LINE = "#0A0A0A", "#161616", "#2E2A1E"
 INK, ACCENT, GOLD_LIGHT, SLATE, MIST = "#F5F1E6", "#D4AF37", "#F1D67A", "#B8B0A0", "#5A5548"
@@ -1019,8 +1020,8 @@ def pause_panel(inputs: Inputs) -> None:
 
 def docs_page() -> None:
     st.markdown('<p class="sl-kicker" style="color:#D4AF37">Project documents</p>', unsafe_allow_html=True)
-    st.title("Report and slide deck")
-    st.markdown('<p class="sl-muted">The final project report and presentation. Every number in them is generated from '
+    st.title("Report, slide deck and demo video")
+    st.markdown('<p class="sl-muted">The final project report, presentation and demo video recording. Every number in them is generated from '
                 'the project\'s measured results (costs, red-team tests and the prompt log).</p>', unsafe_allow_html=True)
     cost = json.loads((DOCS / "cost_results.json").read_text(encoding="utf-8")) if (DOCS / "cost_results.json").exists() else None
     red = json.loads((DOCS / "redteam_results.json").read_text(encoding="utf-8")) if (DOCS / "redteam_results.json").exists() else None
@@ -1030,7 +1031,14 @@ def docs_page() -> None:
         c2.metric("10,000 users per month", f"${cost['monthly']['without_cache']['users'][-1]['total_usd']:,.2f}", border=True)
         o = red["summary"]["overall"]
         c3.metric("Red-team cases passed", f"{o['passed']}/{o['total']}", border=True)
-    report_t, slides_t = st.tabs(["Final report", "Slide deck"])
+    report_t, slides_t, video_t = st.tabs(["Final report", "Slide deck", "Demo Video recording"])
+    with video_t:
+        if DEMO_VIDEO.exists():
+            st.caption("A walk-through of Second Look: analyzing an uploaded portfolio, the X-Ray, fees and crash replays, "
+                       "the AI explanations, Possible Shifts, Try a Shift and the Pause Button.")
+            st.video(str(DEMO_VIDEO))
+        else:
+            st.info("docs/Demo Video recording.mp4 is not in this copy of the project.")
     for tab, name, height, hint in ((report_t, "report.html", 1000, "Scroll inside the report, or download it to read or print."),
                                     (slides_t, "slides.html", 640, "Click a slide or use the arrow keys to move through the deck.")):
         with tab:
