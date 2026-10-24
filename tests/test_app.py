@@ -167,3 +167,11 @@ def test_try_a_shift_tab_shows_three_mixes_and_hindsight_note(monkeypatch):
     assert [m.label for m in at.metric if m.label == "Value today"] == ["Value today"] * 3
     for tick in ("SPY", "EFA", "AGG"):  # stand-ins stay internal
         assert tick not in text
+
+
+def test_landing_badge_matches_the_suggestions_policy(monkeypatch):
+    monkeypatch.setattr(orchestrator, "run_analysis", no_ai)
+    at = AppTest.from_file(APP, default_timeout=120).run()
+    text = " ".join(m.value for m in at.markdown)
+    assert "Never picks specific stocks or funds" in text
+    assert "what to buy or sell" not in text  # Possible Shifts does suggest sector and asset-type shifts

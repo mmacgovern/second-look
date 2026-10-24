@@ -456,3 +456,11 @@ Lets do that Claude
 ```
 
 **Result:** Added a "For graders: how to run it" section at the top of the README (runs locally by design, no online version; four-command quick start; .env one folder up runs live, no key runs free demo mode; Windows tips; how to run the tests) and replaced the report's app-link TODO with "Runs locally from a fresh clone by following the README (not deployed online, by design)"; report 15 pages; 530 tests passed.
+
+### #29 — 2026-10-24 15:35 — Phase 25 — Landing wording
+
+```text
+Yes please change that Claude.
+```
+
+**Result:** Changed the landing-page badge from "Never tells you what to buy or sell" to "Never picks specific stocks or funds", matching the Possible Shifts policy; retook the landing screenshot and rebuilt the report cover; 531 tests passed.

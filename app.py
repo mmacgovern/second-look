@@ -285,7 +285,7 @@ def hero() -> None:
   explained in plain English.</p>
   <div class="sl-trust"><span>&#10003; Every number computed in Python</span>
   <span>&#10003; AI explanations checked before you see them</span>
-  <span>&#10003; Never tells you what to buy or sell</span></div>
+  <span>&#10003; Never picks specific stocks or funds</span></div>
 </div>""", unsafe_allow_html=True)
     steps = [("Choose a portfolio", "Try one of three samples or upload your brokerage CSV."),
              ("Python does the math", "Fund look-through, fees, crash replays and a retirement plan."),
