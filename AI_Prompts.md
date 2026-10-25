@@ -528,3 +528,27 @@ Push the model-default fix to GitHub (main).
 ```
 
 **Result:** Pushed the model-default fix (commit 1fde33e) to https://github.com/mmacgovern/second-look main.
+
+### #38 — 2026-10-24 18:45 — Phase 30 — Final rehearsal
+
+```text
+Yes do the check. Do I need to resubmit the link?
+```
+
+**Result:** Re-cloned the GitHub version (abdc6ea) into a temp folder: the README install worked, 560 tests passed, demo mode ran with no errors, and a live check returned AI answers on all three AI tabs (5 calls, $0.0020); temp folder removed, and the Canvas link is unchanged.
+
+### #39 — 2026-10-25 08:39 — Phase 30 — Final rehearsal
+
+```text
+Can you make the slides better please and redownload them?
+```
+
+**Result:** Restyled the slides in the app's black and gold theme with the Labubu mascot, a readable agent diagram, public data on the problem slide, a persona-based Impact slide and a closing line; all 560 tests passed and the new slides.html was copied to Downloads\Second Look submission.
+
+### #40 — 2026-10-25 08:39 — Phase 30 — Final rehearsal
+
+```text
+Yes, commit and push the new slides to GitHub.
+```
+
+**Result:** Committed the restyled slides (with the earlier re-clone log lines) and pushed them to GitHub main; tests passed (560).

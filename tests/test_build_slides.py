@@ -29,7 +29,7 @@ def test_nine_slides_in_order(page):
     titles = re.findall(r'<section class="slide[^"]*" id="s(\d)"[^>]*>(?:<h2>([^<]*)</h2>)?', page)
     assert [int(n) for n, _ in titles] == list(range(1, 10))
     assert [t for _, t in titles][1:] == ["The problem", "What&#x27;s new", "How the agents work", "Demo", "Cost to run",
-                                          "Safety", "Impact: the numbers", "What&#x27;s next"]
+                                          "Safety", "Impact", "What&#x27;s next"]
     assert "<h1>Second Look</h1>" in page and bs.br.AUTHOR in page
 
 
